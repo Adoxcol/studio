@@ -14,6 +14,7 @@ class ParsedTags {
     this.genre,
     this.artwork,
     this.artworkMime,
+    this.year,
   });
 
   final String title;
@@ -24,6 +25,7 @@ class ParsedTags {
   final String? genre;
   final Uint8List? artwork;
   final String? artworkMime;
+  final int? year;
 }
 
 class TagReader {
@@ -43,6 +45,7 @@ class TagReader {
         genre: _firstGenre(meta.genres),
         artwork: picture?.bytes,
         artworkMime: picture?.mimetype,
+        year: _year(meta.year),
       );
     } on Object {
       return ParsedTags(title: fallbackTitle);
@@ -75,5 +78,11 @@ class TagReader {
       if (trimmed != null) return trimmed;
     }
     return null;
+  }
+
+  static int? _year(DateTime? value) {
+    final year = value?.year;
+    if (year == null || year < 1000 || year > 2100) return null;
+    return year;
   }
 }

@@ -314,6 +314,15 @@ class $TracksTable extends Tracks with TableInfo<$TracksTable, Track> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _yearMeta = const VerificationMeta('year');
+  @override
+  late final GeneratedColumn<int> year = GeneratedColumn<int>(
+    'year',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _fileModifiedMsMeta = const VerificationMeta(
     'fileModifiedMs',
   );
@@ -352,6 +361,7 @@ class $TracksTable extends Tracks with TableInfo<$TracksTable, Track> {
     genre,
     indexedAt,
     artworkPath,
+    year,
     fileModifiedMs,
     folderId,
   ];
@@ -440,6 +450,12 @@ class $TracksTable extends Tracks with TableInfo<$TracksTable, Track> {
         ),
       );
     }
+    if (data.containsKey('year')) {
+      context.handle(
+        _yearMeta,
+        year.isAcceptableOrUnknown(data['year']!, _yearMeta),
+      );
+    }
     if (data.containsKey('file_modified_ms')) {
       context.handle(
         _fileModifiedMsMeta,
@@ -508,6 +524,10 @@ class $TracksTable extends Tracks with TableInfo<$TracksTable, Track> {
         DriftSqlType.string,
         data['${effectivePrefix}artwork_path'],
       ),
+      year: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}year'],
+      ),
       fileModifiedMs: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}file_modified_ms'],
@@ -537,6 +557,7 @@ class Track extends DataClass implements Insertable<Track> {
   final String? genre;
   final DateTime indexedAt;
   final String? artworkPath;
+  final int? year;
   final int? fileModifiedMs;
   final int? folderId;
   const Track({
@@ -551,6 +572,7 @@ class Track extends DataClass implements Insertable<Track> {
     this.genre,
     required this.indexedAt,
     this.artworkPath,
+    this.year,
     this.fileModifiedMs,
     this.folderId,
   });
@@ -579,6 +601,9 @@ class Track extends DataClass implements Insertable<Track> {
     map['indexed_at'] = Variable<DateTime>(indexedAt);
     if (!nullToAbsent || artworkPath != null) {
       map['artwork_path'] = Variable<String>(artworkPath);
+    }
+    if (!nullToAbsent || year != null) {
+      map['year'] = Variable<int>(year);
     }
     if (!nullToAbsent || fileModifiedMs != null) {
       map['file_modified_ms'] = Variable<int>(fileModifiedMs);
@@ -614,6 +639,7 @@ class Track extends DataClass implements Insertable<Track> {
       artworkPath: artworkPath == null && nullToAbsent
           ? const Value.absent()
           : Value(artworkPath),
+      year: year == null && nullToAbsent ? const Value.absent() : Value(year),
       fileModifiedMs: fileModifiedMs == null && nullToAbsent
           ? const Value.absent()
           : Value(fileModifiedMs),
@@ -640,6 +666,7 @@ class Track extends DataClass implements Insertable<Track> {
       genre: serializer.fromJson<String?>(json['genre']),
       indexedAt: serializer.fromJson<DateTime>(json['indexedAt']),
       artworkPath: serializer.fromJson<String?>(json['artworkPath']),
+      year: serializer.fromJson<int?>(json['year']),
       fileModifiedMs: serializer.fromJson<int?>(json['fileModifiedMs']),
       folderId: serializer.fromJson<int?>(json['folderId']),
     );
@@ -659,6 +686,7 @@ class Track extends DataClass implements Insertable<Track> {
       'genre': serializer.toJson<String?>(genre),
       'indexedAt': serializer.toJson<DateTime>(indexedAt),
       'artworkPath': serializer.toJson<String?>(artworkPath),
+      'year': serializer.toJson<int?>(year),
       'fileModifiedMs': serializer.toJson<int?>(fileModifiedMs),
       'folderId': serializer.toJson<int?>(folderId),
     };
@@ -676,6 +704,7 @@ class Track extends DataClass implements Insertable<Track> {
     Value<String?> genre = const Value.absent(),
     DateTime? indexedAt,
     Value<String?> artworkPath = const Value.absent(),
+    Value<int?> year = const Value.absent(),
     Value<int?> fileModifiedMs = const Value.absent(),
     Value<int?> folderId = const Value.absent(),
   }) => Track(
@@ -690,6 +719,7 @@ class Track extends DataClass implements Insertable<Track> {
     genre: genre.present ? genre.value : this.genre,
     indexedAt: indexedAt ?? this.indexedAt,
     artworkPath: artworkPath.present ? artworkPath.value : this.artworkPath,
+    year: year.present ? year.value : this.year,
     fileModifiedMs: fileModifiedMs.present
         ? fileModifiedMs.value
         : this.fileModifiedMs,
@@ -714,6 +744,7 @@ class Track extends DataClass implements Insertable<Track> {
       artworkPath: data.artworkPath.present
           ? data.artworkPath.value
           : this.artworkPath,
+      year: data.year.present ? data.year.value : this.year,
       fileModifiedMs: data.fileModifiedMs.present
           ? data.fileModifiedMs.value
           : this.fileModifiedMs,
@@ -735,6 +766,7 @@ class Track extends DataClass implements Insertable<Track> {
           ..write('genre: $genre, ')
           ..write('indexedAt: $indexedAt, ')
           ..write('artworkPath: $artworkPath, ')
+          ..write('year: $year, ')
           ..write('fileModifiedMs: $fileModifiedMs, ')
           ..write('folderId: $folderId')
           ..write(')'))
@@ -754,6 +786,7 @@ class Track extends DataClass implements Insertable<Track> {
     genre,
     indexedAt,
     artworkPath,
+    year,
     fileModifiedMs,
     folderId,
   );
@@ -772,6 +805,7 @@ class Track extends DataClass implements Insertable<Track> {
           other.genre == this.genre &&
           other.indexedAt == this.indexedAt &&
           other.artworkPath == this.artworkPath &&
+          other.year == this.year &&
           other.fileModifiedMs == this.fileModifiedMs &&
           other.folderId == this.folderId);
 }
@@ -788,6 +822,7 @@ class TracksCompanion extends UpdateCompanion<Track> {
   final Value<String?> genre;
   final Value<DateTime> indexedAt;
   final Value<String?> artworkPath;
+  final Value<int?> year;
   final Value<int?> fileModifiedMs;
   final Value<int?> folderId;
   const TracksCompanion({
@@ -802,6 +837,7 @@ class TracksCompanion extends UpdateCompanion<Track> {
     this.genre = const Value.absent(),
     this.indexedAt = const Value.absent(),
     this.artworkPath = const Value.absent(),
+    this.year = const Value.absent(),
     this.fileModifiedMs = const Value.absent(),
     this.folderId = const Value.absent(),
   });
@@ -817,6 +853,7 @@ class TracksCompanion extends UpdateCompanion<Track> {
     this.genre = const Value.absent(),
     this.indexedAt = const Value.absent(),
     this.artworkPath = const Value.absent(),
+    this.year = const Value.absent(),
     this.fileModifiedMs = const Value.absent(),
     this.folderId = const Value.absent(),
   }) : locator = Value(locator),
@@ -833,6 +870,7 @@ class TracksCompanion extends UpdateCompanion<Track> {
     Expression<String>? genre,
     Expression<DateTime>? indexedAt,
     Expression<String>? artworkPath,
+    Expression<int>? year,
     Expression<int>? fileModifiedMs,
     Expression<int>? folderId,
   }) {
@@ -848,6 +886,7 @@ class TracksCompanion extends UpdateCompanion<Track> {
       if (genre != null) 'genre': genre,
       if (indexedAt != null) 'indexed_at': indexedAt,
       if (artworkPath != null) 'artwork_path': artworkPath,
+      if (year != null) 'year': year,
       if (fileModifiedMs != null) 'file_modified_ms': fileModifiedMs,
       if (folderId != null) 'folder_id': folderId,
     });
@@ -865,6 +904,7 @@ class TracksCompanion extends UpdateCompanion<Track> {
     Value<String?>? genre,
     Value<DateTime>? indexedAt,
     Value<String?>? artworkPath,
+    Value<int?>? year,
     Value<int?>? fileModifiedMs,
     Value<int?>? folderId,
   }) {
@@ -880,6 +920,7 @@ class TracksCompanion extends UpdateCompanion<Track> {
       genre: genre ?? this.genre,
       indexedAt: indexedAt ?? this.indexedAt,
       artworkPath: artworkPath ?? this.artworkPath,
+      year: year ?? this.year,
       fileModifiedMs: fileModifiedMs ?? this.fileModifiedMs,
       folderId: folderId ?? this.folderId,
     );
@@ -921,6 +962,9 @@ class TracksCompanion extends UpdateCompanion<Track> {
     if (artworkPath.present) {
       map['artwork_path'] = Variable<String>(artworkPath.value);
     }
+    if (year.present) {
+      map['year'] = Variable<int>(year.value);
+    }
     if (fileModifiedMs.present) {
       map['file_modified_ms'] = Variable<int>(fileModifiedMs.value);
     }
@@ -944,6 +988,7 @@ class TracksCompanion extends UpdateCompanion<Track> {
           ..write('genre: $genre, ')
           ..write('indexedAt: $indexedAt, ')
           ..write('artworkPath: $artworkPath, ')
+          ..write('year: $year, ')
           ..write('fileModifiedMs: $fileModifiedMs, ')
           ..write('folderId: $folderId')
           ..write(')'))
@@ -1788,6 +1833,7 @@ typedef $$TracksTableCreateCompanionBuilder =
       Value<String?> genre,
       Value<DateTime> indexedAt,
       Value<String?> artworkPath,
+      Value<int?> year,
       Value<int?> fileModifiedMs,
       Value<int?> folderId,
     });
@@ -1804,6 +1850,7 @@ typedef $$TracksTableUpdateCompanionBuilder =
       Value<String?> genre,
       Value<DateTime> indexedAt,
       Value<String?> artworkPath,
+      Value<int?> year,
       Value<int?> fileModifiedMs,
       Value<int?> folderId,
     });
@@ -1912,6 +1959,11 @@ class $$TracksTableFilterComposer
 
   ColumnFilters<String> get artworkPath => $composableBuilder(
     column: $table.artworkPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get year => $composableBuilder(
+    column: $table.year,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2033,6 +2085,11 @@ class $$TracksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get year => $composableBuilder(
+    column: $table.year,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get fileModifiedMs => $composableBuilder(
     column: $table.fileModifiedMs,
     builder: (column) => ColumnOrderings(column),
@@ -2109,6 +2166,9 @@ class $$TracksTableAnnotationComposer
     column: $table.artworkPath,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get year =>
+      $composableBuilder(column: $table.year, builder: (column) => column);
 
   GeneratedColumn<int> get fileModifiedMs => $composableBuilder(
     column: $table.fileModifiedMs,
@@ -2203,6 +2263,7 @@ class $$TracksTableTableManager
                 Value<String?> genre = const Value.absent(),
                 Value<DateTime> indexedAt = const Value.absent(),
                 Value<String?> artworkPath = const Value.absent(),
+                Value<int?> year = const Value.absent(),
                 Value<int?> fileModifiedMs = const Value.absent(),
                 Value<int?> folderId = const Value.absent(),
               }) => TracksCompanion(
@@ -2217,6 +2278,7 @@ class $$TracksTableTableManager
                 genre: genre,
                 indexedAt: indexedAt,
                 artworkPath: artworkPath,
+                year: year,
                 fileModifiedMs: fileModifiedMs,
                 folderId: folderId,
               ),
@@ -2233,6 +2295,7 @@ class $$TracksTableTableManager
                 Value<String?> genre = const Value.absent(),
                 Value<DateTime> indexedAt = const Value.absent(),
                 Value<String?> artworkPath = const Value.absent(),
+                Value<int?> year = const Value.absent(),
                 Value<int?> fileModifiedMs = const Value.absent(),
                 Value<int?> folderId = const Value.absent(),
               }) => TracksCompanion.insert(
@@ -2247,6 +2310,7 @@ class $$TracksTableTableManager
                 genre: genre,
                 indexedAt: indexedAt,
                 artworkPath: artworkPath,
+                year: year,
                 fileModifiedMs: fileModifiedMs,
                 folderId: folderId,
               ),

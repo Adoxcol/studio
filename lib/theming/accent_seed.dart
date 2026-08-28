@@ -57,21 +57,56 @@ enum AccentSeed {
 
 enum AccentMode { auto, custom }
 
+enum TrackLayout {
+  cards,
+  list;
+
+  String get label => switch (this) {
+    TrackLayout.cards => 'Cards',
+    TrackLayout.list => 'List',
+  };
+
+  static TrackLayout fromName(String? name) {
+    return name == 'list' ? TrackLayout.list : TrackLayout.cards;
+  }
+}
+
 class AppearanceState {
   const AppearanceState({
     this.mode = AccentMode.auto,
     this.customHue = AccentSeed.defaultHue,
-  });
+    TrackLayout? trackLayout,
+    bool? showTrackArtwork,
+    bool? fetchMissingArtwork,
+  }) : _trackLayout = trackLayout,
+       _showTrackArtwork = showTrackArtwork,
+       _fetchMissingArtwork = fetchMissingArtwork;
 
   final AccentMode mode;
   final double customHue;
+  final TrackLayout? _trackLayout;
+  final bool? _showTrackArtwork;
+  final bool? _fetchMissingArtwork;
+
+  TrackLayout get trackLayout => _trackLayout ?? TrackLayout.cards;
+  bool get showTrackArtwork => _showTrackArtwork ?? true;
+  bool get fetchMissingArtwork => _fetchMissingArtwork ?? true;
 
   static const defaults = AppearanceState();
 
-  AppearanceState copyWith({AccentMode? mode, double? customHue}) {
+  AppearanceState copyWith({
+    AccentMode? mode,
+    double? customHue,
+    TrackLayout? trackLayout,
+    bool? showTrackArtwork,
+    bool? fetchMissingArtwork,
+  }) {
     return AppearanceState(
       mode: mode ?? this.mode,
       customHue: customHue ?? this.customHue,
+      trackLayout: trackLayout ?? this.trackLayout,
+      showTrackArtwork: showTrackArtwork ?? this.showTrackArtwork,
+      fetchMissingArtwork: fetchMissingArtwork ?? this.fetchMissingArtwork,
     );
   }
 }

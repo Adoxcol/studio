@@ -5,6 +5,8 @@ import 'package:studio/library/database.dart';
 import 'package:studio/library/library_query.dart';
 import 'package:studio/state/library_providers.dart';
 import 'package:studio/state/playback_provider.dart';
+import 'package:studio/theming/accent_seed.dart';
+import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/library_browser/library_browse_view.dart';
 import 'package:studio/ui/library_browser/library_sidebar.dart';
@@ -58,6 +60,8 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       _albumFilter = album;
       _genreFilter = null;
       _tab = LibraryTab.all;
+      _sort = LibrarySort.track;
+      _order = LibraryOrder.ascending;
     });
   }
 
@@ -276,6 +280,10 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                           order: _order,
                           canPlay: tableTracks.isNotEmpty,
                           showSort: _tab != LibraryTab.playlists,
+                          showView: showTable,
+                          trackLayout: ref
+                              .watch(appearanceProvider)
+                              .trackLayout,
                           onPlayAll: () {
                             ref
                                 .read(playbackControllerProvider.notifier)
@@ -298,6 +306,16 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                           onToggleOrder: () => setState(
                             () => _order = LibraryQuery.toggleOrder(_order),
                           ),
+                          onCycleLayout: () {
+                            final next =
+                                ref.read(appearanceProvider).trackLayout ==
+                                    TrackLayout.cards
+                                ? TrackLayout.list
+                                : TrackLayout.cards;
+                            ref
+                                .read(appearanceProvider.notifier)
+                                .setTrackLayout(next);
+                          },
                           extras: [
                             if (_tab == LibraryTab.playlists)
                               LibraryTextAction(
@@ -538,10 +556,13 @@ class _Actions extends StatelessWidget {
     required this.order,
     required this.canPlay,
     required this.showSort,
+    required this.showView,
+    required this.trackLayout,
     required this.onPlayAll,
     required this.onShuffle,
     required this.onCycleSort,
     required this.onToggleOrder,
+    required this.onCycleLayout,
     this.extras = const [],
   });
 
@@ -549,10 +570,13 @@ class _Actions extends StatelessWidget {
   final LibraryOrder order;
   final bool canPlay;
   final bool showSort;
+  final bool showView;
+  final TrackLayout trackLayout;
   final VoidCallback onPlayAll;
   final VoidCallback onShuffle;
   final VoidCallback onCycleSort;
   final VoidCallback onToggleOrder;
+  final VoidCallback onCycleLayout;
   final List<Widget> extras;
 
   @override
@@ -582,6 +606,13 @@ class _Actions extends StatelessWidget {
             showChevron: true,
           ),
         ],
+        if (showView)
+          LibraryTextAction(
+            label: 'View: ${trackLayout.label}',
+            onTap: onCycleLayout,
+            muted: true,
+            showChevron: true,
+          ),
         ...extras,
       ],
     );
