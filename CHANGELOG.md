@@ -7,6 +7,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-29
+
+First public desktop build. GitHub Releases attach a Windows zip (`studio.exe`).
+
 ### Added
 
 - Desktop shell with library, settings, and player placeholders.
@@ -50,6 +54,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Click a time-synced lyric to jump playback to that line.
 - Closing the window asks Close or Run in background, with Don't show
   again to remember the choice.
+- Initial project scaffolding.
 
 ### Changed
 
@@ -114,11 +119,3 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `hotkey_manager` and `tray_manager` can build.
 - Opening an existing library no longer fails to add `indexed_at` (SQLite
   rejects `ALTER TABLE` with a `CURRENT_TIMESTAMP` default).
-
-### Removed
-
-## [0.1.0] - 2026-08-28
-
-### Added
-
-- Initial project scaffolding.
