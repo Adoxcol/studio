@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:studio/playback/audio_engine.dart';
+import 'package:studio/playback/dsp/replay_gain.dart';
 
 class FakeAudioEngine implements AudioEngine {
   Uri? lastUri;
   var paused = false;
   Duration lastSeek = Duration.zero;
   double lastVolume = 1;
+  ReplayGainMode lastReplayGain = ReplayGainMode.off;
 
   final _position = StreamController<Duration>.broadcast();
   final _duration = StreamController<Duration>.broadcast();
@@ -49,6 +51,11 @@ class FakeAudioEngine implements AudioEngine {
   @override
   Future<void> setVolume(double volume) async {
     lastVolume = volume;
+  }
+
+  @override
+  Future<void> setReplayGain(ReplayGainMode mode) async {
+    lastReplayGain = mode;
   }
 
   @override
