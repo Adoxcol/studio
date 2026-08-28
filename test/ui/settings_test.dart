@@ -57,6 +57,39 @@ void main() {
     );
   });
 
+  testWidgets('appearance settings switch to dark surfaces', (tester) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(testStudioApp(db: db, engine: engine));
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pump();
+
+    expect(find.text('Theme'), findsOneWidget);
+    expect(find.text('Light'), findsOneWidget);
+    expect(find.text('Dark'), findsOneWidget);
+    expect(find.text('System'), findsOneWidget);
+    expect(
+      StudioPalette.of(tester.element(find.text('Settings'))).bg,
+      StudioPalette.light().bg,
+    );
+
+    await tester.tap(find.text('Dark'));
+    await tester.pumpAndSettle();
+
+    expect(
+      StudioPalette.of(tester.element(find.text('Settings'))).bg,
+      StudioPalette.dark().bg,
+    );
+    expect(
+      Theme.of(tester.element(find.text('Settings'))).brightness,
+      Brightness.dark,
+    );
+  });
+
   testWidgets('hue slider sets a custom accent between named swatches', (
     tester,
   ) async {

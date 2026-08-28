@@ -7,6 +7,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Light, Dark, or System theme. Dark uses the Editorial Mono night
+  surfaces; System follows the OS. Accents stay the same hue.
+
 ## [0.1.0] - 2026-08-29
 
 First public desktop build. GitHub Releases attach a Windows zip (`studio.exe`).

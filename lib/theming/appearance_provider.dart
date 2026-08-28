@@ -39,6 +39,11 @@ class AppearanceNotifier extends Notifier<AppearanceState> {
     state = state.copyWith(fetchMissingArtwork: fetch);
     ref.read(appearanceStoreProvider).save(state);
   }
+
+  void setThemeMode(AppThemeMode themeMode) {
+    state = state.copyWith(themeMode: themeMode);
+    ref.read(appearanceStoreProvider).save(state);
+  }
 }
 
 final appearanceProvider =

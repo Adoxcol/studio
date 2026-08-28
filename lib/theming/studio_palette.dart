@@ -42,6 +42,15 @@ class StudioPalette extends ThemeExtension<StudioPalette> {
     );
   }
 
+  factory StudioPalette.forBrightness(
+    Brightness brightness, {
+    double hue = AccentSeed.defaultHue,
+  }) {
+    return brightness == Brightness.dark
+        ? StudioPalette.dark(hue: hue)
+        : StudioPalette.light(hue: hue);
+  }
+
   /// Dark theme. Same hue, brighter accent (chroma 0.14, lightness 68%).
   factory StudioPalette.dark({double hue = AccentSeed.defaultHue}) {
     return StudioPalette(
