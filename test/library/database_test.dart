@@ -56,6 +56,20 @@ void main() {
     expect(second.indexedAt, first.indexedAt);
   });
 
+  test('upsert stores artworkPath', () async {
+    final db = StudioDatabase.memory();
+    addTearDown(db.close);
+
+    await db.upsertTrack(
+      TracksCompanion.insert(
+        locator: '/music/a.flac',
+        title: 'Track A',
+        artworkPath: const Value('/tmp/cover.jpg'),
+      ),
+    );
+    expect((await db.allTracks()).single.artworkPath, '/tmp/cover.jpg');
+  });
+
   test(
     'upgrades a v1 library past the non-constant indexed_at default',
     () async {

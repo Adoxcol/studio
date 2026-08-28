@@ -10,6 +10,7 @@ Track testTrack({
   int? trackNumber = 1,
   String? genre = 'Neo-classical',
   String? locator,
+  String? artworkPath,
   DateTime? indexedAt,
 }) {
   return Track(
@@ -22,6 +23,7 @@ Track testTrack({
     durationMs: durationMs,
     trackNumber: trackNumber,
     genre: genre,
+    artworkPath: artworkPath,
     folderId: 1,
     indexedAt: indexedAt ?? DateTime.utc(2026, 1, id.clamp(1, 28)),
   );

@@ -19,7 +19,7 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -27,6 +27,9 @@ class StudioDatabase extends _$StudioDatabase {
     onUpgrade: (m, from, to) async {
       if (from < 2) {
         await _migrateToV2(m);
+      }
+      if (from < 3) {
+        await _migrateToV3(m);
       }
     },
   );
@@ -49,6 +52,13 @@ class StudioDatabase extends _$StudioDatabase {
       "UPDATE tracks SET indexed_at = CAST(strftime('%s', CURRENT_TIMESTAMP) "
       'AS INTEGER) WHERE indexed_at = 0',
     );
+  }
+
+  Future<void> _migrateToV3(Migrator m) async {
+    final columns = await _columnNames('tracks');
+    if (!columns.contains('artwork_path')) {
+      await m.addColumn(tracks, tracks.artworkPath);
+    }
   }
 
   Future<Set<String>> _columnNames(String table) async {
@@ -92,6 +102,7 @@ class StudioDatabase extends _$StudioDatabase {
           durationMs: row.durationMs,
           trackNumber: row.trackNumber,
           genre: row.genre,
+          artworkPath: row.artworkPath,
           folderId: row.folderId,
           source: row.source,
         ),
