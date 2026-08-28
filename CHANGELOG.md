@@ -13,6 +13,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Riverpod, drift/sqlite3, media_kit, and window_manager stack declared.
 - Editorial Mono frameless shell: custom titlebar, 64px icon rail, and
   divider-scrubber player bar (light theme default).
+- Local library folder scan with Drift index, URI-only media_kit playback,
+  and a play queue.
 
 ### Changed
 ### Fixed

@@ -6,10 +6,12 @@ alwaysApply: true
 
 # Studio design system — "Editorial Mono"
 
-Source of truth: the approved mockups (published design canvas, "Studio"). This file distills
-them into values you can use directly in Dart. If a new screen isn't covered here, match its
-feel — flat surfaces, hairline dividers, restrained accent, serif display type — rather than
-inventing a new visual language.
+Source of truth: [docs/design/studio-artboards.pdf](docs/design/studio-artboards.pdf)
+(12 artboards: now playing, library/artists/albums/genres, docking, accent seeds,
+lyrics, playback & sound, appearance, album/artist detail). This file distills
+those boards into values you can use directly in Dart. If a new screen isn't covered
+here, open that PDF and match its feel — flat surfaces, hairline dividers, restrained
+accent, serif display type — rather than inventing a new visual language.
 
 ## Look and feel, in one line
 
