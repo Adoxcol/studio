@@ -24,8 +24,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   up without adding the folder again.
 - Library folders can be removed from the sidebar. Scan progress appears in a
   side notice with Stop, and a refresh control re-scans on demand.
-- Appearance settings: Auto accent from album art or a custom hue swatch,
-  both using the same OKLCH chroma/lightness formula.
+- Appearance settings: Auto accent from album art or a custom hue —
+  any point on the wheel, with named swatches as shortcuts. Both use
+  the same OKLCH chroma/lightness formula.
 - Now Playing shows a 32-band FFT spectrum under the cover art, tapped from
   a silent mpv PCM dump so ReplayGain and EQ are reflected.
 - Library, Now Playing, and Queue sit in a dockable workspace: drag a panel
@@ -46,8 +47,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the same position). Tracks that left the library are dropped.
 - A second launch focuses the running window instead of opening another
   copy.
+- Click a time-synced lyric to jump playback to that line.
+- Closing the window asks Close or Run in background, with Don't show
+  again to remember the choice.
 
 ### Changed
+
+- Shuffle rearranges the play queue: the current track stays first and the
+  rest is randomized. Turning shuffle off restores the original order.
 
 - Folder scans skip unchanged files, read cover art only when needed, stay
   cancellable so the library does not freeze for minutes, and parse tags off
@@ -72,6 +79,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   only after that icon exists.
 - Playback no longer starts a second libmpv FFT tap. That instance's
   `ao=pcm` `stop`/`open`/`dispose` native-crashed the Windows process.
+- Skip next keeps playing after shuffle (and after any skip). The next
+  file no longer opens against mpv's disk cache, and a completed event
+  from the outgoing file no longer steals the open.
 - The equalizer no longer seeks the track or kills audio. media_kit's
   libmpv has no `aresample`/`firequalizer`, so a lavfi graph was flushing
   the decoder on every slider move (`Disabling filter lavfi`). EQ is kept
@@ -84,6 +94,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   command queue (or an idle crossfade player still opening the next track).
 - Now Playing no longer overflows by a few pixels when the pane is short or
   the title wraps.
+- The library header no longer overflows in a narrow docked pane.
 - Linux CI installs `libkeybinder-3.0-dev` and `libayatana-appindicator3-dev` so
   `hotkey_manager` and `tray_manager` can build.
 - Opening an existing library no longer fails to add `indexed_at` (SQLite

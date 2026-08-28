@@ -57,6 +57,29 @@ void main() {
     );
   });
 
+  testWidgets('hue slider sets a custom accent between named swatches', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(testStudioApp(db: db, engine: engine));
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pump();
+    await tester.ensureVisible(find.byKey(const ValueKey('hue-slider')));
+    await tester.pump();
+    final bar = tester.getRect(find.byKey(const ValueKey('hue-slider')));
+    await tester.tapAt(Offset(bar.left + bar.width * 173 / 360, bar.center.dy));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining(RegExp(r'CUSTOM · \d+°')), findsWidgets);
+    expect(find.text('CUSTOM · TEAL'), findsNothing);
+    expect(find.text('CUSTOM · TERRACOTTA'), findsNothing);
+  });
+
   testWidgets('ReplayGain Album is stored on the engine', (tester) async {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1;

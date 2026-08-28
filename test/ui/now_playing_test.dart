@@ -143,6 +143,46 @@ void main() {
     );
   });
 
+  testWidgets('tapping a synced lyric seeks to that line', (tester) async {
+    await db.upsertTrack(
+      TracksCompanion.insert(
+        locator: '/music/a.flac',
+        title: 'First',
+        artist: const Value('Aria'),
+      ),
+    );
+    final rows = await db.allTracks();
+    final lookup = FakeLyricsLookup(
+      const LyricsLookupResult(
+        LyricsLookupStatus.found,
+        LrclibRecord(syncedLyrics: '[00:00.00] Opening\n[00:05.00] Chorus'),
+      ),
+    );
+
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      testStudioApp(db: db, engine: engine, tracks: rows, lyricsLookup: lookup),
+    );
+    await tester.pump();
+    await tester.tap(find.byTooltip('Library'));
+    await tester.pump();
+    await tester.tap(find.text('First'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byTooltip('Now Playing'));
+    await tester.pump();
+    await tester.pump();
+
+    await tester.ensureVisible(find.text('Chorus'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey<String>('lyric-1')));
+    await tester.pump();
+    expect(engine.lastSeek, const Duration(seconds: 5));
+  });
+
   testWidgets('hero fits a short pane with a long title', (tester) async {
     await db.upsertTrack(
       TracksCompanion.insert(

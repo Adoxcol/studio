@@ -56,6 +56,14 @@ void main() {
     expect(AccentSeed.nearest(350), AccentSeed.terracotta);
   });
 
+  test('labelFor uses a name on a seed and degrees in between', () {
+    expect(AccentSeed.labelFor(200), 'TEAL');
+    expect(AccentSeed.labelFor(173), '173°');
+    expect(AccentSeed.wrap(-10), 350);
+    expect(AccentSeed.terracotta.matches(30), isTrue);
+    expect(AccentSeed.terracotta.matches(200), isFalse);
+  });
+
   test('file store round-trips custom teal', () {
     final file = File(
       '${Directory.systemTemp.createTempSync('studio-appearance').path}/appearance.json',

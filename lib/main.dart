@@ -6,6 +6,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:studio/app.dart';
+import 'package:studio/core/desktop/close_preference_provider.dart';
+import 'package:studio/core/desktop/close_preference_store.dart';
 import 'package:studio/core/desktop/studio_desktop_host.dart';
 import 'package:studio/core/window/window_bootstrap.dart';
 import 'package:studio/library/artwork_store.dart';
@@ -37,6 +39,9 @@ Future<void> main() async {
   final playbackSession = FilePlaybackSessionStore(
     File(p.join(support.path, 'session.json')),
   );
+  final closePreference = FileClosePreferenceStore(
+    File(p.join(support.path, 'close.json')),
+  );
   runApp(
     ProviderScope(
       overrides: [
@@ -45,6 +50,7 @@ Future<void> main() async {
         appearanceStoreProvider.overrideWithValue(appearance),
         playbackSettingsStoreProvider.overrideWithValue(playbackSettings),
         playbackSessionStoreProvider.overrideWithValue(playbackSession),
+        closePreferenceStoreProvider.overrideWithValue(closePreference),
         lyricsCacheProvider.overrideWithValue(
           FileLyricsCache(Directory(p.join(support.path, 'lyrics'))),
         ),

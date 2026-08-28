@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/lyrics/lrc.dart';
@@ -108,10 +110,11 @@ class _LyricsScrollerState extends ConsumerState<LyricsScroller> {
           itemCount: lines.length,
           itemBuilder: (context, index) {
             final active = index == current;
-            return Align(
+            final line = lines[index];
+            final text = Align(
               alignment: Alignment.center,
               child: Text(
-                lines[index].text,
+                line.text,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
@@ -119,6 +122,22 @@ class _LyricsScrollerState extends ConsumerState<LyricsScroller> {
                   color: active ? palette.accent : palette.inkMuted,
                   fontWeight: active ? FontWeight.w500 : FontWeight.w400,
                 ),
+              ),
+            );
+            if (!widget.document.synced) return text;
+            return MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                key: ValueKey<String>('lyric-$index'),
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  unawaited(
+                    ref
+                        .read(playbackControllerProvider.notifier)
+                        .seekTo(line.start),
+                  );
+                },
+                child: SizedBox(height: LyricsScroller.lineExtent, child: text),
               ),
             );
           },

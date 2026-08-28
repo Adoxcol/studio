@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:studio/core/desktop/close_preference.dart';
+import 'package:studio/core/desktop/close_preference_provider.dart';
+import 'package:studio/core/desktop/close_window_dialog.dart';
 import 'package:studio/core/desktop/desktop_transport.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:tray_manager/tray_manager.dart';
@@ -32,6 +35,7 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
   var _quitting = false;
   var _started = false;
   var _trayReady = false;
+  var _closePromptOpen = false;
 
   bool get _useWindowsTray => !kIsWeb && Platform.isWindows;
 
@@ -255,12 +259,52 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
 
   @override
   void onWindowClose() {
-    if (shouldHideToTray(trayReady: _trayReady, quitting: _quitting)) {
-      unawaited(_hideToTray());
+    unawaited(_handleClose());
+  }
+
+  Future<void> _handleClose() async {
+    if (_quitting || _closePromptOpen) return;
+    final decision = decideClose(
+      trayReady: _trayReady,
+      quitting: _quitting,
+      preference: ref.read(closePreferenceProvider),
+    );
+    switch (decision) {
+      case CloseDecision.ask:
+        await _promptClose();
+      case CloseDecision.background:
+        await _hideToTray();
+      case CloseDecision.quit:
+        await _quit();
+    }
+  }
+
+  Future<void> _promptClose() async {
+    final nav = ref.read(studioNavigatorKeyProvider).currentContext;
+    if (nav == null || !nav.mounted) {
+      await _hideToTray();
       return;
     }
-    if (!_trayReady) return;
-    unawaited(_quit());
+    _closePromptOpen = true;
+    try {
+      final choice = await showDialog<CloseWindowChoice>(
+        context: nav,
+        barrierDismissible: true,
+        builder: (context) => const CloseWindowDialog(),
+      );
+      if (choice == null || _quitting) return;
+      if (choice.remember) {
+        ref.read(closePreferenceProvider.notifier).remember(choice.action);
+      }
+      switch (choice.action) {
+        case CloseAction.background:
+          await _hideToTray();
+        case CloseAction.quit:
+          await _quit();
+      }
+    } finally {
+      _closePromptOpen = false;
+    }
   }
 
   @override

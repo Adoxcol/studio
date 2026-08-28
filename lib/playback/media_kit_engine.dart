@@ -7,19 +7,37 @@ import 'package:studio/playback/audio_engine.dart';
 import 'package:studio/playback/dsp/crossfade.dart';
 import 'package:studio/playback/dsp/replay_gain.dart';
 
+/// media_kit's audio libmpv has no OSC, and `cache-on-disk` cannot create its
+/// temp files on Windows. Those show up as mpv errors without stopping audio.
+@visibleForTesting
+bool isBenignMpvLog({required String prefix, required String text}) {
+  if (text.contains('Failed to create file cache')) return true;
+  if (text.contains('property not found') && text.contains('osc')) return true;
+  return false;
+}
+
 class MediaKitAudioEngine implements AudioEngine {
   MediaKitAudioEngine({Player? player})
-    : _primary = player ?? Player(configuration: _audibleConfig) {
+    : _primary = player ?? _createAudiblePlayer() {
     _front = _primary;
     _ui = _primary;
     _bind(_primary);
+    if (player != null) unawaited(_configureOutput(_primary));
   }
 
   static const _tick = Duration(milliseconds: 50);
-  static const _audibleConfig = PlayerConfiguration(
-    vo: 'null',
-    title: 'Studio',
-  );
+
+  static Player _createAudiblePlayer() {
+    late final Player player;
+    player = Player(
+      configuration: PlayerConfiguration(
+        vo: 'null',
+        title: 'Studio',
+        ready: () => unawaited(_configureNative(player.platform)),
+      ),
+    );
+    return player;
+  }
 
   final Player _primary;
   Player? _secondary;
@@ -48,7 +66,7 @@ class MediaKitAudioEngine implements AudioEngine {
   Player _ensureSecondary() {
     final existing = _secondary;
     if (existing != null) return existing;
-    final player = Player(configuration: _audibleConfig);
+    final player = _createAudiblePlayer();
     _secondary = player;
     _bind(player);
     return player;
@@ -90,9 +108,8 @@ class MediaKitAudioEngine implements AudioEngine {
     final incoming = _idle;
     if (_prepared != uri) {
       await _startAudible(incoming, uri: uri, volume: 0);
-    } else {
-      await incoming.play();
     }
+    await incoming.play();
     _prepared = null;
     _outgoing = _front;
     _ui = incoming;
@@ -215,6 +232,7 @@ class MediaKitAudioEngine implements AudioEngine {
   void _bind(Player player) {
     _subs.add(
       player.stream.log.listen((log) {
+        if (isBenignMpvLog(prefix: log.prefix, text: log.text)) return;
         debugPrint('mpv ${log.level}: ${log.prefix}: ${log.text}');
       }),
     );
@@ -327,8 +345,11 @@ class MediaKitAudioEngine implements AudioEngine {
     await _applyReplayGain(player);
   }
 
-  Future<void> _configureOutput(Player player) async {
-    final platform = player.platform;
+  Future<void> _configureOutput(Player player) {
+    return _configureNative(player.platform);
+  }
+
+  static Future<void> _configureNative(Object? platform) async {
     if (platform is! NativePlayer) return;
     if (Platform.isWindows) {
       await platform.setProperty('ao', 'wasapi');
@@ -337,6 +358,10 @@ class MediaKitAudioEngine implements AudioEngine {
     await platform.setProperty('mute', 'no');
     await platform.setProperty('ao-mute', 'no');
     await platform.setProperty('ao-volume', '100');
+    // media_kit turns on `cache-on-disk`; this libmpv then logs
+    // `lavf/mf: Failed to create file cache` and the next open can stall.
+    await platform.setProperty('cache-on-disk', 'no');
+    await platform.setProperty('cache', 'no');
   }
 
   Future<void> _applyFilters(Player player) async {
