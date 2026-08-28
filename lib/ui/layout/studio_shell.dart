@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:studio/state/library_providers.dart';
 import 'package:studio/state/nav_provider.dart';
 import 'package:studio/state/nav_state.dart';
 import 'package:studio/ui/layout/icon_rail.dart';
@@ -16,6 +17,7 @@ class StudioShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final destination = ref.watch(studioNavProvider);
+    ref.watch(libraryBootstrapProvider);
     return Scaffold(
       body: Row(
         children: [

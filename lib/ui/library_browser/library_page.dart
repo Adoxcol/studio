@@ -20,7 +20,6 @@ class LibraryPage extends ConsumerStatefulWidget {
 
 class _LibraryPageState extends ConsumerState<LibraryPage> {
   final _search = TextEditingController();
-  var _scanning = false;
   var _sidebarOpen = true;
   var _tab = LibraryTab.all;
   var _sort = LibrarySort.title;
@@ -40,12 +39,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       dialogTitle: 'Add music folder',
     );
     if (path == null) return;
-    setState(() => _scanning = true);
-    try {
-      await ref.read(folderScannerProvider).scan(path);
-    } finally {
-      if (mounted) setState(() => _scanning = false);
-    }
+    await ref.read(libraryScanProvider.notifier).scanFolder(path);
   }
 
   void _selectArtist(String name) {
@@ -78,14 +72,16 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   @override
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
+    final scanning = ref.watch(libraryScanProvider);
     final tracks = ref.watch(libraryTracksProvider);
     final playingId = ref.watch(
       playbackControllerProvider.select((s) => s.trackId),
     );
 
     return tracks.when(
-      data: (rows) => _body(context, palette, rows, playingId),
-      loading: () => _body(context, palette, const <Track>[], playingId),
+      data: (rows) => _body(context, palette, rows, playingId, scanning),
+      loading: () =>
+          _body(context, palette, const <Track>[], playingId, scanning),
       error: (error, _) => Padding(
         padding: const EdgeInsets.all(32),
         child: Text('$error', style: TextStyle(color: palette.inkMuted)),
@@ -98,6 +94,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     StudioPalette palette,
     List<Track> allTracks,
     int? playingId,
+    bool scanning,
   ) {
     final searched = LibraryQuery.filter(
       tracks: allTracks,
@@ -136,10 +133,10 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _Header(
-                  scanning: _scanning,
+                  scanning: scanning,
                   controller: _search,
                   onSearch: () => setState(() {}),
-                  onAddFolder: _scanning ? null : _addFolder,
+                  onAddFolder: scanning ? null : _addFolder,
                 ),
                 const SizedBox(height: 16),
                 _Tabs(

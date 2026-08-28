@@ -77,6 +77,8 @@ class StudioDatabase extends _$StudioDatabase {
 
   Future<List<Track>> allTracks() => select(tracks).get();
 
+  Future<List<LibraryFolder>> allFolders() => select(libraryFolders).get();
+
   Future<Track?> trackById(int id) {
     return (select(tracks)..where((t) => t.id.equals(id))).getSingleOrNull();
   }
@@ -109,6 +111,21 @@ class StudioDatabase extends _$StudioDatabase {
         target: [tracks.locator],
       ),
     );
+  }
+
+  Future<int> deleteTracksNotKept({
+    required int folderId,
+    required Set<String> keepLocators,
+  }) async {
+    final rows = await (select(
+      tracks,
+    )..where((t) => t.folderId.equals(folderId))).get();
+    final ids = [
+      for (final row in rows)
+        if (!keepLocators.contains(row.locator)) row.id,
+    ];
+    if (ids.isEmpty) return 0;
+    return (delete(tracks)..where((t) => t.id.isIn(ids))).go();
   }
 }
 
