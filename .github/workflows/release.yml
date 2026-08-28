@@ -52,7 +52,7 @@ jobs:
           prerelease: false
           files: studio-windows-x64.zip
           body: |
-            First public build, Windows x64.
+            Windows x64.
 
             Unzip `studio-windows-x64.zip` and run `studio.exe`. Keep the `data`
             folder and DLLs next to the exe. Windows may warn because the
