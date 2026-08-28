@@ -11,6 +11,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Desktop shell with library, settings, and player placeholders.
 - Riverpod, drift/sqlite3, media_kit, and window_manager stack declared.
+- Editorial Mono frameless shell: custom titlebar, 64px icon rail, and
+  divider-scrubber player bar (light theme default).
 
 ### Changed
 ### Fixed

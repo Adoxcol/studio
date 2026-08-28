@@ -11,7 +11,8 @@ Future<void> bootstrapWindow() async {
     size: Size(1280, 800),
     minimumSize: Size(900, 600),
     title: 'Studio',
-    titleBarStyle: TitleBarStyle.normal,
+    titleBarStyle: TitleBarStyle.hidden,
+    backgroundColor: Color(0xFFF9F4EE),
   );
 
   await windowManager.waitUntilReadyToShow(options, () async {
