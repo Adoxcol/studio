@@ -47,8 +47,7 @@ void main() {
     await pumpNowPlaying(tester);
 
     expect(find.text('Not playing'), findsWidgets);
-    expect(find.text('UP NEXT'), findsOneWidget);
-    expect(find.text('Nothing up next.'), findsOneWidget);
+    expect(find.text('Queue is empty.'), findsOneWidget);
     expect(find.byType(AmplitudeVisualizer), findsOneWidget);
     expect(
       Theme.of(
@@ -81,6 +80,6 @@ void main() {
 
     expect(find.text('now playing'), findsOneWidget);
     expect(find.text('First'), findsWidgets);
-    expect(find.text('Second'), findsOneWidget);
+    expect(find.text('Second'), findsWidgets);
   });
 }

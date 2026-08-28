@@ -318,29 +318,31 @@ class _Tabs extends StatelessWidget {
     final palette = StudioPalette.of(context);
     return SizedBox(
       height: 32,
-      child: ListView(
+      child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        children: [
-          for (final tab in LibraryTab.values)
-            Padding(
-              padding: const EdgeInsets.only(right: 20),
-              child: GestureDetector(
-                onTap: () => onSelect(tab),
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: Text(
-                    tab.label,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: tab == selected ? palette.ink : palette.inkMuted,
-                      fontWeight: tab == selected
-                          ? FontWeight.w500
-                          : FontWeight.w400,
+        child: Row(
+          children: [
+            for (final tab in LibraryTab.values)
+              Padding(
+                padding: const EdgeInsets.only(right: 20),
+                child: GestureDetector(
+                  onTap: () => onSelect(tab),
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Text(
+                      tab.label,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: tab == selected ? palette.ink : palette.inkMuted,
+                        fontWeight: tab == selected
+                            ? FontWeight.w500
+                            : FontWeight.w400,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -368,43 +370,27 @@ class _Actions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 20,
       runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            LibraryTextAction(
-              label: 'Play All',
-              onTap: onPlayAll,
-              enabled: canPlay,
-            ),
-            const SizedBox(width: 20),
-            LibraryTextAction(
-              label: 'Shuffle',
-              onTap: onShuffle,
-              enabled: canPlay,
-            ),
-          ],
+        LibraryTextAction(
+          label: 'Play All',
+          onTap: onPlayAll,
+          enabled: canPlay,
         ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            LibraryTextAction(
-              label: 'Sort: ${sort.label}',
-              onTap: onCycleSort,
-              muted: true,
-              showChevron: true,
-            ),
-            const SizedBox(width: 20),
-            LibraryTextAction(
-              label: 'Order: ${order.label}',
-              onTap: onToggleOrder,
-              muted: true,
-              showChevron: true,
-            ),
-          ],
+        LibraryTextAction(label: 'Shuffle', onTap: onShuffle, enabled: canPlay),
+        LibraryTextAction(
+          label: 'Sort: ${sort.label}',
+          onTap: onCycleSort,
+          muted: true,
+          showChevron: true,
+        ),
+        LibraryTextAction(
+          label: 'Order: ${order.label}',
+          onTap: onToggleOrder,
+          muted: true,
+          showChevron: true,
         ),
       ],
     );

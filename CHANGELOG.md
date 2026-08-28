@@ -28,6 +28,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   both using the same OKLCH chroma/lightness formula.
 - Now Playing shows an amplitude-envelope visualizer under the cover art
   (position-driven v1, not an FFT tap).
+- Library, Now Playing, and Queue sit in a dockable workspace: drag a panel
+  by its header, resize the split, or maximize it. Settings stays a full page.
 
 ### Changed
 
