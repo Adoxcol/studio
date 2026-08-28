@@ -1,0 +1,149 @@
+---
+description: Studio design system — Editorial Mono. Apply whenever writing or reviewing Flutter UI/theme code.
+globs: lib/**/*.dart
+alwaysApply: true
+---
+
+# Studio design system — "Editorial Mono"
+
+Source of truth: the approved mockups (published design canvas, "Studio"). This file distills
+them into values you can use directly in Dart. If a new screen isn't covered here, match its
+feel — flat surfaces, hairline dividers, restrained accent, serif display type — rather than
+inventing a new visual language.
+
+## Look and feel, in one line
+
+Light, warm, editorial. Serif display type for names/titles, sans for everything functional.
+No rounded "cards" with drop shadows or colored left-borders, no heavy gradients, no emoji, no
+default Material ripple/elevation look. Flat surfaces separated by 1px hairlines. The accent
+color is used sparingly — on progress, active state, and selection only, never as a background
+wash.
+
+## Color model
+
+All colors are authored in OKLCH (`lightness% chroma hue`) and converted to sRGB hex for
+Flutter's `Color`. Keep both in code: the OKLCH comment is the design source of truth if a token
+ever needs to be re-derived (e.g. a new accent hue).
+
+### Light theme
+
+| Token             | OKLCH                  | Hex       | Use |
+|---|---|---|---|
+| `bg`              | `oklch(97% 0.01 80)`   | `#F9F4EE` | app background |
+| `ink`             | `oklch(20% 0.01 80)`   | `#181611` | primary text, transport icon fill |
+| `inkMuted`        | `oklch(50% 0.02 80)`   | `#696257` | secondary text, timestamps, artist/album subtext |
+| `inkMutedAlt`     | `oklch(55% 0.02 80)`   | `#787165` | italic captions, nav-icon default state |
+| `hairlineStrong`  | `oklch(85% 0.01 80)`   | `#D1CDC7` | art-placeholder border, progress-track background, window-control dots |
+| `hairline`        | `oklch(90% 0.01 80)`   | `#E1DDD7` | panel/section dividers (top bar, icon rail, side panels) |
+| `hairlineSoft`     | `oklch(93% 0.01 80)`   | `#EBE7E1` | row dividers inside lists |
+| `artSwatch`       | `oklch(90% 0.02 60)`   | `#E8DBD1` | placeholder album-art fill |
+
+### Dark theme
+
+Dark mode is a deliberate re-tuning, not a naive invert — the accent is brightened
+(chroma 0.14, lightness 68%, vs. 0.12/55% in light) so it still reads clearly against a dark
+background.
+
+| Token             | OKLCH                   | Hex       | Use |
+|---|---|---|---|
+| `bg`              | `oklch(18% 0.005 80)`   | `#13110F` | app background |
+| `ink`             | `oklch(93% 0.005 80)`   | `#EAE7E4` | primary text |
+| `inkMuted`        | `oklch(62% 0.01 80)`    | `#898680` | secondary text, timestamps |
+| `inkDim`          | `oklch(70% 0.01 80)`    | `#A29E98` | tertiary / lower-emphasis text |
+| `inkBright`       | `oklch(80% 0.005 80)`   | `#BFBDBA` | transport icon stroke (unfilled state) |
+| `hairline`        | `oklch(28% 0.01 80)`    | `#2B2823` | dividers |
+| `hairlineAlt`     | `oklch(30% 0.01 80)`    | `#302D28` | progress-track background |
+| `hairlineStrong`  | `oklch(32% 0.01 80)`    | `#36322D` | stronger separators (panel borders) |
+| `artSwatch`       | `oklch(30% 0.03 60)`    | `#392A1E` | placeholder album-art fill |
+
+### Accent — terracotta (default seed hue 30)
+
+| Token                 | OKLCH                 | Hex       | Use |
+|---|---|---|---|
+| `accent` (light)      | `oklch(55% 0.12 30)`  | `#AC5346` | played-progress fill, scrubber handle, active nav icon, active list-row tick, current-track highlight |
+| `accentHover` (light) | `oklch(45% 0.12 30)`  | `#8C352A` | hover/pressed state |
+| `accentPressed`(light)| `oklch(35% 0.12 30)`  | `#6C170E` | active/darkest, rarely used directly |
+| `accent` (dark)       | `oklch(68% 0.14 30)`  | `#E17363` | same roles, dark theme |
+
+### Dynamic color / custom accent — the formula, not just the hue
+
+Every accent — whether auto-extracted from album art (via `palette_generator` /
+`material_color_utilities`) or picked by the user in Settings → Appearance — plugs into the
+**same** tonal formula. Only the hue changes:
+
+- Light mode: `chroma = 0.12`, `lightness = 55%`, hue = seed hue.
+- Dark mode: `chroma = 0.14`, `lightness = 68%`, hue = seed hue.
+
+Named preset hues used in the mockups (Settings swatches / theme showcase), all light-mode
+`oklch(55% 0.12 <hue>)`:
+
+| Name       | Hue | Hex (light) |
+|---|---|---|
+| Terracotta (default) | 30  | `#AC5346` |
+| Ochre      | 85  | `#916A00` |
+| Sage       | 140 | `#48823B` |
+| Teal       | 200 | `#00858D` |
+| Indigo     | 270 | `#576CB7` |
+
+When implementing: derive the seed hue either from the dominant album-art color (auto mode) or
+the user's chosen swatch (custom mode), then run it through the fixed chroma/lightness pipeline
+above for both themes. Never let the user pick chroma/lightness directly — only hue.
+
+## Typography
+
+- Display / serif — **Spectral** (fallback `Georgia, 'Times New Roman', serif`). Used only for:
+  track titles on Now Playing (44px / weight 500 / line-height 1.05), album/artist names on
+  detail pages, genre tile names, italic supporting lines (e.g. artist bio, "now playing" caption).
+- UI / body — **Work Sans** (fallback `'Helvetica Neue', Arial, sans-serif`). Everything else:
+  nav labels, list rows, tabs, sort/order controls, buttons, timestamps, mini-player text.
+- Don't introduce a third typeface. Don't set Work Sans for anything that reads as a "name"
+  (track/album/artist/genre) — that's Spectral's job, it's what gives the app its editorial feel.
+
+## Layout conventions
+
+- App shell: fixed 64px left icon rail (Library / Now Playing / Queue / Settings), separated
+  from content by a `hairline` right-border. 44px top titlebar with 3 window-control dots
+  (`hairlineStrong`), no OS-native chrome.
+- Now Playing (hero) screen: centered content column, `max-width: 520px`. Optional right "Up
+  Next" panel, fixed 280px, separated by a `hairline` left-border.
+- Library screens (All/Artists/Albums/Genres): collapsible quick-nav sidebar, 168px wide, with a
+  collapse chevron; tabs row for All/Artists/Albums/Genres/Playlists/Recently Added; sort/order
+  controls are **typographic** (plain text + chevron), never boxed dropdown chips; column headers
+  above the row list.
+- Detail pages (Album/Artist): back breadcrumb, large art/photo, title block, Play All/Shuffle
+  action row, then a plain track/album list. Currently-playing track shows a small equalizer
+  icon in place of its track number, highlighted in `accent`.
+- Flat surfaces only: no card backgrounds, no drop shadows except the ~1-3px shadow under the
+  scrubber handle dot. Square corners on all internal elements; the outer app window itself is
+  the only thing with rounded corners (20px, in the mockups).
+
+## The persistent player bar — "divider-scrubber" pattern
+
+This is the one component every screen with a footer player shares. Do not reinvent it per
+screen.
+
+1. A **20px-tall strip directly above the player bar**, edge-to-edge (no side padding — it is
+   the visual seam between the main view and the bottom bar), containing:
+   - a 2px hairline track (`hairlineStrong` light / `hairlineAlt` dark) spanning full width
+   - an `accent`-filled portion from the left edge to the current playback position
+   - a small circular handle dot (10px, `accent` fill, subtle drop shadow) sitting exactly on
+     the played/unplayed boundary
+   - elapsed/remaining time labels, small (11px, `inkMuted`), inset 20px from each edge
+2. Below that, a flat **64px content row**, `space-between`:
+   - left, fixed ~260px: 40px art thumbnail + title (ink) / artist (inkMuted)
+   - center: transport icons only (shuffle, previous, play/pause, next, repeat), ~20px gaps,
+     no progress bar embedded here
+   - right, fixed ~130px: small volume cluster (speaker icon + a short 64–120px slider), same
+     hairline-track-with-handle visual language as the main scrubber, just smaller
+
+Do not stack transport icons above a separate progress bar, and do not squeeze the progress bar
+and volume slider into the same row fighting for space — both were tried and explicitly rejected
+in favor of the pattern above.
+
+## Accent-usage discipline (read this before adding a splash of color anywhere)
+
+Accent color is allowed on: played-progress fill, the scrubber/volume handle dots, the active
+icon-rail item, the active sidebar entry's tick mark, the currently-playing track's highlight +
+equalizer icon, and selection rings in the accent picker. It is not allowed as a button
+background, a card background, a large surface wash, or a default icon color. When in doubt,
+default to `ink`/`inkMuted` and reserve `accent` for "this is the thing that's active right now."

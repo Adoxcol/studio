@@ -17,6 +17,13 @@ flutter run -d macos   # or linux / windows
 A fresh clone needs `git config core.hooksPath .githooks` once — Git does not clone that
 setting, and Conventional-Commit / no-push-to-main checks live in `.githooks/`.
 
+Linux desktop builds also need:
+
+```bash
+sudo apt-get install -y ninja-build libgtk-3-dev cmake clang pkg-config libmpv-dev \
+  libkeybinder-3.0-dev libayatana-appindicator3-dev
+```
+
 ## Making a change
 
 1. Branch off the latest `main`: `git checkout -b feat/your-thing`.

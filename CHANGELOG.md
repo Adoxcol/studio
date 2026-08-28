@@ -14,6 +14,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 ### Fixed
+
+- Linux CI installs `libkeybinder-3.0-dev` and `libayatana-appindicator3-dev` so
+  `hotkey_manager` and `tray_manager` can build.
+
 ### Removed
 
 ## [0.1.0] - 2026-08-28
