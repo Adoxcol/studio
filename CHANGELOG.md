@@ -24,6 +24,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Linux CI installs `libkeybinder-3.0-dev` and `libayatana-appindicator3-dev` so
   `hotkey_manager` and `tray_manager` can build.
+- Opening an existing library no longer fails to add `indexed_at` (SQLite
+  rejects `ALTER TABLE` with a `CURRENT_TIMESTAMP` default).
 
 ### Removed
 
