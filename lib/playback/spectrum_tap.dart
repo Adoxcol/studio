@@ -17,8 +17,11 @@ import 'package:studio/playback/pcm_fifo.dart';
 /// in `fwrite` when the pipe is full; a sync property set from Dart then
 /// deadlocks the UI isolate (Windows Not Responding). ReplayGain and EQ are
 /// remembered and applied only before the next `open()`.
+///
+/// Never [Player.dispose] a tap whose ao is live — that native-crashes the
+/// process (`Lost connection to device`). Hung players are leaked instead.
 class MpvSpectrumTap {
-  static const _tapConfig = PlayerConfiguration(vo: 'null', muted: true);
+  static const _tapConfig = PlayerConfiguration(vo: 'null', muted: false);
 
   Player? _player;
   final _bands = StreamController<List<double>>.broadcast();
@@ -45,10 +48,11 @@ class MpvSpectrumTap {
       final player = _ensurePlayer();
       await _configure(player, fifo.writerPath);
       await _applyFilters(player);
+      await player.setVolume(0);
       _running = true;
       _hold = false;
       _loop = _readLoop();
-      await player.open(Media(uri.toString()));
+      unawaited(_openQuietly(player, uri));
     } on Object catch (error, stack) {
       debugPrint('Spectrum tap failed: $error\n$stack');
       _failed = true;
@@ -81,7 +85,6 @@ class MpvSpectrumTap {
     final fifo = _fifo;
     _fifo = null;
     await fifo?.close();
-    // Let the ao thread fail the write before we touch libmpv again.
     await Future<void>.delayed(const Duration(milliseconds: 20));
     try {
       await _loop?.timeout(const Duration(milliseconds: 200));
@@ -91,11 +94,15 @@ class MpvSpectrumTap {
     _loop = null;
     _analyzer.reset();
     final player = _player;
-    _player = null;
-    final paramsSub = _paramsSub;
-    _paramsSub = null;
-    unawaited(paramsSub?.cancel());
-    if (player != null) unawaited(_tearDownPlayer(player));
+    if (player == null) return;
+    try {
+      await player.stop().timeout(const Duration(milliseconds: 400));
+    } on Object {
+      // Hung ao=pcm: leak this instance rather than dispose() (process crash).
+      _player = null;
+      unawaited(_paramsSub?.cancel());
+      _paramsSub = null;
+    }
   }
 
   void rememberReplayGain(ReplayGainMode mode) {
@@ -111,16 +118,12 @@ class MpvSpectrumTap {
     unawaited(_bands.close());
   }
 
-  Future<void> _tearDownPlayer(Player player) async {
+  Future<void> _openQuietly(Player player, Uri uri) async {
     try {
-      await player.stop().timeout(const Duration(milliseconds: 300));
-    } on Object {
-      // Pipe already closed; mpv may error on the way out.
-    }
-    try {
-      player.dispose();
-    } on Object {
-      // Best-effort.
+      await player.open(Media(uri.toString()));
+    } on Object catch (error, stack) {
+      debugPrint('Spectrum tap open failed: $error\n$stack');
+      _failed = true;
     }
   }
 
@@ -180,7 +183,6 @@ class MpvSpectrumTap {
         const tickMs = 16;
         final bytesWanted =
             (_analyzer.sampleRate * _channels * 4 * tickMs) ~/ 1000;
-        // Drain extra so mpv's fwrite cannot fill the pipe and block.
         final drain = bytesWanted < 65536 ? 65536 : bytesWanted;
         final bytes = await fifo.read(drain);
         if (!_running) break;
