@@ -6,6 +6,7 @@ import 'package:studio/theming/accent_seed.dart';
 import 'package:studio/theming/appearance_store.dart';
 import 'package:studio/theming/oklch.dart';
 import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/theming/studio_theme.dart';
 
 void main() {
   test('light terracotta accent matches the design token', () {
@@ -78,6 +79,7 @@ void main() {
     expect(loaded.customHue, 200);
     expect(loaded.trackLayout, TrackLayout.cards);
     expect(loaded.showTrackArtwork, isTrue);
+    expect(loaded.themeMode, AppThemeMode.light);
   });
 
   test('file store round-trips track layout and hidden artwork', () {
@@ -117,5 +119,67 @@ void main() {
     expect(state.trackLayout, TrackLayout.cards);
     expect(state.showTrackArtwork, isTrue);
     expect(state.copyWith().trackLayout, TrackLayout.cards);
+  });
+
+  test('file store round-trips dark theme mode', () {
+    final file = File(
+      '${Directory.systemTemp.createTempSync('studio-appearance').path}/appearance.json',
+    );
+    addTearDown(() {
+      if (file.parent.existsSync()) file.parent.deleteSync(recursive: true);
+    });
+    final store = FileAppearanceStore(file);
+    store.save(
+      const AppearanceState(
+        mode: AccentMode.custom,
+        customHue: 200,
+        themeMode: AppThemeMode.dark,
+      ),
+    );
+    final loaded = FileAppearanceStore(file).load();
+    expect(loaded.themeMode, AppThemeMode.dark);
+    expect(loaded.mode, AccentMode.custom);
+    expect(loaded.customHue, 200);
+  });
+
+  test('missing themeMode in appearance.json defaults to light', () {
+    final file = File(
+      '${Directory.systemTemp.createTempSync('studio-appearance').path}/appearance.json',
+    );
+    addTearDown(() {
+      if (file.parent.existsSync()) file.parent.deleteSync(recursive: true);
+    });
+    file.writeAsStringSync('{"mode":"custom","customHue":200}');
+    final loaded = FileAppearanceStore(file).load();
+    expect(loaded.themeMode, AppThemeMode.light);
+    expect(loaded.mode, AccentMode.custom);
+  });
+
+  test('forBrightness picks the dark surfaces', () {
+    expect(
+      StudioPalette.forBrightness(Brightness.dark).bg,
+      StudioPalette.dark().bg,
+    );
+    expect(
+      StudioPalette.forBrightness(Brightness.light).bg,
+      StudioPalette.light().bg,
+    );
+  });
+
+  test('theme mode names map to Flutter ThemeMode', () {
+    expect(AppThemeMode.fromName(null), AppThemeMode.light);
+    expect(AppThemeMode.fromName('dark'), AppThemeMode.dark);
+    expect(AppThemeMode.fromName('system'), AppThemeMode.system);
+    expect(AppThemeMode.fromName('nope'), AppThemeMode.light);
+    expect(StudioTheme.materialMode(AppThemeMode.dark), ThemeMode.dark);
+    expect(StudioTheme.materialMode(AppThemeMode.system), ThemeMode.system);
+    expect(
+      StudioTheme.windowBackground(AppThemeMode.dark),
+      StudioPalette.dark().bg,
+    );
+    expect(
+      StudioTheme.windowBackground(AppThemeMode.light),
+      StudioPalette.light().bg,
+    );
   });
 }

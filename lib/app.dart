@@ -16,7 +16,9 @@ class StudioApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: StudioTheme.light(hue: hue),
       darkTheme: StudioTheme.dark(hue: hue),
-      themeMode: ThemeMode.light,
+      themeMode: StudioTheme.materialMode(
+        ref.watch(appearanceProvider).themeMode,
+      ),
       navigatorKey: ref.watch(studioNavigatorKeyProvider),
       home: const StudioShell(),
     );

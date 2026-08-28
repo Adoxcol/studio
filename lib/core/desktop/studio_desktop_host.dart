@@ -11,6 +11,8 @@ import 'package:studio/core/desktop/close_preference_provider.dart';
 import 'package:studio/core/desktop/close_window_dialog.dart';
 import 'package:studio/core/desktop/desktop_transport.dart';
 import 'package:studio/state/playback_provider.dart';
+import 'package:studio/theming/appearance_provider.dart';
+import 'package:studio/theming/studio_theme.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -31,7 +33,7 @@ class StudioDesktopHost extends ConsumerStatefulWidget {
 }
 
 class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
-    with WindowListener, TrayListener {
+    with WindowListener, TrayListener, WidgetsBindingObserver {
   var _quitting = false;
   var _started = false;
   var _trayReady = false;
@@ -42,6 +44,7 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (!_useWindowsTray) {
       trayManager.addListener(this);
     }
@@ -52,6 +55,7 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     windowManager.removeListener(this);
     if (_useWindowsTray) {
       StudioDesktopHost.windowsChannel.setMethodCallHandler(null);
@@ -75,6 +79,7 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
     } on Object catch (error, stack) {
       debugPrint('Window close intercept unavailable: $error\n$stack');
     }
+    await _syncWindowBackground();
     await _setupTray();
     if (!_trayReady) {
       try {
@@ -220,6 +225,22 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
     }
   }
 
+  @override
+  void didChangePlatformBrightness() {
+    unawaited(_syncWindowBackground());
+  }
+
+  Future<void> _syncWindowBackground() async {
+    final color = StudioTheme.windowBackground(
+      ref.read(appearanceProvider).themeMode,
+    );
+    try {
+      await windowManager.setBackgroundColor(color);
+    } on Object catch (error, stack) {
+      debugPrint('Window background update failed: $error\n$stack');
+    }
+  }
+
   Future<void> _showWindow() async {
     try {
       await windowManager.setSkipTaskbar(false);
@@ -337,6 +358,9 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
         unawaited(_refreshTray(ref.read(playbackControllerProvider)));
       },
     );
+    ref.listen(appearanceProvider.select((s) => s.themeMode), (_, _) {
+      unawaited(_syncWindowBackground());
+    });
     return widget.child;
   }
 }

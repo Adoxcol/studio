@@ -17,6 +17,7 @@ import 'package:studio/library/scanner.dart';
 import 'package:studio/state/library_providers.dart';
 import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/appearance_store.dart';
+import 'package:studio/theming/studio_theme.dart';
 import 'package:studio/lyrics/lyrics_cache.dart';
 import 'package:studio/lyrics/lyrics_providers.dart';
 import 'package:studio/playback/media_kit_bootstrap.dart';
@@ -26,15 +27,18 @@ import 'package:studio/playback/playback_settings_provider.dart';
 import 'package:studio/playback/playback_settings_store.dart';
 
 Future<void> main() async {
-  await bootstrapWindow();
-  discardStaleMediaKitReferenceHolder();
-  MediaKit.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
   final support = await getApplicationSupportDirectory();
-  final db = StudioDatabase.onFile(File(p.join(support.path, 'studio.sqlite')));
-  final artwork = ArtworkStore(Directory(p.join(support.path, 'artwork')));
   final appearance = FileAppearanceStore(
     File(p.join(support.path, 'appearance.json')),
   );
+  await bootstrapWindow(
+    backgroundColor: StudioTheme.windowBackground(appearance.load().themeMode),
+  );
+  discardStaleMediaKitReferenceHolder();
+  MediaKit.ensureInitialized();
+  final db = StudioDatabase.onFile(File(p.join(support.path, 'studio.sqlite')));
+  final artwork = ArtworkStore(Directory(p.join(support.path, 'artwork')));
   final playbackSettings = FilePlaybackSettingsStore(
     File(p.join(support.path, 'playback.json')),
   );

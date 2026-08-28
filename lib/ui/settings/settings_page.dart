@@ -42,6 +42,30 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 28),
           _SectionLabel(text: 'APPEARANCE'),
           const SizedBox(height: 16),
+          Text('Theme', style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              for (final mode in AppThemeMode.values) ...[
+                if (mode != AppThemeMode.values.first)
+                  const SizedBox(width: 24),
+                LibraryTextAction(
+                  label: mode.label,
+                  onTap: () =>
+                      ref.read(appearanceProvider.notifier).setThemeMode(mode),
+                  muted: appearance.themeMode != mode,
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Dark uses the Editorial Mono night surfaces. System follows the OS.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+          ),
+          const SizedBox(height: 24),
           Text('Accent color', style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 10),
           Row(
@@ -579,14 +603,15 @@ class _HueSlider extends StatelessWidget {
   final double hue;
   final ValueChanged<double> onChanged;
 
-  static final _spectrum = [
+  static List<Color> _spectrum(Brightness brightness) => [
     for (var h = 0; h <= 360; h += 30)
-      StudioPalette.light(hue: h.toDouble()).accent,
+      StudioPalette.forBrightness(brightness, hue: h.toDouble()).accent,
   ];
 
   @override
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
+    final brightness = Theme.of(context).brightness;
     final t = (AccentSeed.wrap(hue) / 360).clamp(0.0, 1.0);
     return Row(
       children: [
@@ -615,7 +640,9 @@ class _HueSlider extends StatelessWidget {
                         Container(
                           height: 2,
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(colors: _spectrum),
+                            gradient: LinearGradient(
+                              colors: _spectrum(brightness),
+                            ),
                           ),
                         ),
                         Align(
@@ -624,7 +651,10 @@ class _HueSlider extends StatelessWidget {
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(
-                              color: StudioPalette.light(hue: hue).accent,
+                              color: StudioPalette.forBrightness(
+                                brightness,
+                                hue: hue,
+                              ).accent,
                               border: Border.all(color: palette.ink, width: 1),
                               shape: BoxShape.circle,
                             ),
@@ -666,7 +696,10 @@ class _Swatch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fill = StudioPalette.light(hue: seed.hue).accent;
+    final fill = StudioPalette.forBrightness(
+      Theme.of(context).brightness,
+      hue: seed.hue,
+    ).accent;
     return Tooltip(
       message: seed.label,
       child: GestureDetector(

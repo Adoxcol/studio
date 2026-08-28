@@ -57,6 +57,26 @@ enum AccentSeed {
 
 enum AccentMode { auto, custom }
 
+enum AppThemeMode {
+  light,
+  dark,
+  system;
+
+  String get label => switch (this) {
+    AppThemeMode.light => 'Light',
+    AppThemeMode.dark => 'Dark',
+    AppThemeMode.system => 'System',
+  };
+
+  static AppThemeMode fromName(String? name) {
+    return switch (name) {
+      'dark' => AppThemeMode.dark,
+      'system' => AppThemeMode.system,
+      _ => AppThemeMode.light,
+    };
+  }
+}
+
 enum TrackLayout {
   cards,
   list;
@@ -78,19 +98,23 @@ class AppearanceState {
     TrackLayout? trackLayout,
     bool? showTrackArtwork,
     bool? fetchMissingArtwork,
+    AppThemeMode? themeMode,
   }) : _trackLayout = trackLayout,
        _showTrackArtwork = showTrackArtwork,
-       _fetchMissingArtwork = fetchMissingArtwork;
+       _fetchMissingArtwork = fetchMissingArtwork,
+       _themeMode = themeMode;
 
   final AccentMode mode;
   final double customHue;
   final TrackLayout? _trackLayout;
   final bool? _showTrackArtwork;
   final bool? _fetchMissingArtwork;
+  final AppThemeMode? _themeMode;
 
   TrackLayout get trackLayout => _trackLayout ?? TrackLayout.cards;
   bool get showTrackArtwork => _showTrackArtwork ?? true;
   bool get fetchMissingArtwork => _fetchMissingArtwork ?? true;
+  AppThemeMode get themeMode => _themeMode ?? AppThemeMode.light;
 
   static const defaults = AppearanceState();
 
@@ -100,6 +124,7 @@ class AppearanceState {
     TrackLayout? trackLayout,
     bool? showTrackArtwork,
     bool? fetchMissingArtwork,
+    AppThemeMode? themeMode,
   }) {
     return AppearanceState(
       mode: mode ?? this.mode,
@@ -107,6 +132,7 @@ class AppearanceState {
       trackLayout: trackLayout ?? this.trackLayout,
       showTrackArtwork: showTrackArtwork ?? this.showTrackArtwork,
       fetchMissingArtwork: fetchMissingArtwork ?? this.fetchMissingArtwork,
+      themeMode: themeMode ?? this.themeMode,
     );
   }
 }
