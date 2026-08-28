@@ -26,6 +26,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   side notice with Stop, and a refresh control re-scans on demand.
 - Appearance settings: Auto accent from album art or a custom hue swatch,
   both using the same OKLCH chroma/lightness formula.
+- Now Playing shows an amplitude-envelope visualizer under the cover art
+  (position-driven v1, not an FFT tap).
 
 ### Changed
 
