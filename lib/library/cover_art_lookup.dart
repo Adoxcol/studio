@@ -73,7 +73,7 @@ class ITunesCoverArtLookup implements CoverArtLookup {
         const Duration(seconds: 12),
       );
       if (response.statusCode != 200) return null;
-      return utf8.decodeStream(response);
+      return await utf8.decodeStream(response);
     } on Object {
       return null;
     } finally {
