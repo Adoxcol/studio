@@ -18,6 +18,15 @@ class PlaybackQueue {
     return ids[index];
   }
 
+  /// Next id [moveNext] would select, without changing [index].
+  int? peekNextId() {
+    if (ids.isEmpty) return null;
+    if (repeat == QueueRepeatMode.one) return currentId;
+    if (index + 1 < ids.length) return ids[index + 1];
+    if (repeat == QueueRepeatMode.all) return ids.first;
+    return null;
+  }
+
   void replace(List<int> nextIds, {int startIndex = 0}) {
     ids = List<int>.of(nextIds);
     if (shuffle) {

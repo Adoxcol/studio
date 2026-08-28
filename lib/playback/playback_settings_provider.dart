@@ -39,6 +39,12 @@ class PlaybackSettingsNotifier extends Notifier<PlaybackSettings> {
     ref.read(playbackSettingsStoreProvider).save(state);
     ref.read(audioEngineProvider).setEqualizer(next);
   }
+
+  void setCrossfade(Duration duration) {
+    state = state.copyWith(crossfade: duration);
+    ref.read(playbackSettingsStoreProvider).save(state);
+    ref.read(audioEngineProvider).setCrossfade(duration);
+  }
 }
 
 final playbackSettingsProvider =

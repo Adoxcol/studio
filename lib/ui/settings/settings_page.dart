@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:studio/playback/dsp/crossfade.dart';
 import 'package:studio/playback/dsp/equalizer.dart';
 import 'package:studio/playback/dsp/replay_gain.dart';
 import 'package:studio/playback/playback_settings_provider.dart';
@@ -144,6 +145,22 @@ class SettingsPage extends ConsumerWidget {
             ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
           ),
           const SizedBox(height: 24),
+          Text('Crossfade', style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 10),
+          _CrossfadeRow(
+            selected: ref.watch(playbackSettingsProvider).crossfade,
+            onSelect: (duration) => ref
+                .read(playbackSettingsProvider.notifier)
+                .setCrossfade(duration),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Overlap the next track with an equal-power fade. Off keeps a hard cut.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+          ),
+          const SizedBox(height: 24),
           Text('Equalizer', style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 10),
           _EqualizerPresetRow(
@@ -181,6 +198,29 @@ class _ReplayGainRow extends StatelessWidget {
             label: mode.label,
             onTap: () => onSelect(mode),
             muted: mode != selected,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _CrossfadeRow extends StatelessWidget {
+  const _CrossfadeRow({required this.selected, required this.onSelect});
+
+  final Duration selected;
+  final ValueChanged<Duration> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (final duration in Crossfade.options) ...[
+          if (duration != Crossfade.options.first) const SizedBox(width: 24),
+          LibraryTextAction(
+            label: Crossfade.label(duration),
+            onTap: () => onSelect(duration),
+            muted: duration != selected,
           ),
         ],
       ],

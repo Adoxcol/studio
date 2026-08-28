@@ -91,6 +91,8 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   final _subs = <StreamSubscription<dynamic>>[];
   Timer? _positionFlush;
   Duration? _queuedPosition;
+  var _crossfadeArmed = false;
+  var _opening = false;
 
   @override
   PlaybackUiState build() {
@@ -113,6 +115,15 @@ class PlaybackController extends Notifier<PlaybackUiState> {
       _engine.setEqualizer(
         ref.read(playbackSettingsProvider).activeEqualizerGains,
       ),
+    );
+    ref.listen(playbackSettingsProvider.select((s) => s.crossfade), (
+      _,
+      duration,
+    ) {
+      unawaited(_engine.setCrossfade(duration));
+    });
+    unawaited(
+      _engine.setCrossfade(ref.read(playbackSettingsProvider).crossfade),
     );
 
     _subs.add(_engine.position.listen(_onPosition));
@@ -143,6 +154,9 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   }
 
   void _onPosition(Duration value) {
+    if (value < const Duration(milliseconds: 400)) {
+      _crossfadeArmed = false;
+    }
     _queuedPosition = value;
     if (_positionFlush != null) return;
     state = state.copyWith(position: value);
@@ -155,6 +169,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
         state = state.copyWith(position: pending);
       }
     });
+    unawaited(_considerAutoCrossfade(value));
   }
 
   Future<void> playTracks(
@@ -162,7 +177,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     int startIndex = 0,
     bool? shuffle,
   }) async {
-    if (ids.isEmpty) return;
+    if (_opening || ids.isEmpty) return;
     if (shuffle != null) {
       queue.shuffle = shuffle;
     }
@@ -171,6 +186,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   }
 
   Future<void> playQueueIndex(int index) async {
+    if (_opening) return;
     if (index < 0 || index >= queue.ids.length) return;
     queue.index = index;
     await _openCurrent();
@@ -186,8 +202,9 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   }
 
   Future<void> skipNext() async {
+    if (_opening) return;
     if (!queue.moveNext()) return;
-    await _openCurrent();
+    await _openCurrent(crossfade: true);
   }
 
   Future<void> skipPrevious() async {
@@ -199,6 +216,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
       state = state.copyWith(position: Duration.zero);
       return;
     }
+    if (_opening) return;
     if (!queue.movePrevious()) return;
     await _openCurrent();
   }
@@ -230,28 +248,66 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     state = state.copyWith(shuffle: queue.shuffle);
   }
 
-  Future<void> _openCurrent() async {
-    final id = queue.currentId;
-    if (id == null) return;
+  Future<void> _openCurrent({bool crossfade = false}) async {
+    if (_opening) return;
+    _opening = true;
+    try {
+      final id = queue.currentId;
+      if (id == null) return;
+      final track = await _db.trackById(id);
+      if (track == null) return;
+      final uri = await _resolvers.resolve(
+        TrackLocator(source: track.source, locator: track.locator),
+      );
+      if (crossfade) {
+        await _engine.crossfadeTo(uri);
+      } else {
+        _crossfadeArmed = false;
+        await _engine.play(uri);
+      }
+      await _engine.setVolume(state.volume);
+      state = state.copyWith(
+        trackId: id,
+        title: track.title,
+        artist: track.artist,
+        artworkPath: track.artworkPath,
+        clearArtist: track.artist == null,
+        clearArtwork: track.artworkPath == null,
+        queueIds: List<int>.of(queue.ids),
+        repeat: queue.repeat,
+        shuffle: queue.shuffle,
+        position: Duration.zero,
+      );
+    } finally {
+      _opening = false;
+    }
+  }
+
+  Future<void> _considerAutoCrossfade(Duration position) async {
+    final fade = ref.read(playbackSettingsProvider).crossfade;
+    if (fade <= Duration.zero || _crossfadeArmed || _opening) return;
+    if (!state.playing) return;
+    final total = state.duration;
+    if (total <= fade + fade) return;
+    final remaining = total - position;
+    final nextId = queue.peekNextId();
+    if (nextId == null) return;
+    if (remaining <= fade + const Duration(seconds: 2)) {
+      unawaited(_prefetch(nextId));
+    }
+    if (remaining <= fade && position > Duration.zero) {
+      _crossfadeArmed = true;
+      await skipNext();
+    }
+  }
+
+  Future<void> _prefetch(int id) async {
     final track = await _db.trackById(id);
     if (track == null) return;
     final uri = await _resolvers.resolve(
       TrackLocator(source: track.source, locator: track.locator),
     );
-    await _engine.play(uri);
-    await _engine.setVolume(state.volume);
-    state = state.copyWith(
-      trackId: id,
-      title: track.title,
-      artist: track.artist,
-      artworkPath: track.artworkPath,
-      clearArtist: track.artist == null,
-      clearArtwork: track.artworkPath == null,
-      queueIds: List<int>.of(queue.ids),
-      repeat: queue.repeat,
-      shuffle: queue.shuffle,
-      position: Duration.zero,
-    );
+    await _engine.prepare(uri);
   }
 }
 

@@ -6,11 +6,13 @@ class PlaybackSettings {
     this.replayGain = ReplayGainMode.off,
     this.equalizerPreset = EqualizerPreset.flat,
     this.equalizerGains = Equalizer.flat,
+    this.crossfade = Duration.zero,
   });
 
   final ReplayGainMode replayGain;
   final EqualizerPreset equalizerPreset;
   final List<double> equalizerGains;
+  final Duration crossfade;
 
   static const defaults = PlaybackSettings();
 
@@ -21,11 +23,13 @@ class PlaybackSettings {
     ReplayGainMode? replayGain,
     EqualizerPreset? equalizerPreset,
     List<double>? equalizerGains,
+    Duration? crossfade,
   }) {
     return PlaybackSettings(
       replayGain: replayGain ?? this.replayGain,
       equalizerPreset: equalizerPreset ?? this.equalizerPreset,
       equalizerGains: equalizerGains ?? this.equalizerGains,
+      crossfade: crossfade ?? this.crossfade,
     );
   }
 }

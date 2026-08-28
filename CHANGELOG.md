@@ -33,8 +33,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - ReplayGain Off / Track / Album in Settings, applied through mpv.
 - 8-band equalizer with Flat / Warm / Bright / Custom presets, applied
   through mpv firequalizer.
-- Synced lyrics from LRCLIB on Now Playing, cached locally, with the
-  current line centered as the track plays.
+- Dual-player crossfade in Settings (Off / 2s / 5s / 8s). Skip and
+  end-of-track overlap with an equal-power fade; the FFT tap follows
+  the incoming track.
 
 ### Changed
 
