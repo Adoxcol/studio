@@ -10,6 +10,7 @@ abstract interface class AudioEngine {
   Future<void> seek(Duration position);
   Future<void> setVolume(double volume);
   Future<void> setReplayGain(ReplayGainMode mode);
+  Future<void> setEqualizer(List<double> gains);
 
   Stream<Duration> get position;
   Stream<Duration> get duration;

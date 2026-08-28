@@ -103,6 +103,17 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     unawaited(
       _engine.setReplayGain(ref.read(playbackSettingsProvider).replayGain),
     );
+    ref.listen(playbackSettingsProvider.select((s) => s.activeEqualizerGains), (
+      _,
+      gains,
+    ) {
+      unawaited(_engine.setEqualizer(gains));
+    });
+    unawaited(
+      _engine.setEqualizer(
+        ref.read(playbackSettingsProvider).activeEqualizerGains,
+      ),
+    );
 
     _subs.add(_engine.position.listen(_onPosition));
     _subs.add(

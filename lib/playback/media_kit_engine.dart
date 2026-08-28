@@ -1,5 +1,6 @@
 import 'package:media_kit/media_kit.dart';
 import 'package:studio/playback/audio_engine.dart';
+import 'package:studio/playback/dsp/equalizer.dart';
 import 'package:studio/playback/dsp/replay_gain.dart';
 
 class MediaKitAudioEngine implements AudioEngine {
@@ -7,10 +8,12 @@ class MediaKitAudioEngine implements AudioEngine {
 
   final Player _player;
   ReplayGainMode _replayGain = ReplayGainMode.off;
+  List<double> _equalizer = Equalizer.flat;
 
   @override
   Future<void> play(Uri uri) async {
     await _applyReplayGain();
+    await _applyEqualizer();
     await _player.open(Media(uri.toString()));
   }
 
@@ -37,10 +40,23 @@ class MediaKitAudioEngine implements AudioEngine {
     return _applyReplayGain();
   }
 
+  @override
+  Future<void> setEqualizer(List<double> gains) {
+    _equalizer = List<double>.from(gains);
+    return _applyEqualizer();
+  }
+
   Future<void> _applyReplayGain() async {
     final platform = _player.platform;
     if (platform is NativePlayer) {
       await platform.setProperty('replaygain', _replayGain.mpvValue);
+    }
+  }
+
+  Future<void> _applyEqualizer() async {
+    final platform = _player.platform;
+    if (platform is NativePlayer) {
+      await platform.setProperty('af', Equalizer.afFilter(_equalizer));
     }
   }
 
