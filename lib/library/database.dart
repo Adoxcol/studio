@@ -19,7 +19,7 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -36,6 +36,9 @@ class StudioDatabase extends _$StudioDatabase {
       }
       if (from < 5) {
         await _migrateToV5(m);
+      }
+      if (from < 6) {
+        await _migrateToV6(m);
       }
     },
     beforeOpen: (details) async {
@@ -80,6 +83,13 @@ class StudioDatabase extends _$StudioDatabase {
   Future<void> _migrateToV5(Migrator m) async {
     await m.createTable(playlists);
     await m.createTable(playlistEntries);
+  }
+
+  Future<void> _migrateToV6(Migrator m) async {
+    final columns = await _columnNames('tracks');
+    if (!columns.contains('year')) {
+      await m.addColumn(tracks, tracks.year);
+    }
   }
 
   Future<Set<String>> _columnNames(String table) async {
@@ -143,6 +153,7 @@ class StudioDatabase extends _$StudioDatabase {
           trackNumber: row.trackNumber,
           genre: row.genre,
           artworkPath: row.artworkPath,
+          year: row.year,
           fileModifiedMs: row.fileModifiedMs,
           folderId: row.folderId,
           source: row.source,
@@ -170,12 +181,26 @@ class StudioDatabase extends _$StudioDatabase {
               trackNumber: row.trackNumber,
               genre: row.genre,
               artworkPath: row.artworkPath,
+              year: row.year,
               fileModifiedMs: row.fileModifiedMs,
               folderId: row.folderId,
               source: row.source,
             ),
             target: [tracks.locator],
           ),
+        );
+      }
+    });
+  }
+
+  Future<void> setArtworkPaths(Map<int, String> paths) {
+    if (paths.isEmpty) return Future.value();
+    return batch((b) {
+      for (final entry in paths.entries) {
+        b.update(
+          tracks,
+          TracksCompanion(artworkPath: Value(entry.value)),
+          where: (t) => t.id.equals(entry.key),
         );
       }
     });

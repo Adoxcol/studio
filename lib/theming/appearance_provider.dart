@@ -24,6 +24,21 @@ class AppearanceNotifier extends Notifier<AppearanceState> {
     );
     ref.read(appearanceStoreProvider).save(state);
   }
+
+  void setTrackLayout(TrackLayout layout) {
+    state = state.copyWith(trackLayout: layout);
+    ref.read(appearanceStoreProvider).save(state);
+  }
+
+  void setShowTrackArtwork(bool show) {
+    state = state.copyWith(showTrackArtwork: show);
+    ref.read(appearanceStoreProvider).save(state);
+  }
+
+  void setFetchMissingArtwork(bool fetch) {
+    state = state.copyWith(fetchMissingArtwork: fetch);
+    ref.read(appearanceStoreProvider).save(state);
+  }
 }
 
 final appearanceProvider =

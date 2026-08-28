@@ -70,6 +70,20 @@ void main() {
     expect((await db.allTracks()).single.artworkPath, '/tmp/cover.jpg');
   });
 
+  test('upsert stores year', () async {
+    final db = StudioDatabase.memory();
+    addTearDown(db.close);
+
+    await db.upsertTrack(
+      TracksCompanion.insert(
+        locator: '/music/a.flac',
+        title: 'Track A',
+        year: const Value(2024),
+      ),
+    );
+    expect((await db.allTracks()).single.year, 2024);
+  });
+
   test('upsertTracks writes a batch in one go', () async {
     final db = StudioDatabase.memory();
     addTearDown(db.close);

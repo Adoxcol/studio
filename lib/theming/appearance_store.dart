@@ -37,6 +37,9 @@ class FileAppearanceStore implements AppearanceStore {
       return AppearanceState(
         mode: modeName == 'custom' ? AccentMode.custom : AccentMode.auto,
         customHue: hue ?? AccentSeed.defaultHue,
+        trackLayout: TrackLayout.fromName(json['trackLayout'] as String?),
+        showTrackArtwork: json['showTrackArtwork'] as bool? ?? true,
+        fetchMissingArtwork: json['fetchMissingArtwork'] as bool? ?? true,
       );
     } on Object {
       return AppearanceState.defaults;
@@ -47,7 +50,13 @@ class FileAppearanceStore implements AppearanceStore {
   void save(AppearanceState state) {
     file.parent.createSync(recursive: true);
     file.writeAsStringSync(
-      jsonEncode({'mode': state.mode.name, 'customHue': state.customHue}),
+      jsonEncode({
+        'mode': state.mode.name,
+        'customHue': state.customHue,
+        'trackLayout': state.trackLayout.name,
+        'showTrackArtwork': state.showTrackArtwork,
+        'fetchMissingArtwork': state.fetchMissingArtwork,
+      }),
     );
   }
 }

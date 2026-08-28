@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:studio/library/artwork_store.dart';
+import 'package:studio/library/cover_art_lookup.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/library/scanner.dart';
 import 'package:studio/library/tag_reader.dart';
@@ -26,6 +27,48 @@ class _CountingReader extends TagReader {
   ParsedTags read(File file, {bool getImage = false}) {
     reads++;
     return ParsedTags(title: p.basenameWithoutExtension(file.path));
+  }
+}
+
+class _PartialArtReader extends TagReader {
+  @override
+  ParsedTags read(File file, {bool getImage = false}) {
+    final name = p.basenameWithoutExtension(file.path);
+    return ParsedTags(
+      title: name,
+      artist: 'Aria Solvang',
+      album: 'Afterglow',
+      artwork: name == 'One' && getImage
+          ? Uint8List.fromList(const [0xFF, 0xD8, 0xFF])
+          : null,
+      artworkMime: 'image/jpeg',
+    );
+  }
+}
+
+class _AlbumReader extends TagReader {
+  @override
+  ParsedTags read(File file, {bool getImage = false}) {
+    return ParsedTags(
+      title: p.basenameWithoutExtension(file.path),
+      artist: 'Aria Solvang',
+      album: 'Afterglow',
+    );
+  }
+}
+
+class _FakeCovers implements CoverArtLookup {
+  var calls = 0;
+
+  @override
+  Future<Uint8List?> fetch({
+    required String artist,
+    required String album,
+  }) async {
+    calls++;
+    expect(artist, 'Aria Solvang');
+    expect(album, 'Afterglow');
+    return Uint8List.fromList(const [0xFF, 0xD8, 0xFF]);
   }
 }
 
@@ -176,6 +219,87 @@ void main() {
     expect(result.cancelled, isTrue);
     expect(await db.allTracks(), isNotEmpty);
     expect((await db.allTracks()).length, lessThan(8));
+  });
+
+  test('scanner copies album art onto tracks that lack a picture', () async {
+    final db = StudioDatabase.memory();
+    addTearDown(db.close);
+    final artDir = Directory.systemTemp.createTempSync('studio-share-art');
+    addTearDown(() {
+      if (artDir.existsSync()) artDir.deleteSync(recursive: true);
+    });
+    final music = Directory.systemTemp.createTempSync('studio-share-music');
+    addTearDown(() {
+      if (music.existsSync()) music.deleteSync(recursive: true);
+    });
+    File(p.join(music.path, 'One.flac')).writeAsStringSync('not audio');
+    File(p.join(music.path, 'Two.flac')).writeAsStringSync('not audio');
+
+    await FolderScanner(
+      db: db,
+      tagReader: _PartialArtReader(),
+      artwork: ArtworkStore(artDir),
+    ).scan(music.path);
+
+    final tracks = await db.allTracks();
+    expect(tracks, hasLength(2));
+    expect(tracks.every((t) => t.artworkPath != null), isTrue);
+    expect(tracks[0].artworkPath, tracks[1].artworkPath);
+  });
+
+  test('scanner uses cover.jpg next to the audio files', () async {
+    final db = StudioDatabase.memory();
+    addTearDown(db.close);
+    final artDir = Directory.systemTemp.createTempSync('studio-folder-art');
+    addTearDown(() {
+      if (artDir.existsSync()) artDir.deleteSync(recursive: true);
+    });
+    final music = Directory.systemTemp.createTempSync('studio-folder-music');
+    addTearDown(() {
+      if (music.existsSync()) music.deleteSync(recursive: true);
+    });
+    File(p.join(music.path, 'Blue.flac')).writeAsStringSync('not audio');
+    File(
+      p.join(music.path, 'cover.jpg'),
+    ).writeAsBytesSync(Uint8List.fromList(const [0xFF, 0xD8, 0xFF, 0xD9]));
+
+    await FolderScanner(
+      db: db,
+      tagReader: _CountingReader(),
+      artwork: ArtworkStore(artDir),
+    ).scan(music.path);
+
+    final track = (await db.allTracks()).single;
+    expect(track.artworkPath, isA<String>());
+    expect(File(track.artworkPath!).existsSync(), isTrue);
+  });
+
+  test('scanner downloads one cover per album when tags have none', () async {
+    final db = StudioDatabase.memory();
+    addTearDown(db.close);
+    final artDir = Directory.systemTemp.createTempSync('studio-itunes-art');
+    addTearDown(() {
+      if (artDir.existsSync()) artDir.deleteSync(recursive: true);
+    });
+    final music = Directory.systemTemp.createTempSync('studio-itunes-music');
+    addTearDown(() {
+      if (music.existsSync()) music.deleteSync(recursive: true);
+    });
+    File(p.join(music.path, 'One.flac')).writeAsStringSync('not audio');
+    File(p.join(music.path, 'Two.flac')).writeAsStringSync('not audio');
+    final covers = _FakeCovers();
+
+    await FolderScanner(
+      db: db,
+      tagReader: _AlbumReader(),
+      artwork: ArtworkStore(artDir),
+      covers: covers,
+    ).scan(music.path);
+
+    expect(covers.calls, 1);
+    final tracks = await db.allTracks();
+    expect(tracks.every((t) => t.artworkPath != null), isTrue);
+    expect(tracks[0].artworkPath, tracks[1].artworkPath);
   });
 
   test('deleteFolder removes the folder and its tracks', () async {

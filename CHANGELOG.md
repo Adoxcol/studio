@@ -55,6 +55,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Shuffle rearranges the play queue: the current track stays first and the
   rest is randomized. Turning shuffle off restores the original order.
+- The library lists each person once. "Drake feat. 21 Savage" stays
+  under Drake's albums and also shows up in 21 Savage's catalog.
+  Combined names are not their own artists. Track rows still show
+  the full credit.
+- Library sort includes Track (disc order). Opening an album uses that
+  order by default. Sort by Album still lists albums A–Z, but tracks
+  inside each album stay in disc order (1, 2, 3).
+- The Albums tab groups by artist, with square cover art, title, and
+  year under each album. Newer records sit first.
+- All / Recently Added tracks use a cover card grid (title, artist,
+  album · year). View: List keeps the column table. Settings can hide
+  cover thumbnails.
+- Missing track covers fill from embedded tags, `cover.jpg` in the
+  folder, other tracks on the same album, then iTunes (Settings can
+  turn download off).
 
 - Folder scans skip unchanged files, read cover art only when needed, stay
   cancellable so the library does not freeze for minutes, and parse tags off

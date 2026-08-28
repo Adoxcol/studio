@@ -80,6 +80,43 @@ void main() {
     expect(find.text('CUSTOM · TERRACOTTA'), findsNothing);
   });
 
+  testWidgets('library settings keep layout and cover art options', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(testStudioApp(db: db, engine: engine));
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pump();
+    await tester.scrollUntilVisible(
+      find.text('Cover art'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
+
+    expect(find.text('Cover art'), findsOneWidget);
+    expect(find.text('Show'), findsOneWidget);
+    expect(find.text('Hide'), findsOneWidget);
+
+    await tester.tap(find.text('Hide'));
+    await tester.pump();
+
+    await tester.scrollUntilVisible(
+      find.text('Local only'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
+    expect(find.text('Missing covers'), findsOneWidget);
+    expect(find.text('Download'), findsOneWidget);
+    expect(find.text('Local only'), findsOneWidget);
+  });
+
   testWidgets('ReplayGain Album is stored on the engine', (tester) async {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1;
@@ -91,6 +128,12 @@ void main() {
     await tester.tap(find.byTooltip('Settings'));
     await tester.pump();
 
+    await tester.scrollUntilVisible(
+      find.text('ReplayGain'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
     expect(find.text('PLAYBACK & SOUND'), findsOneWidget);
     expect(find.text('ReplayGain'), findsOneWidget);
 
@@ -111,6 +154,12 @@ void main() {
     await tester.tap(find.byTooltip('Settings'));
     await tester.pump();
 
+    await tester.scrollUntilVisible(
+      find.text('Equalizer'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
     expect(find.text('Equalizer'), findsOneWidget);
     await tester.ensureVisible(find.text('Warm'));
     await tester.pump();
@@ -131,6 +180,12 @@ void main() {
     await tester.tap(find.byTooltip('Settings'));
     await tester.pump();
 
+    await tester.scrollUntilVisible(
+      find.text('Crossfade'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
     expect(find.text('Crossfade'), findsOneWidget);
     await tester.ensureVisible(find.byKey(const ValueKey('crossfade-slider')));
     await tester.pump();

@@ -137,6 +137,91 @@ class SettingsPage extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 32),
+          _SectionLabel(text: 'LIBRARY'),
+          const SizedBox(height: 16),
+          Text('Track layout', style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              for (final layout in TrackLayout.values) ...[
+                if (layout != TrackLayout.values.first)
+                  const SizedBox(width: 24),
+                LibraryTextAction(
+                  label: layout.label,
+                  onTap: () => ref
+                      .read(appearanceProvider.notifier)
+                      .setTrackLayout(layout),
+                  muted: appearance.trackLayout != layout,
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Cards show cover, title, artist, and album. List keeps the column table.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+          ),
+          const SizedBox(height: 24),
+          Text('Cover art', style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              LibraryTextAction(
+                label: 'Show',
+                onTap: () => ref
+                    .read(appearanceProvider.notifier)
+                    .setShowTrackArtwork(true),
+                muted: !appearance.showTrackArtwork,
+              ),
+              const SizedBox(width: 24),
+              LibraryTextAction(
+                label: 'Hide',
+                onTap: () => ref
+                    .read(appearanceProvider.notifier)
+                    .setShowTrackArtwork(false),
+                muted: appearance.showTrackArtwork,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Hides thumbnails on track cards and the list. Album art in Now Playing is unchanged.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+          ),
+          const SizedBox(height: 24),
+          Text('Missing covers', style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              LibraryTextAction(
+                label: 'Download',
+                onTap: () => ref
+                    .read(appearanceProvider.notifier)
+                    .setFetchMissingArtwork(true),
+                muted: !appearance.fetchMissingArtwork,
+              ),
+              const SizedBox(width: 24),
+              LibraryTextAction(
+                label: 'Local only',
+                onTap: () => ref
+                    .read(appearanceProvider.notifier)
+                    .setFetchMissingArtwork(false),
+                muted: appearance.fetchMissingArtwork,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Embedded tags, cover.jpg in the folder, and other tracks on the same album come first. Download fills the rest from iTunes.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+          ),
+          const SizedBox(height: 32),
           _SectionLabel(text: 'PLAYBACK & SOUND'),
           const SizedBox(height: 16),
           Text('ReplayGain', style: Theme.of(context).textTheme.bodyMedium),

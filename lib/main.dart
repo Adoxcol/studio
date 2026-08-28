@@ -11,7 +11,9 @@ import 'package:studio/core/desktop/close_preference_store.dart';
 import 'package:studio/core/desktop/studio_desktop_host.dart';
 import 'package:studio/core/window/window_bootstrap.dart';
 import 'package:studio/library/artwork_store.dart';
+import 'package:studio/library/cover_art_lookup.dart';
 import 'package:studio/library/database.dart';
+import 'package:studio/library/scanner.dart';
 import 'package:studio/state/library_providers.dart';
 import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/appearance_store.dart';
@@ -47,6 +49,22 @@ Future<void> main() async {
       overrides: [
         studioDatabaseProvider.overrideWithValue(db),
         artworkStoreProvider.overrideWithValue(artwork),
+        folderScannerProvider.overrideWith((ref) {
+          final fetch = ref.watch(
+            appearanceProvider.select((s) => s.fetchMissingArtwork),
+          );
+          return FolderScanner(
+            db: ref.watch(studioDatabaseProvider),
+            artwork: artwork,
+            covers: fetch
+                ? ITunesCoverArtLookup(
+                    missFile: File(
+                      p.join(artwork.directory.path, 'cover-misses.json'),
+                    ),
+                  )
+                : null,
+          );
+        }),
         appearanceStoreProvider.overrideWithValue(appearance),
         playbackSettingsStoreProvider.overrideWithValue(playbackSettings),
         playbackSessionStoreProvider.overrideWithValue(playbackSession),

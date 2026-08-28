@@ -5,6 +5,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/library/scan_progress.dart';
 import 'package:studio/state/library_providers.dart';
+import 'package:studio/theming/accent_seed.dart';
+import 'package:studio/theming/appearance_provider.dart';
+import 'package:studio/theming/appearance_store.dart';
+import 'package:studio/ui/now_playing/cover_art.dart';
 
 import '../helpers/pump_studio.dart';
 import '../helpers/tracks.dart';
@@ -32,13 +36,20 @@ void main() {
     WidgetTester tester, {
     List<Track> tracks = const [],
     List<LibraryFolder> folders = const [],
+    List extraOverrides = const [],
   }) async {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
-      testStudioApp(db: db, engine: engine, tracks: tracks, folders: folders),
+      testStudioApp(
+        db: db,
+        engine: engine,
+        tracks: tracks,
+        folders: folders,
+        extraOverrides: extraOverrides,
+      ),
     );
     await tester.pump();
   }
@@ -58,6 +69,7 @@ void main() {
     expect(find.text('Shuffle'), findsOneWidget);
     expect(find.text('Sort: Title'), findsOneWidget);
     expect(find.text('Order: A–Z'), findsOneWidget);
+    expect(find.text('View: Cards'), findsOneWidget);
     expect(find.text('ARTISTS'), findsOneWidget);
     expect(find.text('Add folder'), findsOneWidget);
     expect(find.byTooltip('Rescan library'), findsOneWidget);
@@ -80,14 +92,77 @@ void main() {
       ],
     );
 
-    expect(find.text('TITLE'), findsOneWidget);
-    expect(find.text('ARTIST'), findsOneWidget);
-    expect(find.text('ALBUM'), findsOneWidget);
-    expect(find.text('TIME'), findsOneWidget);
+    expect(find.text('TITLE'), findsNothing);
+    expect(find.text('ARTIST'), findsNothing);
+    expect(find.text('ALBUM'), findsNothing);
+    expect(find.text('TIME'), findsNothing);
     expect(find.text('Nocturne in Blue'), findsOneWidget);
-    expect(find.text('3:58'), findsOneWidget);
+    expect(find.text('Afterglow'), findsOneWidget);
     expect(find.text('Aria Solvang'), findsWidgets);
     expect(find.text('Halvard Iyer'), findsWidgets);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is CoverArt && widget.size == 56,
+      ),
+      findsNWidgets(2),
+    );
+
+    await tester.tap(find.text('View: Cards'));
+    await tester.pump();
+    expect(find.text('View: List'), findsOneWidget);
+    expect(find.text('TITLE'), findsOneWidget);
+    expect(find.text('3:58'), findsOneWidget);
+  });
+
+  testWidgets('hiding cover art removes thumbnails from track cards', (
+    tester,
+  ) async {
+    await pumpLibrary(
+      tester,
+      tracks: [testTrack()],
+      extraOverrides: [
+        appearanceStoreProvider.overrideWithValue(
+          MemoryAppearanceStore(const AppearanceState(showTrackArtwork: false)),
+        ),
+      ],
+    );
+
+    expect(find.text('Nocturne in Blue'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is CoverArt && widget.size == 56,
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('featured tracks appear in that artist catalog', (tester) async {
+    await pumpLibrary(
+      tester,
+      tracks: [
+        testTrack(
+          id: 1,
+          title: 'Rich Flex',
+          artist: '21 Savage, Offset',
+          album: 'Her Loss',
+        ),
+        testTrack(
+          id: 2,
+          title: 'Jimmy Cooks',
+          artist: 'Drake feat. 21 Savage',
+          album: 'Honestly, Nevermind',
+        ),
+      ],
+    );
+
+    expect(find.text('21 Savage, Offset'), findsOneWidget);
+    expect(find.text('Drake feat. 21 Savage'), findsOneWidget);
+    expect(find.text('Offset'), findsWidgets);
+    expect(find.text('Drake'), findsWidgets);
+    await tester.tap(find.text('21 Savage').first);
+    await tester.pump();
+    expect(find.text('Rich Flex'), findsOneWidget);
+    expect(find.text('Jimmy Cooks'), findsOneWidget);
   });
 
   testWidgets('search narrows the track list', (tester) async {
@@ -121,6 +196,29 @@ void main() {
 
     expect(find.text('1 ARTIST'), findsOneWidget);
     expect(find.text('1 album'), findsOneWidget);
+  });
+
+  testWidgets('opening an album sorts by track number', (tester) async {
+    await pumpLibrary(
+      tester,
+      tracks: [
+        testTrack(id: 1, title: 'zebra', trackNumber: 2),
+        testTrack(id: 2, title: 'alpha', trackNumber: 1),
+      ],
+    );
+
+    await tester.ensureVisible(find.text('Albums'));
+    await tester.pump();
+    await tester.tap(find.text('Albums'));
+    await tester.pump();
+    await tester.tap(find.text('Afterglow'));
+    await tester.pump();
+
+    expect(find.text('Sort: Track'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('alpha')).dy,
+      lessThan(tester.getTopLeft(find.text('zebra')).dy),
+    );
   });
 
   testWidgets('Playlists tab is an empty placeholder', (tester) async {

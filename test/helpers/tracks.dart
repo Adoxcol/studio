@@ -11,6 +11,7 @@ Track testTrack({
   String? genre = 'Neo-classical',
   String? locator,
   String? artworkPath,
+  int? year,
   int? fileModifiedMs,
   DateTime? indexedAt,
 }) {
@@ -25,6 +26,7 @@ Track testTrack({
     trackNumber: trackNumber,
     genre: genre,
     artworkPath: artworkPath,
+    year: year,
     fileModifiedMs: fileModifiedMs,
     folderId: 1,
     indexedAt: indexedAt ?? DateTime.utc(2026, 1, id.clamp(1, 28)),

@@ -76,5 +76,46 @@ void main() {
     final loaded = FileAppearanceStore(file).load();
     expect(loaded.mode, AccentMode.custom);
     expect(loaded.customHue, 200);
+    expect(loaded.trackLayout, TrackLayout.cards);
+    expect(loaded.showTrackArtwork, isTrue);
+  });
+
+  test('file store round-trips track layout and hidden artwork', () {
+    final file = File(
+      '${Directory.systemTemp.createTempSync('studio-appearance').path}/appearance.json',
+    );
+    addTearDown(() {
+      if (file.parent.existsSync()) file.parent.deleteSync(recursive: true);
+    });
+    FileAppearanceStore(file).save(
+      const AppearanceState(
+        trackLayout: TrackLayout.list,
+        showTrackArtwork: false,
+      ),
+    );
+    final loaded = FileAppearanceStore(file).load();
+    expect(loaded.trackLayout, TrackLayout.list);
+    expect(loaded.showTrackArtwork, isFalse);
+    expect(loaded.fetchMissingArtwork, isTrue);
+  });
+
+  test('file store round-trips disabled cover download', () {
+    final file = File(
+      '${Directory.systemTemp.createTempSync('studio-appearance').path}/appearance.json',
+    );
+    addTearDown(() {
+      if (file.parent.existsSync()) file.parent.deleteSync(recursive: true);
+    });
+    FileAppearanceStore(
+      file,
+    ).save(const AppearanceState(fetchMissingArtwork: false));
+    expect(FileAppearanceStore(file).load().fetchMissingArtwork, isFalse);
+  });
+
+  test('omitted track layout and artwork default', () {
+    const state = AppearanceState(mode: AccentMode.custom);
+    expect(state.trackLayout, TrackLayout.cards);
+    expect(state.showTrackArtwork, isTrue);
+    expect(state.copyWith().trackLayout, TrackLayout.cards);
   });
 }
