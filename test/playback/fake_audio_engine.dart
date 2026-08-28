@@ -15,6 +15,7 @@ class FakeAudioEngine implements AudioEngine {
   final _duration = StreamController<Duration>.broadcast();
   final _playing = StreamController<bool>.broadcast();
   final _completed = StreamController<void>.broadcast();
+  final _spectrum = StreamController<List<double>>.broadcast();
 
   @override
   Future<void> play(Uri uri) async {
@@ -77,10 +78,14 @@ class FakeAudioEngine implements AudioEngine {
   Stream<void> get completed => _completed.stream;
 
   @override
+  Stream<List<double>> get spectrum => _spectrum.stream;
+
+  @override
   void dispose() {
     unawaited(_position.close());
     unawaited(_duration.close());
     unawaited(_playing.close());
     unawaited(_completed.close());
+    unawaited(_spectrum.close());
   }
 }

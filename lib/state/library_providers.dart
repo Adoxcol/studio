@@ -21,6 +21,10 @@ final audioEngineProvider = Provider<AudioEngine>((ref) {
   return engine;
 });
 
+final spectrumBandsProvider = StreamProvider<List<double>>((ref) {
+  return ref.watch(audioEngineProvider).spectrum;
+});
+
 final resolverRegistryProvider = Provider<ResolverRegistry>((ref) {
   return ResolverRegistry();
 });
