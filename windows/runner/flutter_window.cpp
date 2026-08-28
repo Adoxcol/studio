@@ -5,6 +5,7 @@
 #include <flutter/flutter_engine.h>
 
 #include "flutter/generated_plugin_registrant.h"
+#include "studio_instance.h"
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -28,6 +29,7 @@ bool FlutterWindow::OnCreate() {
   }
   RegisterPlugins(flutter_controller_->engine());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
+  SetPropW(GetHandle(), kStudioWindowProp, reinterpret_cast<HANDLE>(1));
   studio_tray_ = std::make_unique<StudioTray>(
       flutter_controller_->engine()->messenger(), GetHandle());
 
@@ -44,6 +46,9 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  if (GetHandle() != nullptr) {
+    RemovePropW(GetHandle(), kStudioWindowProp);
+  }
   studio_tray_.reset();
   if (flutter_controller_) {
     flutter_controller_ = nullptr;

@@ -239,6 +239,7 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
     if (_quitting) return;
     _quitting = true;
     try {
+      ref.read(playbackControllerProvider.notifier).saveSession();
       await hotKeyManager.unregisterAll();
       if (_useWindowsTray) {
         await StudioDesktopHost.windowsChannel.invokeMethod('destroy');

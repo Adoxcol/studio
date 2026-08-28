@@ -42,6 +42,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - System tray with Play / Pause / Next / Previous. Closing the window
   hides to the tray; Quit is on the tray menu. Media keys (play/pause,
   next, previous) work while the window is in the background.
+- Queue, current track, and playhead are restored after Quit (paused at
+  the same position). Tracks that left the library are dropped.
+- A second launch focuses the running window instead of opening another
+  copy.
 
 ### Changed
 

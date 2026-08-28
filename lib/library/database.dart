@@ -114,6 +114,13 @@ class StudioDatabase extends _$StudioDatabase {
     return (select(tracks)..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
+  Future<Set<int>> existingTrackIds(Iterable<int> ids) async {
+    final wanted = ids.toSet();
+    if (wanted.isEmpty) return {};
+    final rows = await (select(tracks)..where((t) => t.id.isIn(wanted))).get();
+    return {for (final row in rows) row.id};
+  }
+
   Future<int> upsertFolder(String folderPath) async {
     final existing = await (select(
       libraryFolders,
