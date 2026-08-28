@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 
-class NowPlayingPage extends StatelessWidget {
+class NowPlayingPage extends ConsumerWidget {
   const NowPlayingPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final palette = StudioPalette.of(context);
+    final playback = ref.watch(playbackControllerProvider);
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 520),
@@ -16,13 +19,13 @@ class NowPlayingPage extends StatelessWidget {
             Container(width: 280, height: 280, color: palette.artSwatch),
             const SizedBox(height: 28),
             Text(
-              'Nothing playing',
+              playback.title,
               style: Theme.of(context).textTheme.displaySmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'now playing',
+              playback.artist ?? 'now playing',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: palette.inkMuted,
                 fontStyle: FontStyle.italic,
