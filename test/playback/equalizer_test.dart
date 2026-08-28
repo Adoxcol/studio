@@ -8,15 +8,10 @@ import 'package:studio/playback/playback_settings.dart';
 import 'package:studio/playback/playback_settings_store.dart';
 
 void main() {
-  test('flat curve disables the mpv filter', () {
+  test('graphic EQ is not sent to mpv (bundled libmpv has no lavfi EQ)', () {
     expect(Equalizer.afFilter(Equalizer.flat), isEmpty);
-  });
-
-  test('warm curve builds a lavfi firequalizer graph', () {
-    final af = Equalizer.afFilter(Equalizer.warm);
-    expect(af, startsWith('lavfi=[firequalizer=gain_entry=\''));
-    expect(af, contains('entry(60,3.0)'));
-    expect(af, contains('entry(16000,-2.0)'));
+    expect(Equalizer.afFilter(Equalizer.warm), isEmpty);
+    expect(Equalizer.afFilter(Equalizer.bright), isEmpty);
   });
 
   test('preset lookup falls back to flat', () {

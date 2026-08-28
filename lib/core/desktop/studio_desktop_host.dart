@@ -1,0 +1,297 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:studio/core/desktop/desktop_transport.dart';
+import 'package:studio/state/playback_provider.dart';
+import 'package:tray_manager/tray_manager.dart';
+import 'package:window_manager/window_manager.dart';
+
+/// System tray, close-to-tray, and media keys. Wired from [main], not tests.
+class StudioDesktopHost extends ConsumerStatefulWidget {
+  const StudioDesktopHost({super.key, required this.child});
+
+  final Widget child;
+
+  static String get iconAsset => Platform.isWindows
+      ? 'assets/tray/app_icon.ico'
+      : 'assets/tray/app_icon.png';
+
+  static const windowsChannel = MethodChannel('studio/tray');
+
+  @override
+  ConsumerState<StudioDesktopHost> createState() => _StudioDesktopHostState();
+}
+
+class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
+    with WindowListener, TrayListener {
+  var _quitting = false;
+  var _started = false;
+  var _trayReady = false;
+
+  bool get _useWindowsTray => !kIsWeb && Platform.isWindows;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!_useWindowsTray) {
+      trayManager.addListener(this);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_start());
+    });
+  }
+
+  @override
+  void dispose() {
+    windowManager.removeListener(this);
+    if (_useWindowsTray) {
+      StudioDesktopHost.windowsChannel.setMethodCallHandler(null);
+      unawaited(StudioDesktopHost.windowsChannel.invokeMethod('destroy'));
+    } else {
+      trayManager.removeListener(this);
+      unawaited(trayManager.destroy());
+    }
+    unawaited(hotKeyManager.unregisterAll());
+    super.dispose();
+  }
+
+  Future<void> _start() async {
+    if (_started) return;
+    _started = true;
+    windowManager.addListener(this);
+    try {
+      // Swallow WM_CLOSE during startup. A close event here used to Quit
+      // and the window vanished as soon as the first frame landed.
+      await windowManager.setPreventClose(true);
+    } on Object catch (error, stack) {
+      debugPrint('Window close intercept unavailable: $error\n$stack');
+    }
+    await _setupTray();
+    if (!_trayReady) {
+      try {
+        await windowManager.setPreventClose(false);
+      } on Object catch (error, stack) {
+        debugPrint('Window close intercept restore failed: $error\n$stack');
+      }
+    }
+    // Windows media keys are RegisterHotKey'd in the runner. hotkey_manager
+    // sends a null keyCode for Next/Previous and the plugin then aborts.
+    if (!_useWindowsTray) {
+      await _registerMediaKeys();
+    }
+  }
+
+  Future<void> _registerMediaKeys() async {
+    try {
+      await hotKeyManager.unregisterAll();
+    } on Object catch (error, stack) {
+      debugPrint('Media key reset unavailable: $error\n$stack');
+    }
+    await _registerMediaKey(
+      'studio.playPause',
+      PhysicalKeyboardKey.mediaPlayPause,
+      DesktopTransport.playPause,
+    );
+    await _registerMediaKey(
+      'studio.next',
+      PhysicalKeyboardKey.mediaTrackNext,
+      DesktopTransport.next,
+    );
+    await _registerMediaKey(
+      'studio.previous',
+      PhysicalKeyboardKey.mediaTrackPrevious,
+      DesktopTransport.previous,
+    );
+  }
+
+  Future<void> _registerMediaKey(
+    String identifier,
+    PhysicalKeyboardKey key,
+    DesktopTransport action,
+  ) async {
+    try {
+      await hotKeyManager.register(
+        HotKey(identifier: identifier, key: key),
+        keyDownHandler: (_) => unawaited(_run(action)),
+      );
+    } on Object catch (error, stack) {
+      debugPrint('Media key $identifier unavailable: $error\n$stack');
+    }
+  }
+
+  Future<void> _setupTray() async {
+    try {
+      if (_useWindowsTray) {
+        StudioDesktopHost.windowsChannel.setMethodCallHandler(_onWindowsTray);
+        await StudioDesktopHost.windowsChannel.invokeMethod('setIcon');
+      } else {
+        await trayManager.setIcon(StudioDesktopHost.iconAsset);
+      }
+      await _refreshTray(ref.read(playbackControllerProvider));
+      _trayReady = true;
+    } on Object catch (error, stack) {
+      debugPrint('System tray unavailable: $error\n$stack');
+    }
+  }
+
+  Future<dynamic> _onWindowsTray(MethodCall call) async {
+    switch (call.method) {
+      case 'click':
+        unawaited(_showWindow());
+      case 'menu':
+        final action = desktopTransportForMenuKey(call.arguments as String?);
+        if (action != null) unawaited(_run(action));
+    }
+  }
+
+  Future<void> _refreshTray(PlaybackUiState playback) async {
+    try {
+      final tooltip = desktopTrayTooltip(
+        hasTrack: playback.trackId != null,
+        playing: playback.playing,
+        title: playback.title,
+        artist: playback.artist,
+      );
+      final items = <Map<String, Object?>>[
+        {
+          'key': 'playPause',
+          'label': desktopPlayPauseLabel(playback.playing),
+          'disabled': playback.trackId == null,
+        },
+        {'key': 'previous', 'label': 'Previous'},
+        {'key': 'next', 'label': 'Next'},
+        {'type': 'separator'},
+        {'key': 'show', 'label': 'Show Studio'},
+        {'key': 'quit', 'label': 'Quit'},
+      ];
+      if (_useWindowsTray) {
+        await StudioDesktopHost.windowsChannel.invokeMethod('setToolTip', {
+          'toolTip': tooltip,
+        });
+        await StudioDesktopHost.windowsChannel.invokeMethod('setContextMenu', {
+          'items': items,
+        });
+        return;
+      }
+      await trayManager.setToolTip(tooltip);
+      await trayManager.setContextMenu(
+        Menu(
+          items: [
+            MenuItem(
+              key: 'playPause',
+              label: desktopPlayPauseLabel(playback.playing),
+              disabled: playback.trackId == null,
+            ),
+            MenuItem(key: 'previous', label: 'Previous'),
+            MenuItem(key: 'next', label: 'Next'),
+            MenuItem.separator(),
+            MenuItem(key: 'show', label: 'Show Studio'),
+            MenuItem(key: 'quit', label: 'Quit'),
+          ],
+        ),
+      );
+    } on Object catch (error, stack) {
+      debugPrint('Tray menu update failed: $error\n$stack');
+    }
+  }
+
+  Future<void> _run(DesktopTransport action) async {
+    final playback = ref.read(playbackControllerProvider.notifier);
+    switch (action) {
+      case DesktopTransport.playPause:
+        await playback.togglePlayPause();
+      case DesktopTransport.next:
+        await playback.skipNext();
+      case DesktopTransport.previous:
+        await playback.skipPrevious();
+      case DesktopTransport.show:
+        await _showWindow();
+      case DesktopTransport.quit:
+        await _quit();
+    }
+  }
+
+  Future<void> _showWindow() async {
+    try {
+      await windowManager.setSkipTaskbar(false);
+      await windowManager.show();
+      await windowManager.focus();
+    } on Object catch (error, stack) {
+      debugPrint('Show window failed: $error\n$stack');
+    }
+  }
+
+  Future<void> _hideToTray() async {
+    try {
+      await windowManager.hide();
+      await windowManager.setSkipTaskbar(true);
+    } on Object catch (error, stack) {
+      debugPrint('Hide to tray failed: $error\n$stack');
+    }
+  }
+
+  Future<void> _quit() async {
+    if (_quitting) return;
+    _quitting = true;
+    try {
+      await hotKeyManager.unregisterAll();
+      if (_useWindowsTray) {
+        await StudioDesktopHost.windowsChannel.invokeMethod('destroy');
+      } else {
+        await trayManager.destroy();
+      }
+      await windowManager.setPreventClose(false);
+      await windowManager.destroy();
+    } on Object catch (error, stack) {
+      debugPrint('Quit failed: $error\n$stack');
+    }
+  }
+
+  @override
+  void onWindowClose() {
+    if (shouldHideToTray(trayReady: _trayReady, quitting: _quitting)) {
+      unawaited(_hideToTray());
+      return;
+    }
+    if (!_trayReady) return;
+    unawaited(_quit());
+  }
+
+  @override
+  void onTrayIconMouseDown() {
+    if (Platform.isWindows) {
+      unawaited(_showWindow());
+    } else {
+      unawaited(trayManager.popUpContextMenu());
+    }
+  }
+
+  @override
+  void onTrayIconRightMouseDown() {
+    unawaited(trayManager.popUpContextMenu());
+  }
+
+  @override
+  void onTrayMenuItemClick(MenuItem menuItem) {
+    final action = desktopTransportForMenuKey(menuItem.key);
+    if (action != null) unawaited(_run(action));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(
+      playbackControllerProvider.select(
+        (s) => (s.trackId, s.playing, s.title, s.artist),
+      ),
+      (_, _) {
+        unawaited(_refreshTray(ref.read(playbackControllerProvider)));
+      },
+    );
+    return widget.child;
+  }
+}

@@ -26,7 +26,7 @@ class StudioTitleBar extends StatelessWidget {
                   onTap: () {
                     windowManager.close();
                   },
-                  tooltip: 'Close',
+                  tooltip: 'Hide to tray',
                 ),
                 const SizedBox(width: 8),
                 _WindowDot(

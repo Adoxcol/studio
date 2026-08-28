@@ -21,3 +21,18 @@ class Tracks extends Table {
   IntColumn get folderId =>
       integer().nullable().references(LibraryFolders, #id)();
 }
+
+class Playlists extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+class PlaylistEntries extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get playlistId =>
+      integer().references(Playlists, #id, onDelete: KeyAction.cascade)();
+  IntColumn get trackId =>
+      integer().references(Tracks, #id, onDelete: KeyAction.cascade)();
+  IntColumn get position => integer()();
+}

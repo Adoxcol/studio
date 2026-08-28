@@ -27,6 +27,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   String? _artistFilter;
   String? _albumFilter;
   String? _genreFilter;
+  int? _playlistId;
 
   @override
   void dispose() {
@@ -67,6 +68,102 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       _albumFilter = null;
       _tab = LibraryTab.all;
     });
+  }
+
+  Future<String?> _promptPlaylistName() async {
+    final controller = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final palette = StudioPalette.of(ctx);
+        return AlertDialog(
+          backgroundColor: palette.bg,
+          elevation: 0,
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          title: Text(
+            'New playlist',
+            style: Theme.of(ctx).textTheme.headlineMedium,
+          ),
+          content: TextField(
+            key: const ValueKey('playlist-name-field'),
+            controller: controller,
+            autofocus: true,
+            cursorColor: palette.ink,
+            style: Theme.of(ctx).textTheme.bodyMedium,
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: 'Name',
+              hintStyle: Theme.of(
+                ctx,
+              ).textTheme.bodyMedium?.copyWith(color: palette.inkMuted),
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+            ),
+            onSubmitted: (value) => Navigator.pop(ctx, value),
+          ),
+          actions: [
+            LibraryTextAction(
+              label: 'Cancel',
+              onTap: () => Navigator.pop(ctx),
+              muted: true,
+            ),
+            LibraryTextAction(
+              label: 'Create',
+              onTap: () => Navigator.pop(ctx, controller.text),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    return name;
+  }
+
+  Future<void> _createPlaylist() async {
+    final name = await _promptPlaylistName();
+    if (name == null || !mounted) return;
+    await ref.read(studioDatabaseProvider).createPlaylist(name);
+  }
+
+  Future<void> _showTrackMenu(Track track, Offset globalPosition) async {
+    final lists = ref.read(playlistsProvider).value ?? const [];
+    final palette = StudioPalette.of(context);
+    final selected = await showMenu<Object>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        globalPosition.dx,
+        globalPosition.dy,
+        globalPosition.dx,
+        globalPosition.dy,
+      ),
+      color: palette.bg,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: palette.hairline),
+        borderRadius: BorderRadius.zero,
+      ),
+      items: [
+        for (final list in lists)
+          PopupMenuItem<Object>(value: list.id, child: Text(list.name)),
+        PopupMenuItem<Object>(
+          value: 'new',
+          child: Text(lists.isEmpty ? 'New playlist' : 'New playlist…'),
+        ),
+      ],
+    );
+    if (selected == null || !mounted) return;
+    final db = ref.read(studioDatabaseProvider);
+    if (selected == 'new') {
+      final name = await _promptPlaylistName();
+      if (name == null || !mounted) return;
+      final id = await db.createPlaylist(name);
+      await db.addTrackToPlaylist(playlistId: id, trackId: track.id);
+      return;
+    }
+    if (selected is int) {
+      await db.addTrackToPlaylist(playlistId: selected, trackId: track.id);
+    }
   }
 
   @override
@@ -111,8 +208,16 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       byIndexedAt: recentlyAdded,
     );
     final artists = LibraryQuery.groupArtists(searched);
+    final playlists = ref.watch(playlistsProvider).value ?? const [];
+    final viewingPlaylist = _tab == LibraryTab.playlists && _playlistId != null;
+    final playlistTracks = viewingPlaylist
+        ? (ref.watch(playlistTracksProvider(_playlistId!)).value ?? const [])
+        : const <Track>[];
+    final tableTracks = viewingPlaylist ? playlistTracks : visible;
     final showTable =
-        _tab == LibraryTab.all || _tab == LibraryTab.recentlyAdded;
+        _tab == LibraryTab.all ||
+        _tab == LibraryTab.recentlyAdded ||
+        viewingPlaylist;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -144,18 +249,28 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                     const SizedBox(height: 16),
                     _Tabs(
                       selected: _tab,
-                      onSelect: (tab) => setState(() => _tab = tab),
+                      onSelect: (tab) => setState(() {
+                        if (tab == LibraryTab.playlists &&
+                            _tab == LibraryTab.playlists) {
+                          _playlistId = null;
+                        }
+                        _tab = tab;
+                        if (tab != LibraryTab.playlists) {
+                          _playlistId = null;
+                        }
+                      }),
                     ),
                     const SizedBox(height: 12),
                     _Actions(
                       sort: _sort,
                       order: _order,
-                      canPlay: visible.isNotEmpty,
+                      canPlay: tableTracks.isNotEmpty,
+                      showSort: _tab != LibraryTab.playlists,
                       onPlayAll: () {
                         ref
                             .read(playbackControllerProvider.notifier)
                             .playTracks(
-                              visible.map((t) => t.id).toList(),
+                              tableTracks.map((t) => t.id).toList(),
                               shuffle: false,
                             );
                       },
@@ -163,7 +278,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                         ref
                             .read(playbackControllerProvider.notifier)
                             .playTracks(
-                              visible.map((t) => t.id).toList(),
+                              tableTracks.map((t) => t.id).toList(),
                               shuffle: true,
                             );
                       },
@@ -172,39 +287,69 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                       onToggleOrder: () => setState(
                         () => _order = LibraryQuery.toggleOrder(_order),
                       ),
+                      extras: [
+                        if (_tab == LibraryTab.playlists)
+                          LibraryTextAction(
+                            label: 'New playlist',
+                            onTap: _createPlaylist,
+                          ),
+                        if (viewingPlaylist)
+                          LibraryTextAction(
+                            label: 'Delete playlist',
+                            onTap: () async {
+                              final id = _playlistId;
+                              if (id == null) return;
+                              await ref
+                                  .read(studioDatabaseProvider)
+                                  .deletePlaylist(id);
+                              if (!mounted) return;
+                              setState(() => _playlistId = null);
+                            },
+                            muted: true,
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Expanded(
-                      child: _tab == LibraryTab.playlists
+                      child: _tab == LibraryTab.playlists && !viewingPlaylist
                           ? LibraryBrowseView(
                               tab: _tab,
                               artists: const [],
                               albums: const [],
                               genres: const [],
+                              playlists: playlists,
                               onSelectArtist: _selectArtist,
                               onSelectAlbum: _selectAlbum,
                               onSelectGenre: _selectGenre,
+                              onSelectPlaylist: (playlist) {
+                                setState(() => _playlistId = playlist.id);
+                              },
                             )
-                          : allTracks.isEmpty
+                          : allTracks.isEmpty && !viewingPlaylist
                           ? _EmptyLibrary(palette: palette)
                           : showTable
-                          ? visible.isEmpty
+                          ? tableTracks.isEmpty
                                 ? _EmptyLibrary(
                                     palette: palette,
-                                    text: 'No matching tracks.',
+                                    text: viewingPlaylist
+                                        ? 'This playlist is empty. Right-click a track to add it.'
+                                        : 'No matching tracks.',
                                   )
                                 : LibraryTrackTable(
-                                    tracks: visible,
+                                    tracks: tableTracks,
                                     onPlay: (index) {
                                       ref
                                           .read(
                                             playbackControllerProvider.notifier,
                                           )
                                           .playTracks(
-                                            visible.map((t) => t.id).toList(),
+                                            tableTracks
+                                                .map((t) => t.id)
+                                                .toList(),
                                             startIndex: index,
                                           );
                                     },
+                                    onTrackMenu: _showTrackMenu,
                                   )
                           : LibraryBrowseView(
                               tab: _tab,
@@ -220,9 +365,13 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                 searched,
                                 order: _order,
                               ),
+                              playlists: playlists,
                               onSelectArtist: _selectArtist,
                               onSelectAlbum: _selectAlbum,
                               onSelectGenre: _selectGenre,
+                              onSelectPlaylist: (playlist) {
+                                setState(() => _playlistId = playlist.id);
+                              },
                             ),
                     ),
                   ],
@@ -340,19 +489,23 @@ class _Actions extends StatelessWidget {
     required this.sort,
     required this.order,
     required this.canPlay,
+    required this.showSort,
     required this.onPlayAll,
     required this.onShuffle,
     required this.onCycleSort,
     required this.onToggleOrder,
+    this.extras = const [],
   });
 
   final LibrarySort sort;
   final LibraryOrder order;
   final bool canPlay;
+  final bool showSort;
   final VoidCallback onPlayAll;
   final VoidCallback onShuffle;
   final VoidCallback onCycleSort;
   final VoidCallback onToggleOrder;
+  final List<Widget> extras;
 
   @override
   Widget build(BuildContext context) {
@@ -367,18 +520,21 @@ class _Actions extends StatelessWidget {
           enabled: canPlay,
         ),
         LibraryTextAction(label: 'Shuffle', onTap: onShuffle, enabled: canPlay),
-        LibraryTextAction(
-          label: 'Sort: ${sort.label}',
-          onTap: onCycleSort,
-          muted: true,
-          showChevron: true,
-        ),
-        LibraryTextAction(
-          label: 'Order: ${order.label}',
-          onTap: onToggleOrder,
-          muted: true,
-          showChevron: true,
-        ),
+        if (showSort) ...[
+          LibraryTextAction(
+            label: 'Sort: ${sort.label}',
+            onTap: onCycleSort,
+            muted: true,
+            showChevron: true,
+          ),
+          LibraryTextAction(
+            label: 'Order: ${order.label}',
+            onTap: onToggleOrder,
+            muted: true,
+            showChevron: true,
+          ),
+        ],
+        ...extras,
       ],
     );
   }

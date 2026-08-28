@@ -150,4 +150,40 @@ CREATE TABLE tracks (
     expect(rows.single.title, 'Partial');
     expect(rows.single.indexedAt, isA<DateTime>());
   });
+
+  test('createPlaylist stores tracks in order', () async {
+    final db = StudioDatabase.memory();
+    addTearDown(db.close);
+
+    await db.upsertTrack(
+      TracksCompanion.insert(locator: '/music/a.flac', title: 'A'),
+    );
+    await db.upsertTrack(
+      TracksCompanion.insert(locator: '/music/b.flac', title: 'B'),
+    );
+    final tracks = await db.allTracks();
+    final playlistId = await db.createPlaylist('Late night');
+    await db.addTrackToPlaylist(playlistId: playlistId, trackId: tracks[1].id);
+    await db.addTrackToPlaylist(playlistId: playlistId, trackId: tracks[0].id);
+
+    final lists = await db.allPlaylists();
+    expect(lists, hasLength(1));
+    expect(lists.single.name, 'Late night');
+
+    final names = (await db.watchPlaylistTracks(playlistId).first)
+        .map((t) => t.title)
+        .toList();
+    expect(names, ['B', 'A']);
+
+    await db.deletePlaylist(playlistId);
+    expect(await db.allPlaylists(), isEmpty);
+    expect(await db.allTracks(), hasLength(2));
+  });
+
+  test('blank playlist name becomes Untitled playlist', () async {
+    final db = StudioDatabase.memory();
+    addTearDown(db.close);
+    await db.createPlaylist('   ');
+    expect((await db.allPlaylists()).single.name, 'Untitled playlist');
+  });
 }

@@ -10,12 +10,14 @@ class LibraryTrackTable extends ConsumerWidget {
     super.key,
     required this.tracks,
     required this.onPlay,
+    this.onTrackMenu,
   });
 
   static const double rowExtent = 45;
 
   final List<Track> tracks;
   final void Function(int index) onPlay;
+  final void Function(Track track, Offset globalPosition)? onTrackMenu;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -47,6 +49,9 @@ class LibraryTrackTable extends ConsumerWidget {
                   track: track,
                   playing: track.id == playingId,
                   onPlay: () => onPlay(index),
+                  onMenu: onTrackMenu == null
+                      ? null
+                      : (offset) => onTrackMenu!(track, offset),
                 ),
               );
             },
@@ -91,11 +96,13 @@ class _TrackRow extends StatelessWidget {
     required this.track,
     required this.playing,
     required this.onPlay,
+    this.onMenu,
   });
 
   final Track track;
   final bool playing;
   final VoidCallback onPlay;
+  final ValueChanged<Offset>? onMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +112,9 @@ class _TrackRow extends StatelessWidget {
     ).textTheme.bodySmall?.copyWith(color: palette.inkMuted);
     return GestureDetector(
       onTap: onPlay,
+      onSecondaryTapUp: onMenu == null
+          ? null
+          : (details) => onMenu!(details.globalPosition),
       behavior: HitTestBehavior.opaque,
       child: MouseRegion(
         cursor: SystemMouseCursors.click,

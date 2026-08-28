@@ -8,7 +8,7 @@ import 'package:studio/library/tables.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [LibraryFolders, Tracks])
+@DriftDatabase(tables: [LibraryFolders, Tracks, Playlists, PlaylistEntries])
 class StudioDatabase extends _$StudioDatabase {
   StudioDatabase(super.e);
 
@@ -19,7 +19,7 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -34,6 +34,12 @@ class StudioDatabase extends _$StudioDatabase {
       if (from < 4) {
         await _migrateToV4(m);
       }
+      if (from < 5) {
+        await _migrateToV5(m);
+      }
+    },
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
     },
   );
 
@@ -69,6 +75,11 @@ class StudioDatabase extends _$StudioDatabase {
     if (!columns.contains('file_modified_ms')) {
       await m.addColumn(tracks, tracks.fileModifiedMs);
     }
+  }
+
+  Future<void> _migrateToV5(Migrator m) async {
+    await m.createTable(playlists);
+    await m.createTable(playlistEntries);
   }
 
   Future<Set<String>> _columnNames(String table) async {
@@ -181,6 +192,56 @@ class StudioDatabase extends _$StudioDatabase {
   Future<void> deleteFolder(int folderId) async {
     await (delete(tracks)..where((t) => t.folderId.equals(folderId))).go();
     await (delete(libraryFolders)..where((t) => t.id.equals(folderId))).go();
+  }
+
+  Stream<List<Playlist>> watchPlaylists() {
+    return (select(
+      playlists,
+    )..orderBy([(p) => OrderingTerm.asc(p.name)])).watch();
+  }
+
+  Future<List<Playlist>> allPlaylists() => select(playlists).get();
+
+  Future<int> createPlaylist(String name) {
+    final trimmed = name.trim();
+    return into(playlists).insert(
+      PlaylistsCompanion.insert(
+        name: trimmed.isEmpty ? 'Untitled playlist' : trimmed,
+      ),
+    );
+  }
+
+  Future<void> deletePlaylist(int id) async {
+    await (delete(playlistEntries)..where((e) => e.playlistId.equals(id))).go();
+    await (delete(playlists)..where((p) => p.id.equals(id))).go();
+  }
+
+  Future<void> addTrackToPlaylist({
+    required int playlistId,
+    required int trackId,
+  }) async {
+    final existing = await (select(
+      playlistEntries,
+    )..where((e) => e.playlistId.equals(playlistId))).get();
+    await into(playlistEntries).insert(
+      PlaylistEntriesCompanion.insert(
+        playlistId: playlistId,
+        trackId: trackId,
+        position: existing.length,
+      ),
+    );
+  }
+
+  Stream<List<Track>> watchPlaylistTracks(int playlistId) {
+    final query =
+        select(playlistEntries).join([
+            innerJoin(tracks, tracks.id.equalsExp(playlistEntries.trackId)),
+          ])
+          ..where(playlistEntries.playlistId.equals(playlistId))
+          ..orderBy([OrderingTerm.asc(playlistEntries.position)]);
+    return query.watch().map(
+      (rows) => [for (final row in rows) row.readTable(tracks)],
+    );
   }
 }
 

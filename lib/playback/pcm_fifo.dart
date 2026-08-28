@@ -9,6 +9,8 @@ import 'package:ffi/ffi.dart';
 /// Named FIFO that mpv's `ao=pcm` can fopen() while Dart reads float32 frames.
 ///
 /// Windows uses `PIPE_NOWAIT` so [read] never blocks the UI isolate.
+/// A missing client returns empty bytes instead of throwing — the visualizer
+/// stays silent, the window stays alive.
 class PcmFifo {
   PcmFifo._({
     required this.writerPath,
@@ -43,13 +45,20 @@ class _PosixFifo {
     }
     final opener = file.open(mode: FileMode.read);
     RandomAccessFile? raf;
+    var closed = false;
     return PcmFifo._(
       writerPath: path,
       read: (maxBytes) async {
-        raf ??= await opener.timeout(const Duration(seconds: 5));
+        if (closed) return Uint8List(0);
+        try {
+          raf ??= await opener.timeout(const Duration(milliseconds: 50));
+        } on Object {
+          return Uint8List(0);
+        }
         return raf!.read(max(1, maxBytes));
       },
       close: () async {
+        closed = true;
         try {
           await raf?.close();
         } on Object {
@@ -66,13 +75,14 @@ class _PosixFifo {
 }
 
 class _WindowsPipe {
-  static const _pipeAccessInbound = 0x00000001;
+  static const _pipeAccessDuplex = 0x00000003;
   static const _fileFlagFirstPipeInstance = 0x00080000;
   static const _pipeTypeByte = 0x00000000;
   static const _pipeNoWait = 0x00000001;
   static const _errorPipeConnected = 535;
   static const _errorPipeListening = 536;
   static const _errorNoData = 232;
+  static const _errorBrokenPipe = 109;
 
   static Future<PcmFifo> create() async {
     final name =
@@ -125,9 +135,11 @@ class _WindowsPipe {
         .lookupFunction<Uint32 Function(), int Function()>('GetLastError');
 
     final namePtr = name.toNativeUtf16();
+    // DUPLEX: CRT fopen() often requests GENERIC_READ|GENERIC_WRITE. Inbound-only
+    // pipes then fail to connect and mpv never writes.
     final handle = createNamedPipe(
       namePtr,
-      _pipeAccessInbound | _fileFlagFirstPipeInstance,
+      _pipeAccessDuplex | _fileFlagFirstPipeInstance,
       _pipeTypeByte | _pipeNoWait,
       1,
       262144,
@@ -143,29 +155,21 @@ class _WindowsPipe {
     var connected = false;
     var closed = false;
 
-    Future<void> ensureConnected() async {
-      if (connected) return;
-      final deadline = DateTime.now().add(const Duration(seconds: 5));
-      while (!closed && DateTime.now().isBefore(deadline)) {
-        final ok = connectNamedPipe(handle, nullptr);
-        final err = getLastError();
-        if (ok != 0 || err == _errorPipeConnected) {
-          connected = true;
-          return;
-        }
-        if (err != _errorPipeListening && err != _errorNoData) {
-          throw StateError('ConnectNamedPipe failed ($err)');
-        }
-        await Future<void>.delayed(const Duration(milliseconds: 20));
+    void tryConnect() {
+      if (connected || closed) return;
+      final ok = connectNamedPipe(handle, nullptr);
+      final err = getLastError();
+      if (ok != 0 || err == _errorPipeConnected) {
+        connected = true;
       }
-      throw TimeoutException('PCM pipe connect');
     }
 
     return PcmFifo._(
       writerPath: name,
       read: (maxBytes) async {
         if (closed) return Uint8List(0);
-        await ensureConnected();
+        tryConnect();
+        if (!connected) return Uint8List(0);
         final n = max(1, maxBytes);
         final buffer = calloc<Uint8>(n);
         final readPtr = calloc<Uint32>();
@@ -173,12 +177,19 @@ class _WindowsPipe {
           final ok = readFile(handle, buffer.cast(), n, readPtr, nullptr);
           if (ok == 0) {
             final err = getLastError();
-            if (err == _errorNoData || err == _errorPipeListening) {
+            if (err == _errorBrokenPipe) {
+              connected = false;
+            }
+            if (err == _errorNoData ||
+                err == _errorPipeListening ||
+                err == _errorBrokenPipe) {
               return Uint8List(0);
             }
             return Uint8List(0);
           }
-          return Uint8List.fromList(buffer.asTypedList(readPtr.value));
+          final count = readPtr.value;
+          if (count <= 0) return Uint8List(0);
+          return Uint8List.fromList(buffer.asTypedList(count));
         } finally {
           calloc.free(buffer);
           calloc.free(readPtr);

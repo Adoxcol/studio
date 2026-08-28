@@ -1,27 +1,28 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:studio/playback/audio_engine.dart';
 import 'package:studio/playback/dsp/crossfade.dart';
-import 'package:studio/playback/dsp/equalizer.dart';
 import 'package:studio/playback/dsp/replay_gain.dart';
-import 'package:studio/playback/spectrum_tap.dart';
 
 class MediaKitAudioEngine implements AudioEngine {
-  MediaKitAudioEngine({Player? player, MpvSpectrumTap? spectrumTap})
-    : _primary = player ?? Player(),
-      _tap = spectrumTap {
+  MediaKitAudioEngine({Player? player})
+    : _primary = player ?? Player(configuration: _audibleConfig) {
     _front = _primary;
     _ui = _primary;
     _bind(_primary);
-    if (spectrumTap != null) _bindTap(spectrumTap);
   }
 
   static const _tick = Duration(milliseconds: 50);
+  static const _audibleConfig = PlayerConfiguration(
+    vo: 'null',
+    title: 'Studio',
+  );
 
   final Player _primary;
   Player? _secondary;
-  MpvSpectrumTap? _tap;
 
   late Player _front;
   late Player _ui;
@@ -29,7 +30,6 @@ class MediaKitAudioEngine implements AudioEngine {
   Duration _crossfade = Duration.zero;
   double _userVolume = 0.8;
   ReplayGainMode _replayGain = ReplayGainMode.off;
-  List<double> _equalizer = Equalizer.flat;
   Uri? _prepared;
   var _started = false;
   var _paused = false;
@@ -44,32 +44,13 @@ class MediaKitAudioEngine implements AudioEngine {
   final _completed = StreamController<void>.broadcast();
   final _spectrum = StreamController<List<double>>.broadcast();
   final _subs = <StreamSubscription<dynamic>>[];
-  StreamSubscription<List<double>>? _tapBandsSub;
-
-  MpvSpectrumTap _ensureTap() {
-    final existing = _tap;
-    if (existing != null) return existing;
-    final tap = MpvSpectrumTap();
-    _tap = tap;
-    tap.rememberReplayGain(_replayGain);
-    tap.rememberEqualizer(_equalizer);
-    _bindTap(tap);
-    return tap;
-  }
-
-  void _bindTap(MpvSpectrumTap tap) {
-    _tapBandsSub ??= tap.bands.listen((bands) {
-      if (!_spectrum.isClosed) _spectrum.add(bands);
-    });
-  }
 
   Player _ensureSecondary() {
     final existing = _secondary;
     if (existing != null) return existing;
-    final player = Player();
+    final player = Player(configuration: _audibleConfig);
     _secondary = player;
     _bind(player);
-    unawaited(_applyFilters(player));
     return player;
   }
 
@@ -88,10 +69,7 @@ class MediaKitAudioEngine implements AudioEngine {
     _started = true;
     _paused = false;
     _fading = false;
-    await _applyFilters(_primary);
-    await _setPlayerVolume(_primary, 1);
-    await _primary.open(Media(uri.toString()));
-    unawaited(_ensureTap().play(uri));
+    await _startAudible(_primary, uri: uri, volume: 1);
   }
 
   @override
@@ -99,9 +77,7 @@ class MediaKitAudioEngine implements AudioEngine {
     if (_crossfade <= Duration.zero || !_started) return;
     if (_prepared == uri) return;
     final idle = _idle;
-    await _applyFilters(idle);
-    await _setPlayerVolume(idle, 0);
-    await idle.open(Media(uri.toString()));
+    await _startAudible(idle, uri: uri, volume: 0);
     await idle.pause();
     _prepared = uri;
   }
@@ -113,9 +89,7 @@ class MediaKitAudioEngine implements AudioEngine {
     }
     final incoming = _idle;
     if (_prepared != uri) {
-      await _applyFilters(incoming);
-      await _setPlayerVolume(incoming, 0);
-      await incoming.open(Media(uri.toString()));
+      await _startAudible(incoming, uri: uri, volume: 0);
     } else {
       await incoming.play();
     }
@@ -124,7 +98,6 @@ class MediaKitAudioEngine implements AudioEngine {
     _ui = incoming;
     _fading = true;
     _fadeElapsed = Duration.zero;
-    unawaited(_ensureTap().play(uri));
     _applyFadeGains(0);
     _startFadeTimer();
   }
@@ -138,14 +111,12 @@ class MediaKitAudioEngine implements AudioEngine {
     _setPaused(_front, true);
     final outgoing = _outgoing;
     if (outgoing != null) _setPaused(outgoing, true);
-    unawaited(_tap?.pause());
   }
 
   @override
   Future<void> resume() async {
     _paused = false;
     _emitPlaying(true);
-    unawaited(_tap?.resume());
     if (_fading) {
       final outgoing = _outgoing;
       if (outgoing != null) _setPaused(outgoing, false);
@@ -165,7 +136,6 @@ class MediaKitAudioEngine implements AudioEngine {
     await Future.wait([
       _primary.stop(),
       if (_secondary != null) _secondary!.stop(),
-      if (_tap != null) _tap!.stop(),
     ]);
     _front = _primary;
     _ui = _primary;
@@ -178,8 +148,6 @@ class MediaKitAudioEngine implements AudioEngine {
     if (_fading) await _cancelFade(snapIncoming: true);
     if (gen != _seekGen) return;
     await _front.seek(position);
-    if (gen != _seekGen) return;
-    unawaited(_tap?.seek(position) ?? Future.value());
   }
 
   @override
@@ -195,18 +163,13 @@ class MediaKitAudioEngine implements AudioEngine {
   @override
   Future<void> setReplayGain(ReplayGainMode mode) async {
     _replayGain = mode;
-    unawaited(_applyFilters(_primary));
-    if (_secondary != null) unawaited(_applyFilters(_secondary!));
-    // Never setProperty on the live FFT tap — that deadlocks ao=pcm.
-    _tap?.rememberReplayGain(mode);
+    if (_started) unawaited(_applyFilters(_front));
   }
 
   @override
-  Future<void> setEqualizer(List<double> gains) async {
-    _equalizer = List<double>.from(gains);
-    unawaited(_applyFilters(_primary));
-    if (_secondary != null) unawaited(_applyFilters(_secondary!));
-    _tap?.rememberEqualizer(gains);
+  Future<void> setEqualizer(List<double> _) async {
+    // media_kit's libmpv has no lavfi EQ (`aresample` / `firequalizer`).
+    // Setting `af` flushes the decoder, so the playhead jumps on every slider.
   }
 
   @override
@@ -240,18 +203,21 @@ class MediaKitAudioEngine implements AudioEngine {
     for (final sub in _subs) {
       unawaited(sub.cancel());
     }
-    unawaited(_tapBandsSub?.cancel());
     unawaited(_position.close());
     unawaited(_duration.close());
     unawaited(_playing.close());
     unawaited(_completed.close());
     unawaited(_spectrum.close());
-    _tap?.dispose();
     _primary.dispose();
     _secondary?.dispose();
   }
 
   void _bind(Player player) {
+    _subs.add(
+      player.stream.log.listen((log) {
+        debugPrint('mpv ${log.level}: ${log.prefix}: ${log.text}');
+      }),
+    );
     _subs.add(
       player.stream.position.listen((value) {
         if (identical(player, _ui) && !_position.isClosed) {
@@ -345,11 +311,42 @@ class MediaKitAudioEngine implements AudioEngine {
     _prepared = null;
   }
 
+  /// Open [uri] on [player] and force a real device. Never set mpv `af` —
+  /// this libmpv has no `aresample`/`firequalizer`, and a failed lavfi graph
+  /// flushes the decoder (the playhead jumps).
+  Future<void> _startAudible(
+    Player player, {
+    required Uri uri,
+    required double volume,
+  }) async {
+    await _configureOutput(player);
+    await player.open(Media(uri.toString()), play: volume > 0);
+    await _configureOutput(player);
+    if (volume > 0) await player.play();
+    await _setPlayerVolume(player, volume);
+    await _applyReplayGain(player);
+  }
+
+  Future<void> _configureOutput(Player player) async {
+    final platform = player.platform;
+    if (platform is! NativePlayer) return;
+    if (Platform.isWindows) {
+      await platform.setProperty('ao', 'wasapi');
+    }
+    await platform.setProperty('audio-exclusive', 'no');
+    await platform.setProperty('mute', 'no');
+    await platform.setProperty('ao-mute', 'no');
+    await platform.setProperty('ao-volume', '100');
+  }
+
   Future<void> _applyFilters(Player player) async {
+    await _applyReplayGain(player);
+  }
+
+  Future<void> _applyReplayGain(Player player) async {
     final platform = player.platform;
     if (platform is NativePlayer) {
       await platform.setProperty('replaygain', _replayGain.mpvValue);
-      await platform.setProperty('af', Equalizer.afFilter(_equalizer));
     }
   }
 
@@ -360,7 +357,7 @@ class MediaKitAudioEngine implements AudioEngine {
   }
 
   /// Pauses without blocking the UI isolate. Never uses synchronous
-  /// `mpv_set_property_string` — that deadlocks if mpv is in `ao=pcm`.
+  /// `mpv_set_property_string` on the command queue.
   void _setPaused(Player player, bool paused) {
     final platform = player.platform;
     if (platform is NativePlayer) {

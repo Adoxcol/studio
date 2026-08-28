@@ -132,6 +132,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('No playlists yet.'), findsOneWidget);
+    expect(find.text('New playlist'), findsOneWidget);
   });
 
   testWidgets('tapping a row starts playback', (tester) async {
