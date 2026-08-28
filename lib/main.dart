@@ -12,6 +12,8 @@ import 'package:studio/library/database.dart';
 import 'package:studio/state/library_providers.dart';
 import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/appearance_store.dart';
+import 'package:studio/lyrics/lyrics_cache.dart';
+import 'package:studio/lyrics/lyrics_providers.dart';
 import 'package:studio/playback/playback_settings_provider.dart';
 import 'package:studio/playback/playback_settings_store.dart';
 
@@ -34,6 +36,9 @@ Future<void> main() async {
         artworkStoreProvider.overrideWithValue(artwork),
         appearanceStoreProvider.overrideWithValue(appearance),
         playbackSettingsStoreProvider.overrideWithValue(playbackSettings),
+        lyricsCacheProvider.overrideWithValue(
+          FileLyricsCache(Directory(p.join(support.path, 'lyrics'))),
+        ),
       ],
       child: const StudioApp(),
     ),

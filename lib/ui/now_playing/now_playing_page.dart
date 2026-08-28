@@ -4,6 +4,7 @@ import 'package:studio/library/database.dart';
 import 'package:studio/state/library_providers.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/ui/lyrics/lyrics_scroller.dart';
 import 'package:studio/ui/now_playing/cover_art.dart';
 import 'package:studio/ui/visualizer/amplitude_visualizer.dart';
 
@@ -89,58 +90,57 @@ class _Hero extends StatelessWidget {
         final artSize = [
           NowPlayingPage.artSize,
           (constraints.maxWidth - 64).clamp(96.0, NowPlayingPage.artSize),
-          (constraints.maxHeight * 0.42).clamp(96.0, NowPlayingPage.artSize),
+          (constraints.maxHeight * (hasTrack ? 0.28 : 0.42)).clamp(
+            96.0,
+            NowPlayingPage.artSize,
+          ),
         ].reduce((a, b) => a < b ? a : b);
-        return CustomScrollView(
-          slivers: [
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 24,
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: Column(
+            mainAxisAlignment: hasTrack
+                ? MainAxisAlignment.start
+                : MainAxisAlignment.center,
+            children: [
+              CoverArt(path: artworkPath, size: artSize),
+              const SizedBox(height: 16),
+              _VisualizerSlot(width: artSize),
+              const SizedBox(height: 24),
+              if (hasTrack)
+                Text(
+                  'now playing',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: palette.inkMutedAlt,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CoverArt(path: artworkPath, size: artSize),
-                    const SizedBox(height: 16),
-                    _VisualizerSlot(width: artSize),
-                    const SizedBox(height: 24),
-                    if (hasTrack)
-                      Text(
-                        'now playing',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: palette.inkMutedAlt,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    if (hasTrack) const SizedBox(height: 8),
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.displayLarge,
-                      textAlign: TextAlign.center,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (artist != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        artist!,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: palette.inkMuted,
-                          fontStyle: FontStyle.italic,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
-                ),
+              if (hasTrack) const SizedBox(height: 8),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.displayLarge,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+              if (artist != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  artist!,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: palette.inkMuted,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              if (hasTrack) ...[
+                const SizedBox(height: 20),
+                const Expanded(child: LyricsPane()),
+              ],
+            ],
+          ),
         );
       },
     );

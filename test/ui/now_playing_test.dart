@@ -1,10 +1,14 @@
+import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/library/database.dart';
+import 'package:studio/lyrics/lrclib_client.dart';
+import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/visualizer/amplitude_visualizer.dart';
 
 import '../helpers/pump_studio.dart';
+import '../lyrics/fake_lyrics_lookup.dart';
 import '../playback/fake_audio_engine.dart';
 
 void main() {
@@ -81,5 +85,61 @@ void main() {
     expect(find.text('now playing'), findsOneWidget);
     expect(find.text('First'), findsWidgets);
     expect(find.text('Second'), findsWidgets);
+  });
+
+  testWidgets('hero lyrics highlight the current line in accent', (
+    tester,
+  ) async {
+    await db.upsertTrack(
+      TracksCompanion.insert(
+        locator: '/music/a.flac',
+        title: 'First',
+        artist: const Value('Aria'),
+      ),
+    );
+    final rows = await db.allTracks();
+    final lookup = FakeLyricsLookup(
+      const LyricsLookupResult(
+        LyricsLookupStatus.found,
+        LrclibRecord(syncedLyrics: '[00:00.00] Opening\n[00:05.00] Chorus'),
+      ),
+    );
+
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      testStudioApp(db: db, engine: engine, tracks: rows, lyricsLookup: lookup),
+    );
+    await tester.pump();
+    await tester.tap(find.byTooltip('Library'));
+    await tester.pump();
+    await tester.tap(find.text('First'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byTooltip('Now Playing'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Opening'), findsOneWidget);
+    expect(find.text('Chorus'), findsOneWidget);
+    final palette = StudioPalette.of(tester.element(find.text('Opening')));
+    expect(
+      tester.widget<Text>(find.text('Opening')).style?.color,
+      palette.accent,
+    );
+    expect(
+      tester.widget<Text>(find.text('Chorus')).style?.color,
+      palette.inkMuted,
+    );
+
+    await engine.seek(const Duration(seconds: 6));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+    expect(
+      tester.widget<Text>(find.text('Chorus')).style?.color,
+      palette.accent,
+    );
   });
 }
