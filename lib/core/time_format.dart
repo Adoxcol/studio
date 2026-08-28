@@ -9,3 +9,8 @@ String formatDuration(Duration duration) {
       : '${abs.inMinutes}:$seconds';
   return negative ? '-$body' : body;
 }
+
+String formatDurationMs(int? durationMs) {
+  if (durationMs == null || durationMs < 0) return '';
+  return formatDuration(Duration(milliseconds: durationMs));
+}

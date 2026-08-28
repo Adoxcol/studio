@@ -10,6 +10,7 @@ class ParsedTags {
     this.album,
     this.duration,
     this.trackNumber,
+    this.genre,
   });
 
   final String title;
@@ -17,6 +18,7 @@ class ParsedTags {
   final String? album;
   final Duration? duration;
   final int? trackNumber;
+  final String? genre;
 }
 
 class TagReader {
@@ -32,6 +34,7 @@ class TagReader {
         album: _nonEmpty(meta.album),
         duration: meta.duration,
         trackNumber: meta.trackNumber,
+        genre: _firstGenre(meta.genres),
       );
     } on Object {
       return ParsedTags(title: fallbackTitle);
@@ -42,5 +45,13 @@ class TagReader {
     if (value == null) return null;
     final trimmed = value.trim();
     return trimmed.isEmpty ? null : trimmed;
+  }
+
+  static String? _firstGenre(List<String> genres) {
+    for (final genre in genres) {
+      final trimmed = _nonEmpty(genre);
+      if (trimmed != null) return trimmed;
+    }
+    return null;
   }
 }
