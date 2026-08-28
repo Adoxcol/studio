@@ -9,6 +9,7 @@ class FakeAudioEngine implements AudioEngine {
   Duration lastSeek = Duration.zero;
   double lastVolume = 1;
   ReplayGainMode lastReplayGain = ReplayGainMode.off;
+  List<double> lastEqualizer = const [];
 
   final _position = StreamController<Duration>.broadcast();
   final _duration = StreamController<Duration>.broadcast();
@@ -56,6 +57,11 @@ class FakeAudioEngine implements AudioEngine {
   @override
   Future<void> setReplayGain(ReplayGainMode mode) async {
     lastReplayGain = mode;
+  }
+
+  @override
+  Future<void> setEqualizer(List<double> gains) async {
+    lastEqualizer = List<double>.from(gains);
   }
 
   @override
