@@ -34,8 +34,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Folder scans skip unchanged files, read cover art only when needed, and stay
-  cancellable so the library does not freeze for minutes.
+- Folder scans skip unchanged files, read cover art only when needed, stay
+  cancellable so the library does not freeze for minutes, and parse tags off
+  the UI isolate in batches so large folders stay responsive.
+- Library lists use a fixed row height so long All / Queue views stay smooth
+  when scrolling far down. Playback position ticks only rebuild the scrubber
+  and visualizer.
 
 ### Fixed
 

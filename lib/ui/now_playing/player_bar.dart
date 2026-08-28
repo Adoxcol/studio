@@ -6,88 +6,127 @@ import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/now_playing/cover_art.dart';
 
-class PlayerBar extends ConsumerWidget {
+class PlayerBar extends StatelessWidget {
   const PlayerBar({super.key});
 
   static const double scrubberHeight = 20;
   static const double contentHeight = 64;
 
   @override
+  Widget build(BuildContext context) {
+    return const Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [_PlayerBarScrubber(), _PlayerBarBody()],
+    );
+  }
+}
+
+class _PlayerBarScrubber extends ConsumerWidget {
+  const _PlayerBarScrubber();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final snapshot = ref.watch(
+      playbackControllerProvider.select(
+        (s) => (position: s.position, duration: s.duration),
+      ),
+    );
+    final remaining = snapshot.duration - snapshot.position;
+    return _DividerScrubber(
+      progress: snapshot.duration.inMilliseconds <= 0
+          ? 0
+          : (snapshot.position.inMilliseconds /
+                    snapshot.duration.inMilliseconds)
+                .clamp(0.0, 1.0),
+      elapsedLabel: formatDuration(snapshot.position),
+      remainingLabel: formatDuration(remaining),
+      onSeek: (fraction) {
+        ref.read(playbackControllerProvider.notifier).seekFraction(fraction);
+      },
+    );
+  }
+}
+
+class _PlayerBarBody extends ConsumerWidget {
+  const _PlayerBarBody();
+
+  @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = StudioPalette.of(context);
-    final playback = ref.watch(playbackControllerProvider);
-    final remaining = playback.duration - playback.position;
+    final playback = ref.watch(
+      playbackControllerProvider.select(
+        (s) => (
+          title: s.title,
+          artist: s.artist,
+          artworkPath: s.artworkPath,
+          playing: s.playing,
+          volume: s.volume,
+          shuffle: s.shuffle,
+          repeat: s.repeat,
+        ),
+      ),
+    );
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _DividerScrubber(
-          progress: playback.progress,
-          elapsedLabel: formatDuration(playback.position),
-          remainingLabel: formatDuration(remaining),
-          onSeek: (fraction) {
-            ref
-                .read(playbackControllerProvider.notifier)
-                .seekFraction(fraction);
-          },
-        ),
-        SizedBox(
-          height: contentHeight,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 260,
-                  child: Row(
-                    children: [
-                      CoverArt(path: playback.artworkPath, size: 40),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              playback.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: palette.ink),
-                            ),
-                            if (playback.artist != null)
-                              Text(
-                                playback.artist!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: palette.inkMuted),
-                              ),
-                          ],
+    return SizedBox(
+      height: PlayerBar.contentHeight,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 260,
+              child: Row(
+                children: [
+                  CoverArt(path: playback.artworkPath, size: 40),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          playback.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(color: palette.ink),
                         ),
-                      ),
-                    ],
+                        if (playback.artist != null)
+                          Text(
+                            playback.artist!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: palette.inkMuted),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                const Spacer(),
-                _Transport(playback: playback),
-                const Spacer(),
-                SizedBox(
-                  width: 130,
-                  child: _VolumeCluster(
-                    volume: playback.volume,
-                    onChanged: (value) {
-                      ref
-                          .read(playbackControllerProvider.notifier)
-                          .setVolume(value);
-                    },
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+            const Spacer(),
+            _Transport(
+              playing: playback.playing,
+              shuffle: playback.shuffle,
+              repeat: playback.repeat,
+            ),
+            const Spacer(),
+            SizedBox(
+              width: 130,
+              child: _VolumeCluster(
+                volume: playback.volume,
+                onChanged: (value) {
+                  ref
+                      .read(playbackControllerProvider.notifier)
+                      .setVolume(value);
+                },
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -184,9 +223,15 @@ class _DividerScrubber extends StatelessWidget {
 }
 
 class _Transport extends ConsumerWidget {
-  const _Transport({required this.playback});
+  const _Transport({
+    required this.playing,
+    required this.shuffle,
+    required this.repeat,
+  });
 
-  final PlaybackUiState playback;
+  final bool playing;
+  final bool shuffle;
+  final QueueRepeatMode repeat;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -213,22 +258,18 @@ class _Transport extends ConsumerWidget {
         button(
           icon: Icons.shuffle,
           onTap: controller.toggleShuffle,
-          color: playback.shuffle ? palette.accent : palette.ink,
+          color: shuffle ? palette.accent : palette.ink,
         ),
         button(icon: Icons.skip_previous, onTap: controller.skipPrevious),
         button(
-          icon: playback.playing ? Icons.pause : Icons.play_arrow,
+          icon: playing ? Icons.pause : Icons.play_arrow,
           onTap: controller.togglePlayPause,
         ),
         button(icon: Icons.skip_next, onTap: controller.skipNext),
         button(
-          icon: playback.repeat == QueueRepeatMode.one
-              ? Icons.repeat_one
-              : Icons.repeat,
+          icon: repeat == QueueRepeatMode.one ? Icons.repeat_one : Icons.repeat,
           onTap: controller.cycleRepeat,
-          color: playback.repeat == QueueRepeatMode.off
-              ? palette.ink
-              : palette.accent,
+          color: repeat == QueueRepeatMode.off ? palette.ink : palette.accent,
         ),
       ],
     );

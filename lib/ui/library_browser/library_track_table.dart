@@ -1,23 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/core/time_format.dart';
 import 'package:studio/library/database.dart';
+import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 
-class LibraryTrackTable extends StatelessWidget {
+class LibraryTrackTable extends ConsumerWidget {
   const LibraryTrackTable({
     super.key,
     required this.tracks,
-    required this.playingId,
     required this.onPlay,
   });
 
+  static const double rowExtent = 45;
+
   final List<Track> tracks;
-  final int? playingId;
   final void Function(int index) onPlay;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final palette = StudioPalette.of(context);
+    final playingId = ref.watch(
+      playbackControllerProvider.select((s) => s.trackId),
+    );
     return Column(
       children: [
         const Padding(
@@ -25,16 +30,25 @@ class LibraryTrackTable extends StatelessWidget {
           child: _ColumnHeaders(),
         ),
         Expanded(
-          child: ListView.separated(
+          child: ListView.builder(
+            itemExtent: rowExtent,
+            cacheExtent: 800,
+            addAutomaticKeepAlives: false,
             itemCount: tracks.length,
-            separatorBuilder: (_, _) =>
-                Divider(height: 1, color: palette.hairlineSoft),
             itemBuilder: (context, index) {
               final track = tracks[index];
-              return _TrackRow(
-                track: track,
-                playing: track.id == playingId,
-                onPlay: () => onPlay(index),
+              return DecoratedBox(
+                key: ValueKey(track.id),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: palette.hairlineSoft),
+                  ),
+                ),
+                child: _TrackRow(
+                  track: track,
+                  playing: track.id == playingId,
+                  onPlay: () => onPlay(index),
+                ),
               );
             },
           ),
@@ -96,7 +110,7 @@ class _TrackRow extends StatelessWidget {
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: SizedBox(
-          height: 44,
+          height: LibraryTrackTable.rowExtent - 1,
           child: Row(
             children: [
               SizedBox(

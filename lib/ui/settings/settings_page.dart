@@ -17,7 +17,16 @@ class SettingsPage extends ConsumerWidget {
     final palette = StudioPalette.of(context);
     final appearance = ref.watch(appearanceProvider);
     final hue = ref.watch(resolvedAccentHueProvider);
-    final playback = ref.watch(playbackControllerProvider);
+    final playback = ref.watch(
+      playbackControllerProvider.select(
+        (s) => (
+          trackId: s.trackId,
+          title: s.title,
+          artist: s.artist,
+          artworkPath: s.artworkPath,
+        ),
+      ),
+    );
     final seed = AccentSeed.nearest(hue);
     final previewLabel =
         '${appearance.mode == AccentMode.auto ? 'AUTO' : 'CUSTOM'} · ${seed.label.toUpperCase()}';
