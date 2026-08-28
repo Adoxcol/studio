@@ -2,9 +2,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/library/database.dart';
+import 'package:studio/library/library_query.dart';
 import 'package:studio/state/library_providers.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/ui/library_browser/library_browse_view.dart';
+import 'package:studio/ui/library_browser/library_sidebar.dart';
+import 'package:studio/ui/library_browser/library_text_action.dart';
+import 'package:studio/ui/library_browser/library_track_table.dart';
 
 class LibraryPage extends ConsumerStatefulWidget {
   const LibraryPage({super.key});
@@ -14,7 +19,21 @@ class LibraryPage extends ConsumerStatefulWidget {
 }
 
 class _LibraryPageState extends ConsumerState<LibraryPage> {
-  bool _scanning = false;
+  final _search = TextEditingController();
+  var _scanning = false;
+  var _sidebarOpen = true;
+  var _tab = LibraryTab.all;
+  var _sort = LibrarySort.title;
+  var _order = LibraryOrder.ascending;
+  String? _artistFilter;
+  String? _albumFilter;
+  String? _genreFilter;
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   Future<void> _addFolder() async {
     final path = await FilePicker.getDirectoryPath(
@@ -29,6 +48,33 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     }
   }
 
+  void _selectArtist(String name) {
+    setState(() {
+      _artistFilter = _artistFilter == name ? null : name;
+      _albumFilter = null;
+      _genreFilter = null;
+      _tab = LibraryTab.all;
+    });
+  }
+
+  void _selectAlbum(String artist, String album) {
+    setState(() {
+      _artistFilter = artist;
+      _albumFilter = album;
+      _genreFilter = null;
+      _tab = LibraryTab.all;
+    });
+  }
+
+  void _selectGenre(String genre) {
+    setState(() {
+      _genreFilter = _genreFilter == genre ? null : genre;
+      _artistFilter = null;
+      _albumFilter = null;
+      _tab = LibraryTab.all;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
@@ -37,63 +83,147 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       playbackControllerProvider.select((s) => s.trackId),
     );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return tracks.when(
+      data: (rows) => _body(context, palette, rows, playingId),
+      loading: () => _body(context, palette, const <Track>[], playingId),
+      error: (error, _) => Padding(
+        padding: const EdgeInsets.all(32),
+        child: Text('$error', style: TextStyle(color: palette.inkMuted)),
+      ),
+    );
+  }
+
+  Widget _body(
+    BuildContext context,
+    StudioPalette palette,
+    List<Track> allTracks,
+    int? playingId,
+  ) {
+    final searched = LibraryQuery.filter(
+      tracks: allTracks,
+      query: _search.text,
+    );
+    final recentlyAdded = _tab == LibraryTab.recentlyAdded;
+    final visible = LibraryQuery.sorted(
+      tracks: LibraryQuery.filter(
+        tracks: searched,
+        artist: _artistFilter,
+        album: _albumFilter,
+        genre: _genreFilter,
+      ),
+      sort: _sort,
+      order: recentlyAdded ? LibraryOrder.descending : _order,
+      byIndexedAt: recentlyAdded,
+    );
+    final artists = LibraryQuery.groupArtists(searched);
+    final showTable =
+        _tab == LibraryTab.all || _tab == LibraryTab.recentlyAdded;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(32, 24, 32, 8),
-          child: Row(
-            children: [
-              Text(
-                'Library',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const Spacer(),
-              GestureDetector(
-                onTap: _scanning ? null : _addFolder,
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: Text(
-                    _scanning ? 'Scanning…' : 'Add folder',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: palette.ink),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        LibrarySidebar(
+          expanded: _sidebarOpen,
+          artists: artists,
+          selectedArtist: _artistFilter,
+          onToggle: () => setState(() => _sidebarOpen = !_sidebarOpen),
+          onSelectArtist: _selectArtist,
         ),
         Expanded(
-          child: tracks.when(
-            data: (rows) {
-              if (rows.isEmpty) {
-                return _EmptyLibrary(palette: palette);
-              }
-              return ListView.separated(
-                padding: const EdgeInsets.fromLTRB(32, 0, 32, 16),
-                itemCount: rows.length,
-                separatorBuilder: (_, _) =>
-                    Divider(height: 1, color: palette.hairlineSoft),
-                itemBuilder: (context, index) {
-                  final track = rows[index];
-                  return _TrackRow(
-                    track: track,
-                    playing: track.id == playingId,
-                    onPlay: () {
-                      final ids = rows.map((t) => t.id).toList();
-                      ref
-                          .read(playbackControllerProvider.notifier)
-                          .playTracks(ids, startIndex: index);
-                    },
-                  );
-                },
-              );
-            },
-            loading: () => _EmptyLibrary(palette: palette),
-            error: (error, _) => Padding(
-              padding: const EdgeInsets.all(32),
-              child: Text('$error', style: TextStyle(color: palette.inkMuted)),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(32, 24, 32, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Header(
+                  scanning: _scanning,
+                  controller: _search,
+                  onSearch: () => setState(() {}),
+                  onAddFolder: _scanning ? null : _addFolder,
+                ),
+                const SizedBox(height: 16),
+                _Tabs(
+                  selected: _tab,
+                  onSelect: (tab) => setState(() => _tab = tab),
+                ),
+                const SizedBox(height: 12),
+                _Actions(
+                  sort: _sort,
+                  order: _order,
+                  canPlay: visible.isNotEmpty,
+                  onPlayAll: () {
+                    ref
+                        .read(playbackControllerProvider.notifier)
+                        .playTracks(
+                          visible.map((t) => t.id).toList(),
+                          shuffle: false,
+                        );
+                  },
+                  onShuffle: () {
+                    ref
+                        .read(playbackControllerProvider.notifier)
+                        .playTracks(
+                          visible.map((t) => t.id).toList(),
+                          shuffle: true,
+                        );
+                  },
+                  onCycleSort: () =>
+                      setState(() => _sort = LibraryQuery.nextSort(_sort)),
+                  onToggleOrder: () =>
+                      setState(() => _order = LibraryQuery.toggleOrder(_order)),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: _tab == LibraryTab.playlists
+                      ? LibraryBrowseView(
+                          tab: _tab,
+                          artists: const [],
+                          albums: const [],
+                          genres: const [],
+                          onSelectArtist: _selectArtist,
+                          onSelectAlbum: _selectAlbum,
+                          onSelectGenre: _selectGenre,
+                        )
+                      : allTracks.isEmpty
+                      ? _EmptyLibrary(palette: palette)
+                      : showTable
+                      ? visible.isEmpty
+                            ? _EmptyLibrary(
+                                palette: palette,
+                                text: 'No matching tracks.',
+                              )
+                            : LibraryTrackTable(
+                                tracks: visible,
+                                playingId: playingId,
+                                onPlay: (index) {
+                                  ref
+                                      .read(playbackControllerProvider.notifier)
+                                      .playTracks(
+                                        visible.map((t) => t.id).toList(),
+                                        startIndex: index,
+                                      );
+                                },
+                              )
+                      : LibraryBrowseView(
+                          tab: _tab,
+                          artists: LibraryQuery.groupArtists(
+                            searched,
+                            order: _order,
+                          ),
+                          albums: LibraryQuery.albumSections(
+                            searched,
+                            order: _order,
+                          ),
+                          genres: LibraryQuery.groupGenres(
+                            searched,
+                            order: _order,
+                          ),
+                          onSelectArtist: _selectArtist,
+                          onSelectAlbum: _selectAlbum,
+                          onSelectGenre: _selectGenre,
+                        ),
+                ),
+              ],
             ),
           ),
         ),
@@ -102,95 +232,178 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   }
 }
 
-class _EmptyLibrary extends StatelessWidget {
-  const _EmptyLibrary({required this.palette});
+class _Header extends StatelessWidget {
+  const _Header({
+    required this.scanning,
+    required this.controller,
+    required this.onSearch,
+    required this.onAddFolder,
+  });
 
-  final StudioPalette palette;
+  final bool scanning;
+  final TextEditingController controller;
+  final VoidCallback onSearch;
+  final VoidCallback? onAddFolder;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 8, 32, 24),
-      child: Text(
-        'Library is empty. Local files will show up here.',
-        style: Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(color: palette.inkMuted),
+    final palette = StudioPalette.of(context);
+    return Row(
+      children: [
+        Text('Library', style: Theme.of(context).textTheme.headlineMedium),
+        const SizedBox(width: 24),
+        Expanded(
+          child: TextField(
+            controller: controller,
+            onChanged: (_) => onSearch(),
+            cursorColor: palette.ink,
+            style: Theme.of(context).textTheme.bodyMedium,
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: 'Search your library',
+              hintStyle: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: palette.inkMuted),
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        LibraryTextAction(
+          label: scanning ? 'Scanning…' : 'Add folder',
+          onTap: onAddFolder ?? () {},
+          enabled: onAddFolder != null,
+        ),
+      ],
+    );
+  }
+}
+
+class _Tabs extends StatelessWidget {
+  const _Tabs({required this.selected, required this.onSelect});
+
+  final LibraryTab selected;
+  final ValueChanged<LibraryTab> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StudioPalette.of(context);
+    return SizedBox(
+      height: 32,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          for (final tab in LibraryTab.values)
+            Padding(
+              padding: const EdgeInsets.only(right: 20),
+              child: GestureDetector(
+                onTap: () => onSelect(tab),
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: Text(
+                    tab.label,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: tab == selected ? palette.ink : palette.inkMuted,
+                      fontWeight: tab == selected
+                          ? FontWeight.w500
+                          : FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 }
 
-class _TrackRow extends StatelessWidget {
-  const _TrackRow({
-    required this.track,
-    required this.playing,
-    required this.onPlay,
+class _Actions extends StatelessWidget {
+  const _Actions({
+    required this.sort,
+    required this.order,
+    required this.canPlay,
+    required this.onPlayAll,
+    required this.onShuffle,
+    required this.onCycleSort,
+    required this.onToggleOrder,
   });
 
-  final Track track;
-  final bool playing;
-  final VoidCallback onPlay;
+  final LibrarySort sort;
+  final LibraryOrder order;
+  final bool canPlay;
+  final VoidCallback onPlayAll;
+  final VoidCallback onShuffle;
+  final VoidCallback onCycleSort;
+  final VoidCallback onToggleOrder;
 
   @override
   Widget build(BuildContext context) {
-    final palette = StudioPalette.of(context);
-    return InkWell(
-      onTap: onPlay,
-      splashFactory: NoSplash.splashFactory,
-      hoverColor: Colors.transparent,
-      highlightColor: Colors.transparent,
-      child: SizedBox(
-        height: 44,
-        child: Row(
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      runSpacing: 8,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              width: 28,
-              child: playing
-                  ? Icon(Icons.graphic_eq, size: 16, color: palette.accent)
-                  : Text(
-                      track.trackNumber?.toString() ?? '',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-                    ),
+            LibraryTextAction(
+              label: 'Play All',
+              onTap: onPlayAll,
+              enabled: canPlay,
             ),
-            Expanded(
-              child: Text(
-                track.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: playing ? palette.accent : palette.ink,
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            SizedBox(
-              width: 160,
-              child: Text(
-                track.artist ?? '',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-              ),
-            ),
-            const SizedBox(width: 16),
-            SizedBox(
-              width: 180,
-              child: Text(
-                track.album ?? '',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-              ),
+            const SizedBox(width: 20),
+            LibraryTextAction(
+              label: 'Shuffle',
+              onTap: onShuffle,
+              enabled: canPlay,
             ),
           ],
         ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            LibraryTextAction(
+              label: 'Sort: ${sort.label}',
+              onTap: onCycleSort,
+              muted: true,
+              showChevron: true,
+            ),
+            const SizedBox(width: 20),
+            LibraryTextAction(
+              label: 'Order: ${order.label}',
+              onTap: onToggleOrder,
+              muted: true,
+              showChevron: true,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _EmptyLibrary extends StatelessWidget {
+  const _EmptyLibrary({
+    required this.palette,
+    this.text = 'Library is empty. Local files will show up here.',
+  });
+
+  final StudioPalette palette;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Text(
+        text,
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: palette.inkMuted),
       ),
     );
   }

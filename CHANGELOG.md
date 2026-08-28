@@ -15,6 +15,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   divider-scrubber player bar (light theme default).
 - Local library folder scan with Drift index, URI-only media_kit playback,
   and a play queue.
+- Library browser matching the Editorial Mono All view: collapsible artist
+  sidebar, tabs, search, typographic sort/order, and TITLE/ARTIST/ALBUM/TIME
+  columns.
 
 ### Changed
 ### Fixed

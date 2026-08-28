@@ -112,8 +112,15 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     return const PlaybackUiState();
   }
 
-  Future<void> playTracks(List<int> ids, {int startIndex = 0}) async {
+  Future<void> playTracks(
+    List<int> ids, {
+    int startIndex = 0,
+    bool? shuffle,
+  }) async {
     if (ids.isEmpty) return;
+    if (shuffle != null) {
+      queue.shuffle = shuffle;
+    }
     queue.replace(ids, startIndex: startIndex);
     await _openCurrent();
   }
