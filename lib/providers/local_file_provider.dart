@@ -16,6 +16,8 @@ class LocalFileProvider implements PlayableResolver {
         'LocalFileProvider only handles "${TrackLocator.local}" locators',
       );
     }
-    return Uri.file(locator.locator);
+    final path = locator.locator;
+    final windows = path.contains(r'\') || (path.length >= 2 && path[1] == ':');
+    return Uri.file(path, windows: windows);
   }
 }
