@@ -70,6 +70,18 @@ void main() {
     expect((await db.allTracks()).single.artworkPath, '/tmp/cover.jpg');
   });
 
+  test('upsertTracks writes a batch in one go', () async {
+    final db = StudioDatabase.memory();
+    addTearDown(db.close);
+
+    await db.upsertTracks([
+      TracksCompanion.insert(locator: '/music/a.flac', title: 'A'),
+      TracksCompanion.insert(locator: '/music/b.flac', title: 'B'),
+    ]);
+    final titles = (await db.allTracks()).map((t) => t.title).toSet();
+    expect(titles, {'A', 'B'});
+  });
+
   test(
     'upgrades a v1 library past the non-constant indexed_at default',
     () async {

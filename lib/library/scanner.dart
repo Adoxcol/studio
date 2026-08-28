@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:drift/drift.dart';
@@ -20,6 +21,8 @@ class FolderScanner {
   }) : _db = db,
        _tags = tagReader,
        _artwork = artwork;
+
+  static const _writeBatch = 24;
 
   final StudioDatabase _db;
   final TagReader _tags;
@@ -77,19 +80,9 @@ class FolderScanner {
 
     onProgress?.call(ScanProgress(active: true, folderLabel: label));
 
-    final files = <File>[];
-    var listed = 0;
-    await for (final entity in dir.list(recursive: true, followLinks: false)) {
-      if (isCancelled?.call() ?? false) {
-        return const ScanResult(cancelled: true);
-      }
-      if (entity is! File) continue;
-      if (!_isAudio(entity.path)) continue;
-      files.add(entity);
-      listed++;
-      if (listed % 50 == 0) {
-        await Future<void>.delayed(Duration.zero);
-      }
+    final files = await _listAudioFiles(folderPath);
+    if (isCancelled?.call() ?? false) {
+      return const ScanResult(cancelled: true);
     }
 
     final existing = {
@@ -105,9 +98,22 @@ class FolderScanner {
     var written = 0;
     var skipped = 0;
     final seen = <String>{};
+    final dirty = <_AudioFile>[];
+
+    Future<void> flush() async {
+      if (dirty.isEmpty) return;
+      written += await _writeDirty(
+        dirty,
+        folderId: folderId,
+        existing: existing,
+        albumsWithArt: albumsWithArt,
+      );
+      dirty.clear();
+    }
 
     for (var i = 0; i < files.length; i++) {
       if (isCancelled?.call() ?? false) {
+        await flush();
         return ScanResult(
           seen: seen.length,
           written: written,
@@ -128,26 +134,47 @@ class FolderScanner {
         ),
       );
 
-      final modifiedMs = _modifiedMs(file);
       final previous = existing[file.path];
       if (previous != null &&
           previous.fileModifiedMs != null &&
-          previous.fileModifiedMs == modifiedMs) {
+          previous.fileModifiedMs == file.modifiedMs) {
         skipped++;
-        if (i % 12 == 0) {
-          await Future<void>.delayed(Duration.zero);
-        }
         continue;
       }
 
-      var tags = _tags.read(file);
+      dirty.add(file);
+      if (dirty.length >= _writeBatch) {
+        await flush();
+      }
+    }
+
+    await flush();
+    await _db.deleteTracksNotKept(folderId: folderId, keepLocators: seen);
+    return ScanResult(seen: seen.length, written: written, skipped: skipped);
+  }
+
+  Future<int> _writeDirty(
+    List<_AudioFile> dirty, {
+    required int folderId,
+    required Map<String, Track> existing,
+    required Set<String> albumsWithArt,
+  }) async {
+    final tagsList = await _readAll([
+      for (final file in dirty) file.path,
+    ], getImage: false);
+
+    final rows = <TracksCompanion>[];
+    for (var i = 0; i < dirty.length; i++) {
+      final file = dirty[i];
+      var tags = tagsList[i];
+      final previous = existing[file.path];
       final album = tags.album;
       final needsArt =
           _artwork != null &&
           (album == null || !albumsWithArt.contains(album)) &&
           (previous?.artworkPath == null);
       if (needsArt) {
-        tags = _tags.read(file, getImage: true);
+        tags = _tags.read(File(file.path), getImage: true);
       }
 
       String? artworkPath;
@@ -159,7 +186,7 @@ class FolderScanner {
         }
       }
 
-      await _db.upsertTrack(
+      rows.add(
         TracksCompanion.insert(
           source: const Value(TrackLocator.local),
           locator: file.path,
@@ -172,32 +199,67 @@ class FolderScanner {
           artworkPath: artworkPath == null
               ? const Value.absent()
               : Value(artworkPath),
-          fileModifiedMs: Value(modifiedMs),
+          fileModifiedMs: Value(file.modifiedMs),
           folderId: Value(folderId),
         ),
       );
-      written++;
-
-      if (i % 12 == 0) {
-        await Future<void>.delayed(Duration.zero);
-      }
     }
 
-    await _db.deleteTracksNotKept(folderId: folderId, keepLocators: seen);
-    return ScanResult(seen: seen.length, written: written, skipped: skipped);
+    await _db.upsertTracks(rows);
+    return rows.length;
   }
 
-  static int _modifiedMs(File file) {
-    try {
-      return file.lastModifiedSync().millisecondsSinceEpoch;
-    } on FileSystemException {
-      return 0;
+  Future<List<ParsedTags>> _readAll(
+    List<String> paths, {
+    required bool getImage,
+  }) async {
+    if (paths.isEmpty) return const [];
+    if (_tags.runtimeType != TagReader || paths.length < 8) {
+      return [
+        for (final path in paths) _tags.read(File(path), getImage: getImage),
+      ];
     }
+    return Isolate.run(() {
+      const reader = TagReader();
+      return [
+        for (final path in paths) reader.read(File(path), getImage: getImage),
+      ];
+    });
   }
+}
 
-  bool _isAudio(String path) {
-    final ext = p.extension(path).toLowerCase();
-    if (ext.isEmpty) return false;
-    return supportedFileExtensions.contains(ext);
+class _AudioFile {
+  const _AudioFile({required this.path, required this.modifiedMs});
+
+  final String path;
+  final int modifiedMs;
+}
+
+Future<List<_AudioFile>> _listAudioFiles(String folderPath) {
+  return Isolate.run(() => _listAudioFilesSync(folderPath));
+}
+
+List<_AudioFile> _listAudioFilesSync(String folderPath) {
+  final dir = Directory(folderPath);
+  final files = <_AudioFile>[];
+  for (final entity in dir.listSync(recursive: true, followLinks: false)) {
+    if (entity is! File) continue;
+    if (!_isAudioPath(entity.path)) continue;
+    files.add(_AudioFile(path: entity.path, modifiedMs: _modifiedMs(entity)));
   }
+  return files;
+}
+
+int _modifiedMs(File file) {
+  try {
+    return file.lastModifiedSync().millisecondsSinceEpoch;
+  } on FileSystemException {
+    return 0;
+  }
+}
+
+bool _isAudioPath(String path) {
+  final ext = p.extension(path).toLowerCase();
+  if (ext.isEmpty) return false;
+  return supportedFileExtensions.contains(ext);
 }

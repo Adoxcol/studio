@@ -31,11 +31,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Library, Now Playing, and Queue sit in a dockable workspace: drag a panel
   by its header, resize the split, or maximize it. Settings stays a full page.
 - ReplayGain Off / Track / Album in Settings, applied through mpv.
+- 8-band equalizer with Flat / Warm / Bright / Custom presets, applied
+  through mpv firequalizer.
 
 ### Changed
 
-- Folder scans skip unchanged files, read cover art only when needed, and stay
-  cancellable so the library does not freeze for minutes.
+- Folder scans skip unchanged files, read cover art only when needed, stay
+  cancellable so the library does not freeze for minutes, and parse tags off
+  the UI isolate in batches so large folders stay responsive.
+- Library lists use a fixed row height so long All / Queue views stay smooth
+  when scrolling far down. Playback position ticks only rebuild the scrubber
+  and visualizer.
 
 ### Fixed
 

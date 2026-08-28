@@ -33,8 +33,59 @@ final folderScannerProvider = Provider<FolderScanner>((ref) {
 });
 
 final libraryTracksProvider = StreamProvider<List<Track>>((ref) {
-  return ref.watch(studioDatabaseProvider).watchTracks();
+  return coalesceLatest(
+    ref.watch(studioDatabaseProvider).watchTracks(),
+    const Duration(milliseconds: 250),
+  );
 });
+
+/// Emits immediately, then at most once per [window], always flushing the
+/// latest value so a scan batch does not rebuild the library on every write.
+Stream<T> coalesceLatest<T>(Stream<T> source, Duration window) {
+  late StreamController<T> controller;
+  StreamSubscription<T>? sub;
+  Timer? timer;
+  T? pending;
+  var ignoring = false;
+
+  controller = StreamController<T>(
+    onListen: () {
+      sub = source.listen(
+        (event) {
+          if (!ignoring) {
+            ignoring = true;
+            controller.add(event);
+            timer = Timer(window, () {
+              ignoring = false;
+              final value = pending;
+              pending = null;
+              if (value != null && !controller.isClosed) {
+                controller.add(value);
+              }
+            });
+            return;
+          }
+          pending = event;
+        },
+        onError: controller.addError,
+        onDone: () {
+          timer?.cancel();
+          final value = pending;
+          pending = null;
+          if (value != null && !controller.isClosed) {
+            controller.add(value);
+          }
+          controller.close();
+        },
+      );
+    },
+    onCancel: () async {
+      timer?.cancel();
+      await sub?.cancel();
+    },
+  );
+  return controller.stream;
+}
 
 final libraryFoldersProvider = StreamProvider<List<LibraryFolder>>((ref) {
   return ref.watch(studioDatabaseProvider).watchFolders();

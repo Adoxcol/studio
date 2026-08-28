@@ -72,25 +72,14 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   @override
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
-    final scan = ref.watch(libraryScanProvider);
-    final scanning = scan.active;
+    final scanActive = ref.watch(libraryScanProvider.select((s) => s.active));
     final folders = ref.watch(libraryFoldersProvider).value ?? const [];
     final tracks = ref.watch(libraryTracksProvider);
-    final playingId = ref.watch(
-      playbackControllerProvider.select((s) => s.trackId),
-    );
 
     return tracks.when(
-      data: (rows) =>
-          _body(context, palette, rows, folders, playingId, scanning),
-      loading: () => _body(
-        context,
-        palette,
-        const <Track>[],
-        folders,
-        playingId,
-        scanning,
-      ),
+      data: (rows) => _body(context, palette, rows, folders, scanActive),
+      loading: () =>
+          _body(context, palette, const <Track>[], folders, scanActive),
       error: (error, _) => Padding(
         padding: const EdgeInsets.all(32),
         child: Text('$error', style: TextStyle(color: palette.inkMuted)),
@@ -103,7 +92,6 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     StudioPalette palette,
     List<Track> allTracks,
     List<LibraryFolder> folders,
-    int? playingId,
     bool scanning,
   ) {
     final searched = LibraryQuery.filter(
@@ -207,7 +195,6 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                   )
                                 : LibraryTrackTable(
                                     tracks: visible,
-                                    playingId: playingId,
                                     onPlay: (index) {
                                       ref
                                           .read(

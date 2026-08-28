@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:studio/playback/dsp/equalizer.dart';
 import 'package:studio/playback/dsp/replay_gain.dart';
 import 'package:studio/playback/playback_settings_provider.dart';
 import 'package:studio/state/playback_provider.dart';
@@ -17,7 +18,16 @@ class SettingsPage extends ConsumerWidget {
     final palette = StudioPalette.of(context);
     final appearance = ref.watch(appearanceProvider);
     final hue = ref.watch(resolvedAccentHueProvider);
-    final playback = ref.watch(playbackControllerProvider);
+    final playback = ref.watch(
+      playbackControllerProvider.select(
+        (s) => (
+          trackId: s.trackId,
+          title: s.title,
+          artist: s.artist,
+          artworkPath: s.artworkPath,
+        ),
+      ),
+    );
     final seed = AccentSeed.nearest(hue);
     final previewLabel =
         '${appearance.mode == AccentMode.auto ? 'AUTO' : 'CUSTOM'} · ${seed.label.toUpperCase()}';
@@ -133,6 +143,22 @@ class SettingsPage extends ConsumerWidget {
               context,
             ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
           ),
+          const SizedBox(height: 24),
+          Text('Equalizer', style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 10),
+          _EqualizerPresetRow(
+            selected: ref.watch(playbackSettingsProvider).equalizerPreset,
+            onSelect: (preset) => ref
+                .read(playbackSettingsProvider.notifier)
+                .setEqualizerPreset(preset),
+          ),
+          const SizedBox(height: 16),
+          _EqualizerBands(
+            gains: ref.watch(playbackSettingsProvider).activeEqualizerGains,
+            onChanged: (index, gain) => ref
+                .read(playbackSettingsProvider.notifier)
+                .setEqualizerBand(index, gain),
+          ),
         ],
       ),
     );
@@ -159,6 +185,124 @@ class _ReplayGainRow extends StatelessWidget {
         ],
       ],
     );
+  }
+}
+
+class _EqualizerPresetRow extends StatelessWidget {
+  const _EqualizerPresetRow({required this.selected, required this.onSelect});
+
+  final EqualizerPreset selected;
+  final ValueChanged<EqualizerPreset> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 24,
+      runSpacing: 8,
+      children: [
+        for (final preset in EqualizerPreset.values)
+          LibraryTextAction(
+            label: preset.label,
+            onTap: () => onSelect(preset),
+            muted: preset != selected,
+          ),
+      ],
+    );
+  }
+}
+
+class _EqualizerBands extends StatelessWidget {
+  const _EqualizerBands({required this.gains, required this.onChanged});
+
+  final List<double> gains;
+  final void Function(int index, double gain) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (var i = 0; i < Equalizer.bandsHz.length; i++)
+          Expanded(
+            child: _EqSlider(
+              label: Equalizer.labels[i],
+              gain: i < gains.length ? gains[i] : 0,
+              onChanged: (gain) => onChanged(i, gain),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _EqSlider extends StatelessWidget {
+  const _EqSlider({
+    required this.label,
+    required this.gain,
+    required this.onChanged,
+  });
+
+  static const double _height = 88;
+
+  final String label;
+  final double gain;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StudioPalette.of(context);
+    final t =
+        ((gain - Equalizer.minGain) / (Equalizer.maxGain - Equalizer.minGain))
+            .clamp(0.0, 1.0);
+    return Column(
+      children: [
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (details) => onChanged(_gainAt(details.localPosition.dy)),
+          onVerticalDragUpdate: (details) =>
+              onChanged(_gainAt(details.localPosition.dy)),
+          child: SizedBox(
+            height: _height,
+            child: Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                Align(
+                  child: Container(
+                    width: 2,
+                    height: _height,
+                    color: palette.hairlineStrong,
+                  ),
+                ),
+                Align(
+                  alignment: Alignment(0, 1 - t * 2),
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: palette.accent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: palette.inkMuted,
+            fontSize: 11,
+          ),
+        ),
+      ],
+    );
+  }
+
+  double _gainAt(double dy) {
+    final t = (1 - (dy / _height)).clamp(0.0, 1.0);
+    return Equalizer.minGain + t * (Equalizer.maxGain - Equalizer.minGain);
   }
 }
 

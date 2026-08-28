@@ -15,9 +15,27 @@ class NowPlayingPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final playback = ref.watch(playbackControllerProvider);
+    final snapshot = ref.watch(
+      playbackControllerProvider.select(
+        (s) => (
+          title: s.title,
+          artist: s.artist,
+          artworkPath: s.artworkPath,
+          trackId: s.trackId,
+          queueIds: s.queueIds,
+        ),
+      ),
+    );
     final tracks = ref.watch(libraryTracksProvider).value ?? const [];
     final byId = {for (final track in tracks) track.id: track};
+    final currentIndex = snapshot.trackId == null
+        ? -1
+        : snapshot.queueIds.indexOf(snapshot.trackId!);
+    final upcoming = [
+      if (currentIndex >= 0)
+        for (final id in snapshot.queueIds.skip(currentIndex + 1))
+          if (byId[id] != null) byId[id]!,
+    ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -27,22 +45,17 @@ class NowPlayingPage extends ConsumerWidget {
           children: [
             Expanded(
               child: _Hero(
-                title: playback.title,
-                artist: playback.artist,
-                artworkPath: playback.artworkPath,
-                hasTrack: playback.trackId != null,
-                playing: playback.playing,
-                position: playback.position,
+                title: snapshot.title,
+                artist: snapshot.artist,
+                artworkPath: snapshot.artworkPath,
+                hasTrack: snapshot.trackId != null,
               ),
             ),
             if (showUpNext)
               _UpNext(
-                upcoming: [
-                  for (final id in playback.upcomingIds)
-                    if (byId[id] != null) byId[id]!,
-                ],
+                upcoming: upcoming,
                 onSelect: (track) {
-                  final index = playback.queueIds.indexOf(track.id);
+                  final index = snapshot.queueIds.indexOf(track.id);
                   ref
                       .read(playbackControllerProvider.notifier)
                       .playQueueIndex(index);
@@ -61,16 +74,12 @@ class _Hero extends StatelessWidget {
     required this.artist,
     required this.artworkPath,
     required this.hasTrack,
-    required this.playing,
-    required this.position,
   });
 
   final String title;
   final String? artist;
   final String? artworkPath;
   final bool hasTrack;
-  final bool playing;
-  final Duration position;
 
   @override
   Widget build(BuildContext context) {
@@ -96,11 +105,7 @@ class _Hero extends StatelessWidget {
                   children: [
                     CoverArt(path: artworkPath, size: artSize),
                     const SizedBox(height: 16),
-                    AmplitudeVisualizer(
-                      playing: playing,
-                      position: position,
-                      width: artSize,
-                    ),
+                    _VisualizerSlot(width: artSize),
                     const SizedBox(height: 24),
                     if (hasTrack)
                       Text(
@@ -138,6 +143,26 @@ class _Hero extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _VisualizerSlot extends ConsumerWidget {
+  const _VisualizerSlot({required this.width});
+
+  final double width;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final snapshot = ref.watch(
+      playbackControllerProvider.select(
+        (s) => (playing: s.playing, position: s.position),
+      ),
+    );
+    return AmplitudeVisualizer(
+      playing: snapshot.playing,
+      position: snapshot.position,
+      width: width,
     );
   }
 }

@@ -89,6 +89,8 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   late final ResolverRegistry _resolvers;
   final queue = PlaybackQueue();
   final _subs = <StreamSubscription<dynamic>>[];
+  Timer? _positionFlush;
+  Duration? _queuedPosition;
 
   @override
   PlaybackUiState build() {
@@ -101,12 +103,19 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     unawaited(
       _engine.setReplayGain(ref.read(playbackSettingsProvider).replayGain),
     );
-
-    _subs.add(
-      _engine.position.listen((value) {
-        state = state.copyWith(position: value);
-      }),
+    ref.listen(playbackSettingsProvider.select((s) => s.activeEqualizerGains), (
+      _,
+      gains,
+    ) {
+      unawaited(_engine.setEqualizer(gains));
+    });
+    unawaited(
+      _engine.setEqualizer(
+        ref.read(playbackSettingsProvider).activeEqualizerGains,
+      ),
     );
+
+    _subs.add(_engine.position.listen(_onPosition));
     _subs.add(
       _engine.duration.listen((value) {
         state = state.copyWith(duration: value);
@@ -124,12 +133,28 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     );
 
     ref.onDispose(() {
+      _positionFlush?.cancel();
       for (final sub in _subs) {
         unawaited(sub.cancel());
       }
     });
 
     return const PlaybackUiState();
+  }
+
+  void _onPosition(Duration value) {
+    _queuedPosition = value;
+    if (_positionFlush != null) return;
+    state = state.copyWith(position: value);
+    _queuedPosition = null;
+    _positionFlush = Timer(const Duration(milliseconds: 50), () {
+      _positionFlush = null;
+      final pending = _queuedPosition;
+      _queuedPosition = null;
+      if (pending != null) {
+        state = state.copyWith(position: pending);
+      }
+    });
   }
 
   Future<void> playTracks(
@@ -167,7 +192,11 @@ class PlaybackController extends Notifier<PlaybackUiState> {
 
   Future<void> skipPrevious() async {
     if (state.position > const Duration(seconds: 3)) {
+      _positionFlush?.cancel();
+      _positionFlush = null;
+      _queuedPosition = null;
       await _engine.seek(Duration.zero);
+      state = state.copyWith(position: Duration.zero);
       return;
     }
     if (!queue.movePrevious()) return;
@@ -177,7 +206,12 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   Future<void> seekFraction(double fraction) async {
     final total = state.duration;
     if (total <= Duration.zero) return;
-    await _engine.seek(total * fraction.clamp(0.0, 1.0));
+    final next = total * fraction.clamp(0.0, 1.0);
+    _positionFlush?.cancel();
+    _positionFlush = null;
+    _queuedPosition = null;
+    await _engine.seek(next);
+    state = state.copyWith(position: next);
   }
 
   Future<void> setVolume(double volume) async {

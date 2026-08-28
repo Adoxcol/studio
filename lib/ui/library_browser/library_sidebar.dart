@@ -90,26 +90,35 @@ class LibrarySidebar extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.only(bottom: 16),
-            children: [
+          child: CustomScrollView(
+            slivers: [
               if (folders.isNotEmpty) ...[
-                _SectionLabel(text: 'FOLDERS'),
-                for (final folder in folders)
-                  _FolderRow(
-                    label: p.basename(folder.path),
-                    tooltip: folder.path,
-                    onRemove: () => onRemoveFolder(folder.id),
-                  ),
-                const SizedBox(height: 12),
-              ],
-              _SectionLabel(text: 'ARTISTS'),
-              for (final artist in artists)
-                _ArtistRow(
-                  name: artist.name,
-                  selected: artist.name == selectedArtist,
-                  onTap: () => onSelectArtist(artist.name),
+                const SliverToBoxAdapter(child: _SectionLabel(text: 'FOLDERS')),
+                SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final folder = folders[index];
+                    return _FolderRow(
+                      label: p.basename(folder.path),
+                      tooltip: folder.path,
+                      onRemove: () => onRemoveFolder(folder.id),
+                    );
+                  }, childCount: folders.length),
                 ),
+                const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              ],
+              const SliverToBoxAdapter(child: _SectionLabel(text: 'ARTISTS')),
+              SliverFixedExtentList(
+                itemExtent: 36,
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final artist = artists[index];
+                  return _ArtistRow(
+                    name: artist.name,
+                    selected: artist.name == selectedArtist,
+                    onTap: () => onSelectArtist(artist.name),
+                  );
+                }, childCount: artists.length),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
             ],
           ),
         ),
@@ -208,28 +217,31 @@ class _ArtistRow extends StatelessWidget {
       onTap: onTap,
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 12,
-                child: selected
-                    ? Icon(Icons.check, size: 12, color: palette.accent)
-                    : null,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: selected ? palette.ink : palette.inkMuted,
+        child: SizedBox(
+          height: 36,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 12,
+                  child: selected
+                      ? Icon(Icons.check, size: 12, color: palette.accent)
+                      : null,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: selected ? palette.ink : palette.inkMuted,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

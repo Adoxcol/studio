@@ -10,7 +10,11 @@ class QueuePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = StudioPalette.of(context);
-    final playback = ref.watch(playbackControllerProvider);
+    final playback = ref.watch(
+      playbackControllerProvider.select(
+        (s) => (queueIds: s.queueIds, trackId: s.trackId),
+      ),
+    );
     final tracks = ref.watch(libraryTracksProvider).value ?? const [];
     final byId = {for (final track in tracks) track.id: track};
 
@@ -26,23 +30,28 @@ class QueuePage extends ConsumerWidget {
       );
     }
 
-    return ListView.separated(
+    return ListView.builder(
       padding: const EdgeInsets.fromLTRB(32, 24, 32, 16),
+      itemExtent: 45,
+      addAutomaticKeepAlives: false,
       itemCount: playback.queueIds.length,
-      separatorBuilder: (_, _) =>
-          Divider(height: 1, color: palette.hairlineSoft),
       itemBuilder: (context, index) {
         final id = playback.queueIds[index];
         final track = byId[id];
         final current = id == playback.trackId;
-        return SizedBox(
-          height: 44,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              track?.title ?? 'Unknown track',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: current ? palette.accent : palette.ink,
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: palette.hairlineSoft)),
+          ),
+          child: SizedBox(
+            height: 44,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                track?.title ?? 'Unknown track',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: current ? palette.accent : palette.ink,
+                ),
               ),
             ),
           ),

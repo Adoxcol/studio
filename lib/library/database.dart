@@ -134,6 +134,35 @@ class StudioDatabase extends _$StudioDatabase {
     );
   }
 
+  /// One transaction so [watchTracks] emits once per batch, not per file.
+  Future<void> upsertTracks(List<TracksCompanion> rows) {
+    if (rows.isEmpty) return Future.value();
+    if (rows.length == 1) return upsertTrack(rows.first);
+    return batch((b) {
+      for (final row in rows) {
+        b.insert(
+          tracks,
+          row,
+          onConflict: DoUpdate(
+            (old) => TracksCompanion(
+              title: row.title,
+              artist: row.artist,
+              album: row.album,
+              durationMs: row.durationMs,
+              trackNumber: row.trackNumber,
+              genre: row.genre,
+              artworkPath: row.artworkPath,
+              fileModifiedMs: row.fileModifiedMs,
+              folderId: row.folderId,
+              source: row.source,
+            ),
+            target: [tracks.locator],
+          ),
+        );
+      }
+    });
+  }
+
   Future<int> deleteTracksNotKept({
     required int folderId,
     required Set<String> keepLocators,

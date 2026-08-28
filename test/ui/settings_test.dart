@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/theming/accent_seed.dart';
 import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/playback/dsp/equalizer.dart';
 import 'package:studio/playback/dsp/replay_gain.dart';
 
 import '../helpers/pump_studio.dart';
@@ -42,7 +43,7 @@ void main() {
 
     expect(find.text('APPEARANCE'), findsOneWidget);
     expect(find.text('Auto — from album art'), findsOneWidget);
-    expect(find.text('Custom'), findsOneWidget);
+    expect(find.text('Custom'), findsWidgets);
     expect(find.text('AUTO · TERRACOTTA'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Teal'));
@@ -73,5 +74,25 @@ void main() {
     await tester.pump();
 
     expect(engine.lastReplayGain, ReplayGainMode.album);
+  });
+
+  testWidgets('equalizer Warm preset is stored on the engine', (tester) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(testStudioApp(db: db, engine: engine));
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pump();
+
+    expect(find.text('Equalizer'), findsOneWidget);
+    await tester.ensureVisible(find.text('Warm'));
+    await tester.pump();
+    await tester.tap(find.text('Warm'));
+    await tester.pump();
+
+    expect(engine.lastEqualizer, Equalizer.warm);
   });
 }
