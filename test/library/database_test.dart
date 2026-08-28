@@ -23,5 +23,34 @@ void main() {
     expect(rows, hasLength(1));
     expect(rows.single.title, 'Track A');
     expect(rows.single.source, TrackLocator.local);
+    expect(rows.single.genre, equals(null));
+    expect(rows.single.indexedAt, isA<DateTime>());
+  });
+
+  test('upsert keeps indexedAt and updates genre', () async {
+    final db = StudioDatabase.memory();
+    addTearDown(db.close);
+
+    await db.upsertTrack(
+      TracksCompanion.insert(
+        locator: '/music/a.flac',
+        title: 'Track A',
+        genre: const Value('Jazz'),
+      ),
+    );
+    final first = (await db.watchTracks().first).single;
+    expect(first.genre, 'Jazz');
+
+    await db.upsertTrack(
+      TracksCompanion.insert(
+        locator: '/music/a.flac',
+        title: 'Track A (remaster)',
+        genre: const Value('Blues'),
+      ),
+    );
+    final second = (await db.watchTracks().first).single;
+    expect(second.title, 'Track A (remaster)');
+    expect(second.genre, 'Blues');
+    expect(second.indexedAt, first.indexedAt);
   });
 }

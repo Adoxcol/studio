@@ -282,6 +282,27 @@ class $TracksTable extends Tracks with TableInfo<$TracksTable, Track> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _genreMeta = const VerificationMeta('genre');
+  @override
+  late final GeneratedColumn<String> genre = GeneratedColumn<String>(
+    'genre',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _indexedAtMeta = const VerificationMeta(
+    'indexedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> indexedAt = GeneratedColumn<DateTime>(
+    'indexed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
   static const VerificationMeta _folderIdMeta = const VerificationMeta(
     'folderId',
   );
@@ -306,6 +327,8 @@ class $TracksTable extends Tracks with TableInfo<$TracksTable, Track> {
     album,
     durationMs,
     trackNumber,
+    genre,
+    indexedAt,
     folderId,
   ];
   @override
@@ -372,6 +395,18 @@ class $TracksTable extends Tracks with TableInfo<$TracksTable, Track> {
         ),
       );
     }
+    if (data.containsKey('genre')) {
+      context.handle(
+        _genreMeta,
+        genre.isAcceptableOrUnknown(data['genre']!, _genreMeta),
+      );
+    }
+    if (data.containsKey('indexed_at')) {
+      context.handle(
+        _indexedAtMeta,
+        indexedAt.isAcceptableOrUnknown(data['indexed_at']!, _indexedAtMeta),
+      );
+    }
     if (data.containsKey('folder_id')) {
       context.handle(
         _folderIdMeta,
@@ -419,6 +454,14 @@ class $TracksTable extends Tracks with TableInfo<$TracksTable, Track> {
         DriftSqlType.int,
         data['${effectivePrefix}track_number'],
       ),
+      genre: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}genre'],
+      ),
+      indexedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}indexed_at'],
+      )!,
       folderId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}folder_id'],
@@ -441,6 +484,8 @@ class Track extends DataClass implements Insertable<Track> {
   final String? album;
   final int? durationMs;
   final int? trackNumber;
+  final String? genre;
+  final DateTime indexedAt;
   final int? folderId;
   const Track({
     required this.id,
@@ -451,6 +496,8 @@ class Track extends DataClass implements Insertable<Track> {
     this.album,
     this.durationMs,
     this.trackNumber,
+    this.genre,
+    required this.indexedAt,
     this.folderId,
   });
   @override
@@ -472,6 +519,10 @@ class Track extends DataClass implements Insertable<Track> {
     if (!nullToAbsent || trackNumber != null) {
       map['track_number'] = Variable<int>(trackNumber);
     }
+    if (!nullToAbsent || genre != null) {
+      map['genre'] = Variable<String>(genre);
+    }
+    map['indexed_at'] = Variable<DateTime>(indexedAt);
     if (!nullToAbsent || folderId != null) {
       map['folder_id'] = Variable<int>(folderId);
     }
@@ -496,6 +547,10 @@ class Track extends DataClass implements Insertable<Track> {
       trackNumber: trackNumber == null && nullToAbsent
           ? const Value.absent()
           : Value(trackNumber),
+      genre: genre == null && nullToAbsent
+          ? const Value.absent()
+          : Value(genre),
+      indexedAt: Value(indexedAt),
       folderId: folderId == null && nullToAbsent
           ? const Value.absent()
           : Value(folderId),
@@ -516,6 +571,8 @@ class Track extends DataClass implements Insertable<Track> {
       album: serializer.fromJson<String?>(json['album']),
       durationMs: serializer.fromJson<int?>(json['durationMs']),
       trackNumber: serializer.fromJson<int?>(json['trackNumber']),
+      genre: serializer.fromJson<String?>(json['genre']),
+      indexedAt: serializer.fromJson<DateTime>(json['indexedAt']),
       folderId: serializer.fromJson<int?>(json['folderId']),
     );
   }
@@ -531,6 +588,8 @@ class Track extends DataClass implements Insertable<Track> {
       'album': serializer.toJson<String?>(album),
       'durationMs': serializer.toJson<int?>(durationMs),
       'trackNumber': serializer.toJson<int?>(trackNumber),
+      'genre': serializer.toJson<String?>(genre),
+      'indexedAt': serializer.toJson<DateTime>(indexedAt),
       'folderId': serializer.toJson<int?>(folderId),
     };
   }
@@ -544,6 +603,8 @@ class Track extends DataClass implements Insertable<Track> {
     Value<String?> album = const Value.absent(),
     Value<int?> durationMs = const Value.absent(),
     Value<int?> trackNumber = const Value.absent(),
+    Value<String?> genre = const Value.absent(),
+    DateTime? indexedAt,
     Value<int?> folderId = const Value.absent(),
   }) => Track(
     id: id ?? this.id,
@@ -554,6 +615,8 @@ class Track extends DataClass implements Insertable<Track> {
     album: album.present ? album.value : this.album,
     durationMs: durationMs.present ? durationMs.value : this.durationMs,
     trackNumber: trackNumber.present ? trackNumber.value : this.trackNumber,
+    genre: genre.present ? genre.value : this.genre,
+    indexedAt: indexedAt ?? this.indexedAt,
     folderId: folderId.present ? folderId.value : this.folderId,
   );
   Track copyWithCompanion(TracksCompanion data) {
@@ -570,6 +633,8 @@ class Track extends DataClass implements Insertable<Track> {
       trackNumber: data.trackNumber.present
           ? data.trackNumber.value
           : this.trackNumber,
+      genre: data.genre.present ? data.genre.value : this.genre,
+      indexedAt: data.indexedAt.present ? data.indexedAt.value : this.indexedAt,
       folderId: data.folderId.present ? data.folderId.value : this.folderId,
     );
   }
@@ -585,6 +650,8 @@ class Track extends DataClass implements Insertable<Track> {
           ..write('album: $album, ')
           ..write('durationMs: $durationMs, ')
           ..write('trackNumber: $trackNumber, ')
+          ..write('genre: $genre, ')
+          ..write('indexedAt: $indexedAt, ')
           ..write('folderId: $folderId')
           ..write(')'))
         .toString();
@@ -600,6 +667,8 @@ class Track extends DataClass implements Insertable<Track> {
     album,
     durationMs,
     trackNumber,
+    genre,
+    indexedAt,
     folderId,
   );
   @override
@@ -614,6 +683,8 @@ class Track extends DataClass implements Insertable<Track> {
           other.album == this.album &&
           other.durationMs == this.durationMs &&
           other.trackNumber == this.trackNumber &&
+          other.genre == this.genre &&
+          other.indexedAt == this.indexedAt &&
           other.folderId == this.folderId);
 }
 
@@ -626,6 +697,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
   final Value<String?> album;
   final Value<int?> durationMs;
   final Value<int?> trackNumber;
+  final Value<String?> genre;
+  final Value<DateTime> indexedAt;
   final Value<int?> folderId;
   const TracksCompanion({
     this.id = const Value.absent(),
@@ -636,6 +709,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
     this.album = const Value.absent(),
     this.durationMs = const Value.absent(),
     this.trackNumber = const Value.absent(),
+    this.genre = const Value.absent(),
+    this.indexedAt = const Value.absent(),
     this.folderId = const Value.absent(),
   });
   TracksCompanion.insert({
@@ -647,6 +722,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
     this.album = const Value.absent(),
     this.durationMs = const Value.absent(),
     this.trackNumber = const Value.absent(),
+    this.genre = const Value.absent(),
+    this.indexedAt = const Value.absent(),
     this.folderId = const Value.absent(),
   }) : locator = Value(locator),
        title = Value(title);
@@ -659,6 +736,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
     Expression<String>? album,
     Expression<int>? durationMs,
     Expression<int>? trackNumber,
+    Expression<String>? genre,
+    Expression<DateTime>? indexedAt,
     Expression<int>? folderId,
   }) {
     return RawValuesInsertable({
@@ -670,6 +749,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
       if (album != null) 'album': album,
       if (durationMs != null) 'duration_ms': durationMs,
       if (trackNumber != null) 'track_number': trackNumber,
+      if (genre != null) 'genre': genre,
+      if (indexedAt != null) 'indexed_at': indexedAt,
       if (folderId != null) 'folder_id': folderId,
     });
   }
@@ -683,6 +764,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
     Value<String?>? album,
     Value<int?>? durationMs,
     Value<int?>? trackNumber,
+    Value<String?>? genre,
+    Value<DateTime>? indexedAt,
     Value<int?>? folderId,
   }) {
     return TracksCompanion(
@@ -694,6 +777,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
       album: album ?? this.album,
       durationMs: durationMs ?? this.durationMs,
       trackNumber: trackNumber ?? this.trackNumber,
+      genre: genre ?? this.genre,
+      indexedAt: indexedAt ?? this.indexedAt,
       folderId: folderId ?? this.folderId,
     );
   }
@@ -725,6 +810,12 @@ class TracksCompanion extends UpdateCompanion<Track> {
     if (trackNumber.present) {
       map['track_number'] = Variable<int>(trackNumber.value);
     }
+    if (genre.present) {
+      map['genre'] = Variable<String>(genre.value);
+    }
+    if (indexedAt.present) {
+      map['indexed_at'] = Variable<DateTime>(indexedAt.value);
+    }
     if (folderId.present) {
       map['folder_id'] = Variable<int>(folderId.value);
     }
@@ -742,6 +833,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
           ..write('album: $album, ')
           ..write('durationMs: $durationMs, ')
           ..write('trackNumber: $trackNumber, ')
+          ..write('genre: $genre, ')
+          ..write('indexedAt: $indexedAt, ')
           ..write('folderId: $folderId')
           ..write(')'))
         .toString();
@@ -1002,6 +1095,8 @@ typedef $$TracksTableCreateCompanionBuilder =
       Value<String?> album,
       Value<int?> durationMs,
       Value<int?> trackNumber,
+      Value<String?> genre,
+      Value<DateTime> indexedAt,
       Value<int?> folderId,
     });
 typedef $$TracksTableUpdateCompanionBuilder =
@@ -1014,6 +1109,8 @@ typedef $$TracksTableUpdateCompanionBuilder =
       Value<String?> album,
       Value<int?> durationMs,
       Value<int?> trackNumber,
+      Value<String?> genre,
+      Value<DateTime> indexedAt,
       Value<int?> folderId,
     });
 
@@ -1085,6 +1182,16 @@ class $$TracksTableFilterComposer
 
   ColumnFilters<int> get trackNumber => $composableBuilder(
     column: $table.trackNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get genre => $composableBuilder(
+    column: $table.genre,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get indexedAt => $composableBuilder(
+    column: $table.indexedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1161,6 +1268,16 @@ class $$TracksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get genre => $composableBuilder(
+    column: $table.genre,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get indexedAt => $composableBuilder(
+    column: $table.indexedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LibraryFoldersTableOrderingComposer get folderId {
     final $$LibraryFoldersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -1222,6 +1339,12 @@ class $$TracksTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get genre =>
+      $composableBuilder(column: $table.genre, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get indexedAt =>
+      $composableBuilder(column: $table.indexedAt, builder: (column) => column);
+
   $$LibraryFoldersTableAnnotationComposer get folderId {
     final $$LibraryFoldersTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -1282,6 +1405,8 @@ class $$TracksTableTableManager
                 Value<String?> album = const Value.absent(),
                 Value<int?> durationMs = const Value.absent(),
                 Value<int?> trackNumber = const Value.absent(),
+                Value<String?> genre = const Value.absent(),
+                Value<DateTime> indexedAt = const Value.absent(),
                 Value<int?> folderId = const Value.absent(),
               }) => TracksCompanion(
                 id: id,
@@ -1292,6 +1417,8 @@ class $$TracksTableTableManager
                 album: album,
                 durationMs: durationMs,
                 trackNumber: trackNumber,
+                genre: genre,
+                indexedAt: indexedAt,
                 folderId: folderId,
               ),
           createCompanionCallback:
@@ -1304,6 +1431,8 @@ class $$TracksTableTableManager
                 Value<String?> album = const Value.absent(),
                 Value<int?> durationMs = const Value.absent(),
                 Value<int?> trackNumber = const Value.absent(),
+                Value<String?> genre = const Value.absent(),
+                Value<DateTime> indexedAt = const Value.absent(),
                 Value<int?> folderId = const Value.absent(),
               }) => TracksCompanion.insert(
                 id: id,
@@ -1314,6 +1443,8 @@ class $$TracksTableTableManager
                 album: album,
                 durationMs: durationMs,
                 trackNumber: trackNumber,
+                genre: genre,
+                indexedAt: indexedAt,
                 folderId: folderId,
               ),
           withReferenceMapper: (p0) => p0

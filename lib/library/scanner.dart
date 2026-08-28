@@ -36,6 +36,7 @@ class FolderScanner {
           album: Value(tags.album),
           durationMs: Value(tags.duration?.inMilliseconds),
           trackNumber: Value(tags.trackNumber),
+          genre: Value(tags.genre),
           folderId: Value(folderId),
         ),
       );

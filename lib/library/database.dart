@@ -19,7 +19,18 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) async => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.addColumn(tracks, tracks.genre);
+        await m.addColumn(tracks, tracks.indexedAt);
+      }
+    },
+  );
 
   Stream<List<Track>> watchTracks() {
     return (select(tracks)..orderBy([
@@ -29,6 +40,8 @@ class StudioDatabase extends _$StudioDatabase {
         ]))
         .watch();
   }
+
+  Future<List<Track>> allTracks() => select(tracks).get();
 
   Future<Track?> trackById(int id) {
     return (select(tracks)..where((t) => t.id.equals(id))).getSingleOrNull();
@@ -54,6 +67,7 @@ class StudioDatabase extends _$StudioDatabase {
           album: row.album,
           durationMs: row.durationMs,
           trackNumber: row.trackNumber,
+          genre: row.genre,
           folderId: row.folderId,
           source: row.source,
         ),
