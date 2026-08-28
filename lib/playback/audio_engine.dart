@@ -1,3 +1,5 @@
+import 'package:studio/playback/dsp/replay_gain.dart';
+
 /// Audio engine contract. Implementations must accept a playable [Uri] only —
 /// never a filesystem path or a "local vs streaming" branch.
 abstract interface class AudioEngine {
@@ -7,6 +9,7 @@ abstract interface class AudioEngine {
   Future<void> stop();
   Future<void> seek(Duration position);
   Future<void> setVolume(double volume);
+  Future<void> setReplayGain(ReplayGainMode mode);
 
   Stream<Duration> get position;
   Stream<Duration> get duration;

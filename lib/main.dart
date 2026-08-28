@@ -12,6 +12,8 @@ import 'package:studio/library/database.dart';
 import 'package:studio/state/library_providers.dart';
 import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/appearance_store.dart';
+import 'package:studio/playback/playback_settings_provider.dart';
+import 'package:studio/playback/playback_settings_store.dart';
 
 Future<void> main() async {
   await bootstrapWindow();
@@ -22,12 +24,16 @@ Future<void> main() async {
   final appearance = FileAppearanceStore(
     File(p.join(support.path, 'appearance.json')),
   );
+  final playbackSettings = FilePlaybackSettingsStore(
+    File(p.join(support.path, 'playback.json')),
+  );
   runApp(
     ProviderScope(
       overrides: [
         studioDatabaseProvider.overrideWithValue(db),
         artworkStoreProvider.overrideWithValue(artwork),
         appearanceStoreProvider.overrideWithValue(appearance),
+        playbackSettingsStoreProvider.overrideWithValue(playbackSettings),
       ],
       child: const StudioApp(),
     ),
