@@ -25,3 +25,8 @@ DesktopTransport? desktopTransportForMenuKey(String? key) {
     _ => null,
   };
 }
+
+/// Close hides the window only after the tray icon exists. Otherwise Quit.
+bool shouldHideToTray({required bool trayReady, required bool quitting}) {
+  return trayReady && !quitting;
+}

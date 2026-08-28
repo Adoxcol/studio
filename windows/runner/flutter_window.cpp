@@ -2,6 +2,8 @@
 
 #include <optional>
 
+#include <flutter/flutter_engine.h>
+
 #include "flutter/generated_plugin_registrant.h"
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
@@ -26,6 +28,8 @@ bool FlutterWindow::OnCreate() {
   }
   RegisterPlugins(flutter_controller_->engine());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
+  studio_tray_ = std::make_unique<StudioTray>(
+      flutter_controller_->engine()->messenger(), GetHandle());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();
@@ -40,6 +44,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  studio_tray_.reset();
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }
@@ -58,6 +63,13 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                                                       lparam);
     if (result) {
       return *result;
+    }
+  }
+  if (studio_tray_) {
+    std::optional<LRESULT> tray =
+        studio_tray_->HandleMessage(hwnd, message, wparam, lparam);
+    if (tray) {
+      return *tray;
     }
   }
 

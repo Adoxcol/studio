@@ -61,6 +61,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Debug launches no longer die with `NativeReferenceHolder: Located …`
   then `Lost connection to device`. A leftover media_kit handle file from
   a crashed run is discarded before init (Windows reuses PIDs).
+- Windows no longer exits as soon as the window appears. `tray_manager`
+  called `DestroyIcon` on an uninitialized handle on first `setIcon` in
+  Debug, and `hotkey_manager` aborted on a null Next/Previous keyCode.
+  The tray icon and media keys now come from the runner. Close hides
+  only after that icon exists.
 - Playback no longer starts a second libmpv FFT tap. That instance's
   `ao=pcm` `stop`/`open`/`dispose` native-crashed the Windows process.
 - The equalizer no longer seeks the track or kills audio. media_kit's
