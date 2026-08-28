@@ -18,17 +18,12 @@ abstract final class Equalizer {
     };
   }
 
-  /// mpv `af` value. Empty string disables the filter when the curve is flat.
+  /// mpv `af` value. Always empty: media_kit's libmpv has no `firequalizer`
+  /// or `aresample`, so a lavfi graph mutes playback and flushes the decoder
+  /// (the playhead jumps) on every EQ change.
   static String afFilter(List<double> gains) {
-    final normalized = [
-      for (final gain in gains) gain.clamp(minGain, maxGain).toDouble(),
-    ];
-    if (normalized.every((gain) => gain.abs() < 0.05)) return '';
-    final entries = [
-      for (var i = 0; i < bandsHz.length && i < normalized.length; i++)
-        'entry(${bandsHz[i]},${normalized[i].toStringAsFixed(1)})',
-    ].join(';');
-    return "lavfi=[firequalizer=gain_entry='$entries']";
+    if (gains.isEmpty) return '';
+    return '';
   }
 }
 

@@ -9,19 +9,15 @@ import 'package:studio/playback/pcm_fifo.dart';
 
 /// Silent mpv instance that dumps post-DSP PCM into a FIFO for FFT.
 ///
-/// Created lazily. Pipe reads are non-blocking so a stuck tap cannot freeze
-/// the Windows UI isolate.
-///
-/// After [play] opens the file, never call synchronous `setProperty` (or
-/// blocking `pause`/`stop`) on this instance. libmpv's `ao=pcm` writer blocks
-/// in `fwrite` when the pipe is full; a sync property set from Dart then
-/// deadlocks the UI isolate (Windows Not Responding). ReplayGain and EQ are
-/// remembered and applied only before the next `open()`.
-///
-/// Never [Player.dispose] a tap whose ao is live — that native-crashes the
-/// process (`Lost connection to device`). Hung players are leaked instead.
+/// **Not wired to playback.** `ao=pcm` on Windows froze the UI, stole the
+/// WASAPI device (silent speakers), and native-crashed the process
+/// (`Lost connection to device`) on `stop`/`dispose`/`open`. Keep this
+/// isolated until there is a PCM source that never calls into a live pcm ao.
 class MpvSpectrumTap {
-  static const _tapConfig = PlayerConfiguration(vo: 'null', muted: false);
+  /// Try PCM dump, then silence. Never a real audio device.
+  static const audioOutput = 'pcm,null';
+
+  static const _tapConfig = PlayerConfiguration(vo: 'null', muted: true);
 
   Player? _player;
   final _bands = StreamController<List<double>>.broadcast();
@@ -48,7 +44,6 @@ class MpvSpectrumTap {
       final player = _ensurePlayer();
       await _configure(player, fifo.writerPath);
       await _applyFilters(player);
-      await player.setVolume(0);
       _running = true;
       _hold = false;
       _loop = _readLoop();
@@ -148,7 +143,9 @@ class MpvSpectrumTap {
     }
     await platform.setProperty('vid', 'no');
     await platform.setProperty('audio-display', 'no');
-    await platform.setProperty('ao', 'pcm');
+    await platform.setProperty('audio-exclusive', 'no');
+    await platform.setProperty('audio-fallback-to-null', 'yes');
+    await platform.setProperty('ao', audioOutput);
     await platform.setProperty('ao-pcm-waveheader', 'no');
     await platform.setProperty('audio-format', 'float');
     await platform.setProperty('audio-channels', 'stereo');

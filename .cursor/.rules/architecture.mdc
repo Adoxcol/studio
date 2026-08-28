@@ -59,9 +59,9 @@ rewrite (same pattern as the open-source Spotube app).
 
 - **ReplayGain** — mostly wiring: mpv has native support, expose Track/Album/Off in settings and
   pass through. Test against real library tags; mpv's fallback-gain behavior has known quirks.
-- **Equalizer** — mpv's `anequalizer`/`firequalizer` audio filter, inserted at runtime via
-  `media_kit`'s low-level mpv property/filter access. There's no ready-made Flutter EQ widget
-  that does this end-to-end — expect a thin platform-facing layer under `playback/dsp/`.
+- **Equalizer** — UI + settings only with media_kit_libs_audio. That libmpv has no
+  `firequalizer` or `aresample`; writing `af=lavfi=[...]` mutes playback and flushes
+  the decoder (playhead jumps). Do not send a graphic EQ graph to mpv.
 - **Crossfade — real engineering, not a config flag.** libmpv plays one stream at a time. Real
   crossfade means two concurrent `media_kit` `Player` instances: pre-load the next track, ramp
   its volume up while ramping the outgoing player down over the crossfade duration, then swap
