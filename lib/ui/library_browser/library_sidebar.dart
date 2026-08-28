@@ -91,7 +91,6 @@ class LibrarySidebar extends StatelessWidget {
         ),
         Expanded(
           child: CustomScrollView(
-            cacheExtent: 400,
             slivers: [
               if (folders.isNotEmpty) ...[
                 const SliverToBoxAdapter(child: _SectionLabel(text: 'FOLDERS')),

@@ -32,7 +32,6 @@ class LibraryTrackTable extends ConsumerWidget {
         Expanded(
           child: ListView.builder(
             itemExtent: rowExtent,
-            cacheExtent: 800,
             addAutomaticKeepAlives: false,
             itemCount: tracks.length,
             itemBuilder: (context, index) {

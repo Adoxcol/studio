@@ -33,7 +33,6 @@ class QueuePage extends ConsumerWidget {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(32, 24, 32, 16),
       itemExtent: 45,
-      cacheExtent: 400,
       addAutomaticKeepAlives: false,
       itemCount: playback.queueIds.length,
       itemBuilder: (context, index) {
