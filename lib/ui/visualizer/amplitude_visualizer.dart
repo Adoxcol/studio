@@ -12,14 +12,14 @@ class AmplitudeVisualizer extends StatelessWidget {
     required this.position,
     this.barCount = 32,
     this.height = 44,
+    this.width = 280,
   });
-
-  static const double width = 280;
 
   final bool playing;
   final Duration position;
   final int barCount;
   final double height;
+  final double width;
 
   @override
   Widget build(BuildContext context) {

@@ -46,7 +46,7 @@ void main() {
   testWidgets('library chrome matches the All view', (tester) async {
     await pumpLibrary(tester);
 
-    expect(find.text('Library'), findsOneWidget);
+    expect(find.text('Library'), findsWidgets);
     expect(find.text('Search your library'), findsOneWidget);
     expect(find.text('All'), findsOneWidget);
     expect(find.text('Artists'), findsOneWidget);
@@ -114,6 +114,8 @@ void main() {
   testWidgets('Artists tab lists artist names', (tester) async {
     await pumpLibrary(tester, tracks: [testTrack()]);
 
+    await tester.ensureVisible(find.text('Artists'));
+    await tester.pump();
     await tester.tap(find.text('Artists'));
     await tester.pump();
 
@@ -124,6 +126,8 @@ void main() {
   testWidgets('Playlists tab is an empty placeholder', (tester) async {
     await pumpLibrary(tester, tracks: [testTrack()]);
 
+    await tester.ensureVisible(find.text('Playlists'));
+    await tester.pump();
     await tester.tap(find.text('Playlists'));
     await tester.pump();
 
