@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/playback/audio_engine.dart';
 import 'package:studio/playback/playback_queue.dart';
+import 'package:studio/playback/playback_session.dart';
+import 'package:studio/playback/playback_session_provider.dart';
+import 'package:studio/playback/playback_session_store.dart';
 import 'package:studio/playback/playback_settings_provider.dart';
 import 'package:studio/providers/playable_resolver.dart';
 import 'package:studio/providers/resolver_registry.dart';
@@ -87,6 +90,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   late final AudioEngine _engine;
   late final StudioDatabase _db;
   late final ResolverRegistry _resolvers;
+  late final PlaybackSessionStore _sessionStore;
   final queue = PlaybackQueue();
   final _subs = <StreamSubscription<dynamic>>[];
   Timer? _positionFlush;
@@ -103,12 +107,16 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   var _seekGen = 0;
   Timer? _seekHold;
   var _wantPlaying = false;
+  Timer? _sessionSave;
+  DateTime? _sessionSavedAt;
+  var _restoring = false;
 
   @override
   PlaybackUiState build() {
     _engine = ref.watch(audioEngineProvider);
     _db = ref.watch(studioDatabaseProvider);
     _resolvers = ref.watch(resolverRegistryProvider);
+    _sessionStore = ref.watch(playbackSessionStoreProvider);
     ref.listen(playbackSettingsProvider.select((s) => s.replayGain), (_, mode) {
       unawaited(_engine.setReplayGain(mode));
     });
@@ -157,6 +165,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     );
 
     ref.onDispose(() {
+      _sessionSave?.cancel();
       _positionFlush?.cancel();
       _seekHold?.cancel();
       for (final sub in _subs) {
@@ -164,6 +173,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
       }
     });
 
+    unawaited(_restoreSession());
     return const PlaybackUiState();
   }
 
@@ -216,6 +226,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
       if (pending == null) return;
       if (_seekTarget != null && _tickIsStale(pending)) return;
       state = state.copyWith(position: pending);
+      _scheduleSessionSave();
     });
     unawaited(_considerAutoCrossfade(value));
   }
@@ -261,12 +272,14 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     }
     queue.replace(ids, startIndex: startIndex);
     await _openCurrent();
+    _scheduleSessionSave(flush: true);
   }
 
   Future<void> playQueueIndex(int index) async {
     if (index < 0 || index >= queue.ids.length) return;
     queue.index = index;
     await _openCurrent();
+    _scheduleSessionSave(flush: true);
   }
 
   Future<void> togglePlayPause() async {
@@ -279,11 +292,13 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     } else {
       await _engine.resume();
     }
+    _scheduleSessionSave(flush: true);
   }
 
   Future<void> skipNext() async {
     if (!queue.moveNext()) return;
     await _openCurrent(crossfade: true);
+    _scheduleSessionSave(flush: true);
   }
 
   Future<void> skipPrevious() async {
@@ -294,10 +309,12 @@ class PlaybackController extends Notifier<PlaybackUiState> {
       _armSeek(Duration.zero);
       state = state.copyWith(position: Duration.zero);
       await _engine.seek(Duration.zero);
+      _scheduleSessionSave(flush: true);
       return;
     }
     if (!queue.movePrevious()) return;
     await _openCurrent();
+    _scheduleSessionSave(flush: true);
   }
 
   Future<void> seekFraction(double fraction) async {
@@ -311,6 +328,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     state = state.copyWith(position: next);
     await _engine.seek(next);
     if (gen != _seekGen) return;
+    _scheduleSessionSave(flush: true);
   }
 
   Future<void> setVolume(double volume) async {
@@ -322,14 +340,16 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   void cycleRepeat() {
     queue.cycleRepeat();
     state = state.copyWith(repeat: queue.repeat);
+    _scheduleSessionSave(flush: true);
   }
 
   void toggleShuffle() {
     queue.shuffle = !queue.shuffle;
     state = state.copyWith(shuffle: queue.shuffle);
+    _scheduleSessionSave(flush: true);
   }
 
-  Future<void> _openCurrent({bool crossfade = false}) async {
+  Future<void> _openCurrent({bool crossfade = false, bool play = true}) async {
     _openCrossfade = crossfade;
     if (_opening) {
       _openAgain = true;
@@ -360,10 +380,10 @@ class PlaybackController extends Notifier<PlaybackUiState> {
           queueIds: List<int>.of(queue.ids),
           repeat: queue.repeat,
           shuffle: queue.shuffle,
-          playing: true,
+          playing: play,
           position: Duration.zero,
         );
-        _wantPlaying = true;
+        _wantPlaying = play;
         final uri = await _resolvers.resolve(
           TrackLocator(source: track.source, locator: track.locator),
         );
@@ -374,7 +394,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
           await _engine.play(uri);
         }
         await _engine.setVolume(state.volume);
-        if (!state.playing) {
+        if (!play || !state.playing) {
           _wantPlaying = false;
           await _engine.pause();
         }
@@ -410,6 +430,60 @@ class PlaybackController extends Notifier<PlaybackUiState> {
       TrackLocator(source: track.source, locator: track.locator),
     );
     await _engine.prepare(uri);
+  }
+
+  Future<void> _restoreSession() async {
+    if (queue.ids.isNotEmpty) return;
+    final loaded = _sessionStore.load();
+    if (loaded.isEmpty) return;
+    _restoring = true;
+    try {
+      final known = await _db.existingTrackIds(loaded.queueIds);
+      final session = loaded.keepKnown(known);
+      if (session.isEmpty || queue.ids.isNotEmpty) return;
+      queue.shuffle = session.shuffle;
+      queue.repeat = session.repeat;
+      queue.ids = List<int>.of(session.queueIds);
+      queue.index = session.index;
+      await _openCurrent(play: false);
+      final position = session.position;
+      if (position <= Duration.zero) return;
+      _armSeek(position);
+      state = state.copyWith(position: position);
+      await _engine.seek(position);
+    } finally {
+      _restoring = false;
+    }
+  }
+
+  void saveSession() {
+    _sessionSave?.cancel();
+    _sessionSave = null;
+    _sessionSavedAt = DateTime.now();
+    _sessionStore.save(
+      PlaybackSession(
+        queueIds: List<int>.of(queue.ids),
+        index: queue.index,
+        position: state.position,
+        repeat: queue.repeat,
+        shuffle: queue.shuffle,
+      ),
+    );
+  }
+
+  void _scheduleSessionSave({bool flush = false}) {
+    if (_restoring) return;
+    if (flush) {
+      saveSession();
+      return;
+    }
+    final last = _sessionSavedAt;
+    final now = DateTime.now();
+    if (last != null && now.difference(last) < const Duration(seconds: 5)) {
+      _sessionSave ??= Timer(const Duration(seconds: 5), saveSession);
+      return;
+    }
+    saveSession();
   }
 }
 

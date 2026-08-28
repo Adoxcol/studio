@@ -16,6 +16,8 @@ import 'package:studio/theming/appearance_store.dart';
 import 'package:studio/lyrics/lyrics_cache.dart';
 import 'package:studio/lyrics/lyrics_providers.dart';
 import 'package:studio/playback/media_kit_bootstrap.dart';
+import 'package:studio/playback/playback_session_provider.dart';
+import 'package:studio/playback/playback_session_store.dart';
 import 'package:studio/playback/playback_settings_provider.dart';
 import 'package:studio/playback/playback_settings_store.dart';
 
@@ -32,6 +34,9 @@ Future<void> main() async {
   final playbackSettings = FilePlaybackSettingsStore(
     File(p.join(support.path, 'playback.json')),
   );
+  final playbackSession = FilePlaybackSessionStore(
+    File(p.join(support.path, 'session.json')),
+  );
   runApp(
     ProviderScope(
       overrides: [
@@ -39,6 +44,7 @@ Future<void> main() async {
         artworkStoreProvider.overrideWithValue(artwork),
         appearanceStoreProvider.overrideWithValue(appearance),
         playbackSettingsStoreProvider.overrideWithValue(playbackSettings),
+        playbackSessionStoreProvider.overrideWithValue(playbackSession),
         lyricsCacheProvider.overrideWithValue(
           FileLyricsCache(Directory(p.join(support.path, 'lyrics'))),
         ),

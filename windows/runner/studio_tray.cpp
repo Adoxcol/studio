@@ -7,6 +7,7 @@
 #include <flutter/standard_method_codec.h>
 
 #include "resource.h"
+#include "studio_instance.h"
 
 namespace {
 
@@ -114,6 +115,9 @@ std::optional<LRESULT> StudioTray::HandleMessage(HWND hwnd, UINT message,
       default:
         break;
     }
+  } else if (message == StudioShowMessage()) {
+    Notify("click");
+    return 0;
   }
   return std::nullopt;
 }
