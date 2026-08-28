@@ -29,11 +29,11 @@ class ParsedTags {
 class TagReader {
   const TagReader();
 
-  ParsedTags read(File file) {
+  ParsedTags read(File file, {bool getImage = false}) {
     final fallbackTitle = p.basenameWithoutExtension(file.path);
     try {
-      final meta = readMetadata(file, getImage: true);
-      final picture = _cover(meta.pictures);
+      final meta = readMetadata(file, getImage: getImage);
+      final picture = getImage ? _cover(meta.pictures) : null;
       return ParsedTags(
         title: _nonEmpty(meta.title) ?? fallbackTitle,
         artist: _nonEmpty(meta.artist),

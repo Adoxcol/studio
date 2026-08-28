@@ -6,6 +6,7 @@ import 'package:studio/state/nav_state.dart';
 import 'package:studio/ui/layout/icon_rail.dart';
 import 'package:studio/ui/layout/title_bar.dart';
 import 'package:studio/ui/library_browser/library_page.dart';
+import 'package:studio/ui/library_browser/scan_notice.dart';
 import 'package:studio/ui/now_playing/now_playing_page.dart';
 import 'package:studio/ui/now_playing/player_bar.dart';
 import 'package:studio/ui/queue/queue_page.dart';
@@ -30,7 +31,18 @@ class StudioShell extends ConsumerWidget {
             child: Column(
               children: [
                 const StudioTitleBar(),
-                Expanded(child: _page(destination)),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      _page(destination),
+                      const Positioned(
+                        right: 20,
+                        bottom: 72,
+                        child: ScanNotice(),
+                      ),
+                    ],
+                  ),
+                ),
                 const PlayerBar(),
               ],
             ),

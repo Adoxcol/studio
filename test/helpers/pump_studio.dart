@@ -9,12 +9,16 @@ Widget testStudioApp({
   required StudioDatabase db,
   required AudioEngine engine,
   List<Track> tracks = const [],
+  List<LibraryFolder> folders = const [],
+  List extraOverrides = const [],
 }) {
   return ProviderScope(
     overrides: [
       studioDatabaseProvider.overrideWithValue(db),
       audioEngineProvider.overrideWithValue(engine),
       libraryTracksProvider.overrideWith((ref) => Stream.value(tracks)),
+      libraryFoldersProvider.overrideWith((ref) => Stream.value(folders)),
+      ...extraOverrides,
     ],
     child: const StudioApp(),
   );

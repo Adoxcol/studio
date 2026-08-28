@@ -72,16 +72,25 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   @override
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
-    final scanning = ref.watch(libraryScanProvider);
+    final scan = ref.watch(libraryScanProvider);
+    final scanning = scan.active;
+    final folders = ref.watch(libraryFoldersProvider).value ?? const [];
     final tracks = ref.watch(libraryTracksProvider);
     final playingId = ref.watch(
       playbackControllerProvider.select((s) => s.trackId),
     );
 
     return tracks.when(
-      data: (rows) => _body(context, palette, rows, playingId, scanning),
-      loading: () =>
-          _body(context, palette, const <Track>[], playingId, scanning),
+      data: (rows) =>
+          _body(context, palette, rows, folders, playingId, scanning),
+      loading: () => _body(
+        context,
+        palette,
+        const <Track>[],
+        folders,
+        playingId,
+        scanning,
+      ),
       error: (error, _) => Padding(
         padding: const EdgeInsets.all(32),
         child: Text('$error', style: TextStyle(color: palette.inkMuted)),
@@ -93,6 +102,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     BuildContext context,
     StudioPalette palette,
     List<Track> allTracks,
+    List<LibraryFolder> folders,
     int? playingId,
     bool scanning,
   ) {
@@ -121,107 +131,127 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       children: [
         LibrarySidebar(
           expanded: _sidebarOpen,
+          folders: folders,
           artists: artists,
           selectedArtist: _artistFilter,
           onToggle: () => setState(() => _sidebarOpen = !_sidebarOpen),
           onSelectArtist: _selectArtist,
+          onRemoveFolder: (id) {
+            ref.read(libraryScanProvider.notifier).removeFolder(id);
+          },
         ),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(32, 24, 32, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Header(
-                  scanning: scanning,
-                  controller: _search,
-                  onSearch: () => setState(() {}),
-                  onAddFolder: scanning ? null : _addFolder,
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(32, 24, 32, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _Header(
+                      controller: _search,
+                      onSearch: () => setState(() {}),
+                      onAddFolder: scanning ? null : _addFolder,
+                    ),
+                    const SizedBox(height: 16),
+                    _Tabs(
+                      selected: _tab,
+                      onSelect: (tab) => setState(() => _tab = tab),
+                    ),
+                    const SizedBox(height: 12),
+                    _Actions(
+                      sort: _sort,
+                      order: _order,
+                      canPlay: visible.isNotEmpty,
+                      onPlayAll: () {
+                        ref
+                            .read(playbackControllerProvider.notifier)
+                            .playTracks(
+                              visible.map((t) => t.id).toList(),
+                              shuffle: false,
+                            );
+                      },
+                      onShuffle: () {
+                        ref
+                            .read(playbackControllerProvider.notifier)
+                            .playTracks(
+                              visible.map((t) => t.id).toList(),
+                              shuffle: true,
+                            );
+                      },
+                      onCycleSort: () =>
+                          setState(() => _sort = LibraryQuery.nextSort(_sort)),
+                      onToggleOrder: () => setState(
+                        () => _order = LibraryQuery.toggleOrder(_order),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: _tab == LibraryTab.playlists
+                          ? LibraryBrowseView(
+                              tab: _tab,
+                              artists: const [],
+                              albums: const [],
+                              genres: const [],
+                              onSelectArtist: _selectArtist,
+                              onSelectAlbum: _selectAlbum,
+                              onSelectGenre: _selectGenre,
+                            )
+                          : allTracks.isEmpty
+                          ? _EmptyLibrary(palette: palette)
+                          : showTable
+                          ? visible.isEmpty
+                                ? _EmptyLibrary(
+                                    palette: palette,
+                                    text: 'No matching tracks.',
+                                  )
+                                : LibraryTrackTable(
+                                    tracks: visible,
+                                    playingId: playingId,
+                                    onPlay: (index) {
+                                      ref
+                                          .read(
+                                            playbackControllerProvider.notifier,
+                                          )
+                                          .playTracks(
+                                            visible.map((t) => t.id).toList(),
+                                            startIndex: index,
+                                          );
+                                    },
+                                  )
+                          : LibraryBrowseView(
+                              tab: _tab,
+                              artists: LibraryQuery.groupArtists(
+                                searched,
+                                order: _order,
+                              ),
+                              albums: LibraryQuery.albumSections(
+                                searched,
+                                order: _order,
+                              ),
+                              genres: LibraryQuery.groupGenres(
+                                searched,
+                                order: _order,
+                              ),
+                              onSelectArtist: _selectArtist,
+                              onSelectAlbum: _selectAlbum,
+                              onSelectGenre: _selectGenre,
+                            ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                _Tabs(
-                  selected: _tab,
-                  onSelect: (tab) => setState(() => _tab = tab),
-                ),
-                const SizedBox(height: 12),
-                _Actions(
-                  sort: _sort,
-                  order: _order,
-                  canPlay: visible.isNotEmpty,
-                  onPlayAll: () {
-                    ref
-                        .read(playbackControllerProvider.notifier)
-                        .playTracks(
-                          visible.map((t) => t.id).toList(),
-                          shuffle: false,
-                        );
+              ),
+              Positioned(
+                right: 20,
+                bottom: 20,
+                child: _RefreshButton(
+                  enabled: !scanning && folders.isNotEmpty,
+                  onTap: () {
+                    ref.read(libraryScanProvider.notifier).rescanKnown();
                   },
-                  onShuffle: () {
-                    ref
-                        .read(playbackControllerProvider.notifier)
-                        .playTracks(
-                          visible.map((t) => t.id).toList(),
-                          shuffle: true,
-                        );
-                  },
-                  onCycleSort: () =>
-                      setState(() => _sort = LibraryQuery.nextSort(_sort)),
-                  onToggleOrder: () =>
-                      setState(() => _order = LibraryQuery.toggleOrder(_order)),
                 ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: _tab == LibraryTab.playlists
-                      ? LibraryBrowseView(
-                          tab: _tab,
-                          artists: const [],
-                          albums: const [],
-                          genres: const [],
-                          onSelectArtist: _selectArtist,
-                          onSelectAlbum: _selectAlbum,
-                          onSelectGenre: _selectGenre,
-                        )
-                      : allTracks.isEmpty
-                      ? _EmptyLibrary(palette: palette)
-                      : showTable
-                      ? visible.isEmpty
-                            ? _EmptyLibrary(
-                                palette: palette,
-                                text: 'No matching tracks.',
-                              )
-                            : LibraryTrackTable(
-                                tracks: visible,
-                                playingId: playingId,
-                                onPlay: (index) {
-                                  ref
-                                      .read(playbackControllerProvider.notifier)
-                                      .playTracks(
-                                        visible.map((t) => t.id).toList(),
-                                        startIndex: index,
-                                      );
-                                },
-                              )
-                      : LibraryBrowseView(
-                          tab: _tab,
-                          artists: LibraryQuery.groupArtists(
-                            searched,
-                            order: _order,
-                          ),
-                          albums: LibraryQuery.albumSections(
-                            searched,
-                            order: _order,
-                          ),
-                          genres: LibraryQuery.groupGenres(
-                            searched,
-                            order: _order,
-                          ),
-                          onSelectArtist: _selectArtist,
-                          onSelectAlbum: _selectAlbum,
-                          onSelectGenre: _selectGenre,
-                        ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ],
@@ -231,13 +261,11 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
 
 class _Header extends StatelessWidget {
   const _Header({
-    required this.scanning,
     required this.controller,
     required this.onSearch,
     required this.onAddFolder,
   });
 
-  final bool scanning;
   final TextEditingController controller;
   final VoidCallback onSearch;
   final VoidCallback? onAddFolder;
@@ -270,7 +298,7 @@ class _Header extends StatelessWidget {
         ),
         const SizedBox(width: 16),
         LibraryTextAction(
-          label: scanning ? 'Scanning…' : 'Add folder',
+          label: 'Add folder',
           onTap: onAddFolder ?? () {},
           enabled: onAddFolder != null,
         ),
@@ -401,6 +429,39 @@ class _EmptyLibrary extends StatelessWidget {
         style: Theme.of(
           context,
         ).textTheme.bodyMedium?.copyWith(color: palette.inkMuted),
+      ),
+    );
+  }
+}
+
+class _RefreshButton extends StatelessWidget {
+  const _RefreshButton({required this.enabled, required this.onTap});
+
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StudioPalette.of(context);
+    final color = enabled ? palette.ink : palette.inkMuted;
+    return Tooltip(
+      message: 'Rescan library',
+      child: GestureDetector(
+        onTap: enabled ? onTap : null,
+        child: MouseRegion(
+          cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: palette.bg,
+              border: Border.all(color: palette.hairline),
+            ),
+            child: SizedBox(
+              width: 40,
+              height: 40,
+              child: Icon(Icons.refresh, size: 18, color: color),
+            ),
+          ),
+        ),
       ),
     );
   }

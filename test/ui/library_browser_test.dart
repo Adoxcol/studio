@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/library/database.dart';
+import 'package:studio/library/scan_progress.dart';
+import 'package:studio/state/library_providers.dart';
 
 import '../helpers/pump_studio.dart';
 import '../helpers/tracks.dart';
@@ -29,13 +31,14 @@ void main() {
   Future<void> pumpLibrary(
     WidgetTester tester, {
     List<Track> tracks = const [],
+    List<LibraryFolder> folders = const [],
   }) async {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
-      testStudioApp(db: db, engine: engine, tracks: tracks),
+      testStudioApp(db: db, engine: engine, tracks: tracks, folders: folders),
     );
     await tester.pump();
   }
@@ -57,6 +60,7 @@ void main() {
     expect(find.text('Order: A–Z'), findsOneWidget);
     expect(find.text('ARTISTS'), findsOneWidget);
     expect(find.text('Add folder'), findsOneWidget);
+    expect(find.byTooltip('Rescan library'), findsOneWidget);
   });
 
   testWidgets('track rows show columns, time, and sidebar artists', (
@@ -146,4 +150,50 @@ void main() {
     expect(engine.lastUri, isA<Uri>());
     expect(engine.lastUri!.scheme, 'file');
   });
+
+  testWidgets('sidebar lists folders with a remove action', (tester) async {
+    await pumpLibrary(
+      tester,
+      folders: [const LibraryFolder(id: 1, path: '/music/Records')],
+    );
+
+    expect(find.text('FOLDERS'), findsOneWidget);
+    expect(find.text('Records'), findsOneWidget);
+    expect(find.byTooltip('Remove folder'), findsOneWidget);
+  });
+
+  testWidgets('scan notice shows progress and stop', (tester) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      testStudioApp(
+        db: db,
+        engine: engine,
+        extraOverrides: [
+          libraryScanProvider.overrideWith(_BusyScan.new),
+          libraryBootstrapProvider.overrideWith((ref) async {}),
+        ],
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Scanning'), findsOneWidget);
+    expect(find.text('Records'), findsOneWidget);
+    expect(find.text('4 of 20 files'), findsOneWidget);
+    expect(find.text('Stop'), findsOneWidget);
+  });
+}
+
+class _BusyScan extends LibraryScanNotifier {
+  @override
+  ScanProgress build() {
+    return const ScanProgress(
+      active: true,
+      folderLabel: 'Records',
+      processed: 4,
+      total: 20,
+    );
+  }
 }

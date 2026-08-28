@@ -22,8 +22,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Up Next queue panel.
 - Known music folders are re-scanned on launch so new and removed files show
   up without adding the folder again.
+- Library folders can be removed from the sidebar. Scan progress appears in a
+  side notice with Stop, and a refresh control re-scans on demand.
 
 ### Changed
+
+- Folder scans skip unchanged files, read cover art only when needed, and stay
+  cancellable so the library does not freeze for minutes.
+
 ### Fixed
 
 - Linux CI installs `libkeybinder-3.0-dev` and `libayatana-appindicator3-dev` so

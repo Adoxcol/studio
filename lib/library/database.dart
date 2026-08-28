@@ -19,7 +19,7 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -30,6 +30,9 @@ class StudioDatabase extends _$StudioDatabase {
       }
       if (from < 3) {
         await _migrateToV3(m);
+      }
+      if (from < 4) {
+        await _migrateToV4(m);
       }
     },
   );
@@ -61,6 +64,13 @@ class StudioDatabase extends _$StudioDatabase {
     }
   }
 
+  Future<void> _migrateToV4(Migrator m) async {
+    final columns = await _columnNames('tracks');
+    if (!columns.contains('file_modified_ms')) {
+      await m.addColumn(tracks, tracks.fileModifiedMs);
+    }
+  }
+
   Future<Set<String>> _columnNames(String table) async {
     final rows = await customSelect('PRAGMA table_info($table)').get();
     return {for (final row in rows) row.read<String>('name')};
@@ -78,6 +88,16 @@ class StudioDatabase extends _$StudioDatabase {
   Future<List<Track>> allTracks() => select(tracks).get();
 
   Future<List<LibraryFolder>> allFolders() => select(libraryFolders).get();
+
+  Stream<List<LibraryFolder>> watchFolders() {
+    return (select(
+      libraryFolders,
+    )..orderBy([(t) => OrderingTerm(expression: t.path)])).watch();
+  }
+
+  Future<List<Track>> tracksInFolder(int folderId) {
+    return (select(tracks)..where((t) => t.folderId.equals(folderId))).get();
+  }
 
   Future<Track?> trackById(int id) {
     return (select(tracks)..where((t) => t.id.equals(id))).getSingleOrNull();
@@ -105,6 +125,7 @@ class StudioDatabase extends _$StudioDatabase {
           trackNumber: row.trackNumber,
           genre: row.genre,
           artworkPath: row.artworkPath,
+          fileModifiedMs: row.fileModifiedMs,
           folderId: row.folderId,
           source: row.source,
         ),
@@ -126,6 +147,11 @@ class StudioDatabase extends _$StudioDatabase {
     ];
     if (ids.isEmpty) return 0;
     return (delete(tracks)..where((t) => t.id.isIn(ids))).go();
+  }
+
+  Future<void> deleteFolder(int folderId) async {
+    await (delete(tracks)..where((t) => t.folderId.equals(folderId))).go();
+    await (delete(libraryFolders)..where((t) => t.id.equals(folderId))).go();
   }
 }
 
