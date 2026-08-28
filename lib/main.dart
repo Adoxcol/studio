@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:studio/app.dart';
+import 'package:studio/core/desktop/studio_desktop_host.dart';
 import 'package:studio/core/window/window_bootstrap.dart';
 import 'package:studio/library/artwork_store.dart';
 import 'package:studio/library/database.dart';
@@ -14,11 +15,13 @@ import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/appearance_store.dart';
 import 'package:studio/lyrics/lyrics_cache.dart';
 import 'package:studio/lyrics/lyrics_providers.dart';
+import 'package:studio/playback/media_kit_bootstrap.dart';
 import 'package:studio/playback/playback_settings_provider.dart';
 import 'package:studio/playback/playback_settings_store.dart';
 
 Future<void> main() async {
   await bootstrapWindow();
+  discardStaleMediaKitReferenceHolder();
   MediaKit.ensureInitialized();
   final support = await getApplicationSupportDirectory();
   final db = StudioDatabase.onFile(File(p.join(support.path, 'studio.sqlite')));
@@ -40,7 +43,7 @@ Future<void> main() async {
           FileLyricsCache(Directory(p.join(support.path, 'lyrics'))),
         ),
       ],
-      child: const StudioApp(),
+      child: const StudioDesktopHost(child: StudioApp()),
     ),
   );
 }

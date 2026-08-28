@@ -31,13 +31,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Library, Now Playing, and Queue sit in a dockable workspace: drag a panel
   by its header, resize the split, or maximize it. Settings stays a full page.
 - ReplayGain Off / Track / Album in Settings, applied through mpv.
-- 8-band equalizer with Flat / Warm / Bright / Custom presets, applied
-  through mpv firequalizer.
+- 8-band equalizer with Flat / Warm / Bright / Custom presets, stored in
+  settings. media_kit's libmpv cannot apply a graphic EQ (`aresample` and
+  `firequalizer` are missing), so sliders do not touch the live decoder.
 - Dual-player crossfade in Settings as a 0–15s slider. Skip and
   end-of-track overlap with an equal-power fade; the FFT tap follows
   the incoming track.
 - Local playlists: create a list from the Playlists tab, right-click a
   track to add it, then Play All / Shuffle that list.
+- System tray with Play / Pause / Next / Previous. Closing the window
+  hides to the tray; Quit is on the tray menu. Media keys (play/pause,
+  next, previous) work while the window is in the background.
 
 ### Changed
 
@@ -49,26 +53,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   The spectrum visualizer listens to its own FFT band stream.
 - The player-bar times stay hidden until hover (or while dragging). Then
   start, current position, and end appear above the scrubber.
+- Now Playing spectrum stays in the rest pose. The silent second libmpv
+  (`ao=pcm`) froze the window, muted the speakers, or killed the process.
 
 ### Fixed
 
-- Windows UI freeze while a track played: the FFT tap was blocking the UI
-  isolate on a waiting named-pipe read. Pipe I/O is now non-blocking, extra
-  libmpv players are created only when crossfade or the visualizer needs
-  them, and a stuck tap can no longer hang the window.
+- Debug launches no longer die with `NativeReferenceHolder: Located …`
+  then `Lost connection to device`. A leftover media_kit handle file from
+  a crashed run is discarded before init (Windows reuses PIDs).
+- Playback no longer starts a second libmpv FFT tap. That instance's
+  `ao=pcm` `stop`/`open`/`dispose` native-crashed the Windows process.
+- The equalizer no longer seeks the track or kills audio. media_kit's
+  libmpv has no `aresample`/`firequalizer`, so a lavfi graph was flushing
+  the decoder on every slider move (`Disabling filter lavfi`). EQ is kept
+  in settings only until there is a real DSP path.
 - Play, pause, skip, and the progress bar respond on the first click: the
-  transport no longer waits on the silent FFT player, skip is not dropped
+  transport no longer waits on a second player, skip is not dropped
   while a track is still opening, and the scrubber can be clicked or dragged
   without the playhead bouncing back to the old time.
 - Pause and resume take effect immediately instead of waiting on media_kit's
   command queue (or an idle crossfade player still opening the next track).
-  Pause never calls blocking libmpv from the UI isolate (that froze the
-  window when the FFT tap was dumping PCM). ReplayGain and EQ changes
-  never touch the live FFT player either.
-- FFT tap no longer crashes the Windows process when mpv is slow to
-  connect to the PCM pipe (`TimeoutException: PCM pipe connect` then
-  `Lost connection to device`). The pipe stays duplex and non-blocking,
-  and a stuck tap is abandoned instead of disposed.
 - Now Playing no longer overflows by a few pixels when the pane is short or
   the title wraps.
 - Linux CI installs `libkeybinder-3.0-dev` and `libayatana-appindicator3-dev` so
