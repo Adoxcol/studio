@@ -75,51 +75,69 @@ class _Hero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CoverArt(path: artworkPath, size: NowPlayingPage.artSize),
-              const SizedBox(height: 16),
-              AmplitudeVisualizer(playing: playing, position: position),
-              const SizedBox(height: 24),
-              if (hasTrack)
-                Text(
-                  'now playing',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: palette.inkMutedAlt,
-                    fontStyle: FontStyle.italic,
-                  ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final artSize = [
+          NowPlayingPage.artSize,
+          (constraints.maxWidth - 64).clamp(96.0, NowPlayingPage.artSize),
+          (constraints.maxHeight * 0.42).clamp(96.0, NowPlayingPage.artSize),
+        ].reduce((a, b) => a < b ? a : b);
+        return CustomScrollView(
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 24,
                 ),
-              if (hasTrack) const SizedBox(height: 8),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.displayLarge,
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CoverArt(path: artworkPath, size: artSize),
+                    const SizedBox(height: 16),
+                    AmplitudeVisualizer(
+                      playing: playing,
+                      position: position,
+                      width: artSize,
+                    ),
+                    const SizedBox(height: 24),
+                    if (hasTrack)
+                      Text(
+                        'now playing',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: palette.inkMutedAlt,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    if (hasTrack) const SizedBox(height: 8),
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.displayLarge,
+                      textAlign: TextAlign.center,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (artist != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        artist!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: palette.inkMuted,
+                          fontStyle: FontStyle.italic,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
               ),
-              if (artist != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  artist!,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: palette.inkMuted,
-                    fontStyle: FontStyle.italic,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

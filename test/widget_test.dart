@@ -26,6 +26,10 @@ void main() {
   });
 
   Future<void> pumpApp(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(testStudioApp(db: db, engine: engine));
     await tester.pump();
   }
@@ -33,17 +37,19 @@ void main() {
   testWidgets('Studio shell shows library placeholder', (tester) async {
     await pumpApp(tester);
 
-    expect(find.text('Library'), findsOneWidget);
+    expect(find.text('Library'), findsWidgets);
+    expect(find.text('Now Playing'), findsWidgets);
     expect(
       find.text('Library is empty. Local files will show up here.'),
       findsOneWidget,
     );
-    expect(find.text('Not playing'), findsOneWidget);
+    expect(find.text('Not playing'), findsWidgets);
     expect(find.byTooltip('Library'), findsOneWidget);
     expect(find.byTooltip('Now Playing'), findsOneWidget);
     expect(find.byTooltip('Queue'), findsOneWidget);
     expect(find.byTooltip('Settings'), findsOneWidget);
     expect(find.text('Add folder'), findsOneWidget);
+    expect(find.text('Queue'), findsWidgets);
   });
 
   testWidgets('icon rail opens Settings', (tester) async {
@@ -58,7 +64,9 @@ void main() {
   testWidgets('light theme uses Editorial Mono background', (tester) async {
     await pumpApp(tester);
     expect(
-      Theme.of(tester.element(find.text('Library'))).scaffoldBackgroundColor,
+      Theme.of(
+        tester.element(find.text('Library').first),
+      ).scaffoldBackgroundColor,
       StudioPalette.light().bg,
     );
   });
