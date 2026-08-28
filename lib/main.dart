@@ -10,6 +10,8 @@ import 'package:studio/core/window/window_bootstrap.dart';
 import 'package:studio/library/artwork_store.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/state/library_providers.dart';
+import 'package:studio/theming/appearance_provider.dart';
+import 'package:studio/theming/appearance_store.dart';
 
 Future<void> main() async {
   await bootstrapWindow();
@@ -17,11 +19,15 @@ Future<void> main() async {
   final support = await getApplicationSupportDirectory();
   final db = StudioDatabase.onFile(File(p.join(support.path, 'studio.sqlite')));
   final artwork = ArtworkStore(Directory(p.join(support.path, 'artwork')));
+  final appearance = FileAppearanceStore(
+    File(p.join(support.path, 'appearance.json')),
+  );
   runApp(
     ProviderScope(
       overrides: [
         studioDatabaseProvider.overrideWithValue(db),
         artworkStoreProvider.overrideWithValue(artwork),
+        appearanceStoreProvider.overrideWithValue(appearance),
       ],
       child: const StudioApp(),
     ),

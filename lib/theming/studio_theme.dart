@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:studio/theming/accent_seed.dart';
 import 'package:studio/theming/studio_palette.dart';
 
 abstract final class StudioTheme {
-  static ThemeData light() => _build(StudioPalette.light(), Brightness.light);
+  static ThemeData light({double hue = AccentSeed.defaultHue}) =>
+      _build(StudioPalette.light(hue: hue), Brightness.light);
 
-  static ThemeData dark() => _build(StudioPalette.dark(), Brightness.dark);
+  static ThemeData dark({double hue = AccentSeed.defaultHue}) =>
+      _build(StudioPalette.dark(hue: hue), Brightness.dark);
 
   static ThemeData _build(StudioPalette palette, Brightness brightness) {
     final workSans = GoogleFonts.workSansTextTheme().apply(
