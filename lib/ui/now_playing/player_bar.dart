@@ -31,17 +31,21 @@ class _PlayerBarScrubber extends ConsumerWidget {
         (s) => (position: s.position, duration: s.duration),
       ),
     );
-    final remaining = snapshot.duration - snapshot.position;
     return _DividerScrubber(
       progress: snapshot.duration.inMilliseconds <= 0
           ? 0
           : (snapshot.position.inMilliseconds /
                     snapshot.duration.inMilliseconds)
                 .clamp(0.0, 1.0),
-      elapsedLabel: formatDuration(snapshot.position),
-      remainingLabel: formatDuration(remaining),
+      duration: snapshot.duration,
       onSeek: (fraction) {
         ref.read(playbackControllerProvider.notifier).seekFraction(fraction);
+      },
+      onScrubStart: () {
+        ref.read(playbackControllerProvider.notifier).beginScrub();
+      },
+      onScrubEnd: () {
+        ref.read(playbackControllerProvider.notifier).endScrub();
       },
     );
   }
@@ -131,92 +135,232 @@ class _PlayerBarBody extends ConsumerWidget {
   }
 }
 
-class _DividerScrubber extends StatelessWidget {
+class _DividerScrubber extends StatefulWidget {
   const _DividerScrubber({
     required this.progress,
-    required this.elapsedLabel,
-    required this.remainingLabel,
+    required this.duration,
     required this.onSeek,
+    required this.onScrubStart,
+    required this.onScrubEnd,
   });
 
   final double progress;
-  final String elapsedLabel;
-  final String remainingLabel;
+  final Duration duration;
   final ValueChanged<double> onSeek;
+  final VoidCallback onScrubStart;
+  final VoidCallback onScrubEnd;
+
+  @override
+  State<_DividerScrubber> createState() => _DividerScrubberState();
+}
+
+class _DividerScrubberState extends State<_DividerScrubber> {
+  double? _scrub;
+  double? _sent;
+  var _hover = false;
+
+  double get _shown => (_scrub ?? widget.progress).clamp(0.0, 1.0);
+
+  bool get _showTimes =>
+      (_hover || _scrub != null) && widget.duration > Duration.zero;
+
+  double _fraction(Offset local, double width) {
+    if (width <= 0) return 0;
+    return (local.dx / width).clamp(0.0, 1.0);
+  }
+
+  void _send(double value) {
+    if (_sent != null && (value - _sent!).abs() < 0.003) return;
+    _sent = value;
+    widget.onSeek(value);
+  }
 
   @override
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
+    final progress = _shown;
+    final elapsed = Duration(
+      milliseconds: (widget.duration.inMilliseconds * progress).round(),
+    );
+    final style = Theme.of(
+      context,
+    ).textTheme.labelSmall?.copyWith(color: palette.inkMuted, fontSize: 11);
+    final currentStyle = style?.copyWith(color: palette.ink);
     return SizedBox(
       height: PlayerBar.scrubberHeight,
       width: double.infinity,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapDown: (details) {
-              onSeek(details.localPosition.dx / constraints.maxWidth);
-            },
-            onHorizontalDragUpdate: (details) {
-              onSeek(details.localPosition.dx / constraints.maxWidth);
-            },
-            child: Stack(
-              alignment: Alignment.centerLeft,
-              children: [
-                Align(
-                  child: Container(height: 2, color: palette.hairlineStrong),
-                ),
-                FractionallySizedBox(
-                  widthFactor: progress,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Container(height: 2, color: palette.accent),
+          return MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (_) => setState(() => _hover = true),
+            onExit: (_) => setState(() => _hover = false),
+            child: Listener(
+              behavior: HitTestBehavior.opaque,
+              onPointerDown: (event) {
+                widget.onScrubStart();
+                final value = _fraction(
+                  event.localPosition,
+                  constraints.maxWidth,
+                );
+                setState(() => _scrub = value);
+                _send(value);
+              },
+              onPointerMove: (event) {
+                if (_scrub == null || !event.down) return;
+                setState(
+                  () => _scrub = _fraction(
+                    event.localPosition,
+                    constraints.maxWidth,
                   ),
-                ),
-                Align(
-                  alignment: Alignment(progress * 2 - 1, 0),
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: palette.accent,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: palette.ink.withValues(alpha: 0.18),
-                          blurRadius: 2,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
+                );
+              },
+              onPointerUp: (_) {
+                final value = _scrub;
+                if (value != null) _send(value);
+                widget.onScrubEnd();
+                _sent = null;
+                setState(() => _scrub = null);
+              },
+              onPointerCancel: (_) {
+                widget.onScrubEnd();
+                _sent = null;
+                setState(() => _scrub = null);
+              },
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.centerLeft,
+                children: [
+                  Align(
+                    child: Container(height: 2, color: palette.hairlineStrong),
+                  ),
+                  FractionallySizedBox(
+                    widthFactor: progress,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(height: 2, color: palette.accent),
                     ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      Text(
-                        elapsedLabel,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: palette.inkMuted,
-                          fontSize: 11,
-                        ),
+                  Align(
+                    alignment: Alignment(progress * 2 - 1, 0),
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: palette.accent,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: palette.ink.withValues(alpha: 0.18),
+                            blurRadius: 2,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
                       ),
-                      const Spacer(),
-                      Text(
-                        remainingLabel,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: palette.inkMuted,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                  if (_showTimes)
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      bottom: 14,
+                      child: IgnorePointer(
+                        child: _HoverTimes(
+                          start: formatDuration(Duration.zero),
+                          current: formatDuration(elapsed),
+                          end: formatDuration(widget.duration),
+                          progress: progress,
+                          startStyle: style,
+                          currentStyle: currentStyle,
+                          background: palette.bg,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _HoverTimes extends StatelessWidget {
+  const _HoverTimes({
+    required this.start,
+    required this.current,
+    required this.end,
+    required this.progress,
+    required this.startStyle,
+    required this.currentStyle,
+    required this.background,
+  });
+
+  final String start;
+  final String current;
+  final String end;
+  final double progress;
+  final TextStyle? startStyle;
+  final TextStyle? currentStyle;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) {
+    final nearStart = progress < 0.08;
+    final nearEnd = progress > 0.92;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        if (!nearStart)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: _TimeChip(
+              text: start,
+              style: startStyle,
+              background: background,
+            ),
+          ),
+        Align(
+          alignment: Alignment(progress * 2 - 1, 0),
+          child: _TimeChip(
+            text: current,
+            style: currentStyle,
+            background: background,
+          ),
+        ),
+        if (!nearEnd)
+          Align(
+            alignment: Alignment.centerRight,
+            child: _TimeChip(
+              text: end,
+              style: startStyle,
+              background: background,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _TimeChip extends StatelessWidget {
+  const _TimeChip({
+    required this.text,
+    required this.style,
+    required this.background,
+  });
+
+  final String text;
+  final TextStyle? style;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: background,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+        child: Text(text, style: style),
       ),
     );
   }
@@ -240,14 +384,25 @@ class _Transport extends ConsumerWidget {
 
     Widget button({
       required IconData icon,
+      required String tooltip,
       required VoidCallback onTap,
       Color? color,
     }) {
-      return GestureDetector(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Icon(icon, size: 20, color: color ?? palette.ink),
+      return Tooltip(
+        message: tooltip,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onTap,
+            child: SizedBox(
+              height: PlayerBar.contentHeight,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Icon(icon, size: 20, color: color ?? palette.ink),
+              ),
+            ),
+          ),
         ),
       );
     }
@@ -257,17 +412,28 @@ class _Transport extends ConsumerWidget {
       children: [
         button(
           icon: Icons.shuffle,
+          tooltip: 'Shuffle',
           onTap: controller.toggleShuffle,
           color: shuffle ? palette.accent : palette.ink,
         ),
-        button(icon: Icons.skip_previous, onTap: controller.skipPrevious),
+        button(
+          icon: Icons.skip_previous,
+          tooltip: 'Previous',
+          onTap: controller.skipPrevious,
+        ),
         button(
           icon: playing ? Icons.pause : Icons.play_arrow,
+          tooltip: playing ? 'Pause' : 'Play',
           onTap: controller.togglePlayPause,
         ),
-        button(icon: Icons.skip_next, onTap: controller.skipNext),
+        button(
+          icon: Icons.skip_next,
+          tooltip: 'Next',
+          onTap: controller.skipNext,
+        ),
         button(
           icon: repeat == QueueRepeatMode.one ? Icons.repeat_one : Icons.repeat,
+          tooltip: 'Repeat',
           onTap: controller.cycleRepeat,
           color: repeat == QueueRepeatMode.off ? palette.ink : palette.accent,
         ),
@@ -292,36 +458,57 @@ class _VolumeCluster extends StatelessWidget {
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              return GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapDown: (details) {
-                  onChanged(details.localPosition.dx / constraints.maxWidth);
-                },
-                onHorizontalDragUpdate: (details) {
-                  onChanged(details.localPosition.dx / constraints.maxWidth);
-                },
-                child: SizedBox(
-                  height: 10,
-                  child: Stack(
-                    alignment: Alignment.centerLeft,
-                    children: [
-                      Container(height: 2, color: palette.hairlineStrong),
-                      FractionallySizedBox(
-                        widthFactor: volume,
-                        child: Container(height: 2, color: palette.accent),
+              return MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTapDown: (details) {
+                    onChanged(
+                      (details.localPosition.dx / constraints.maxWidth).clamp(
+                        0.0,
+                        1.0,
                       ),
-                      Align(
-                        alignment: Alignment(volume * 2 - 1, 0),
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: palette.accent,
-                            shape: BoxShape.circle,
+                    );
+                  },
+                  onHorizontalDragStart: (details) {
+                    onChanged(
+                      (details.localPosition.dx / constraints.maxWidth).clamp(
+                        0.0,
+                        1.0,
+                      ),
+                    );
+                  },
+                  onHorizontalDragUpdate: (details) {
+                    onChanged(
+                      (details.localPosition.dx / constraints.maxWidth).clamp(
+                        0.0,
+                        1.0,
+                      ),
+                    );
+                  },
+                  child: SizedBox(
+                    height: 10,
+                    child: Stack(
+                      alignment: Alignment.centerLeft,
+                      children: [
+                        Container(height: 2, color: palette.hairlineStrong),
+                        FractionallySizedBox(
+                          widthFactor: volume,
+                          child: Container(height: 2, color: palette.accent),
+                        ),
+                        Align(
+                          alignment: Alignment(volume * 2 - 1, 0),
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: palette.accent,
+                              shape: BoxShape.circle,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );

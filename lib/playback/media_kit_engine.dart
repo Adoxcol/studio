@@ -8,24 +8,20 @@ import 'package:studio/playback/dsp/replay_gain.dart';
 import 'package:studio/playback/spectrum_tap.dart';
 
 class MediaKitAudioEngine implements AudioEngine {
-  MediaKitAudioEngine({
-    Player? player,
-    Player? secondary,
-    MpvSpectrumTap? spectrumTap,
-  }) : _primary = player ?? Player(),
-       _secondary = secondary ?? Player(),
-       _tap = spectrumTap ?? MpvSpectrumTap() {
+  MediaKitAudioEngine({Player? player, MpvSpectrumTap? spectrumTap})
+    : _primary = player ?? Player(),
+      _tap = spectrumTap {
     _front = _primary;
     _ui = _primary;
     _bind(_primary);
-    _bind(_secondary);
+    if (spectrumTap != null) _bindTap(spectrumTap);
   }
 
   static const _tick = Duration(milliseconds: 50);
 
   final Player _primary;
-  final Player _secondary;
-  final MpvSpectrumTap _tap;
+  Player? _secondary;
+  MpvSpectrumTap? _tap;
 
   late Player _front;
   late Player _ui;
@@ -40,19 +36,52 @@ class MediaKitAudioEngine implements AudioEngine {
   var _fading = false;
   Duration _fadeElapsed = Duration.zero;
   Timer? _fadeTimer;
+  var _seekGen = 0;
 
   final _position = StreamController<Duration>.broadcast();
   final _duration = StreamController<Duration>.broadcast();
   final _playing = StreamController<bool>.broadcast();
   final _completed = StreamController<void>.broadcast();
+  final _spectrum = StreamController<List<double>>.broadcast();
   final _subs = <StreamSubscription<dynamic>>[];
+  StreamSubscription<List<double>>? _tapBandsSub;
 
-  Player get _idle => identical(_front, _primary) ? _secondary : _primary;
+  MpvSpectrumTap _ensureTap() {
+    final existing = _tap;
+    if (existing != null) return existing;
+    final tap = MpvSpectrumTap();
+    _tap = tap;
+    tap.rememberReplayGain(_replayGain);
+    tap.rememberEqualizer(_equalizer);
+    _bindTap(tap);
+    return tap;
+  }
+
+  void _bindTap(MpvSpectrumTap tap) {
+    _tapBandsSub ??= tap.bands.listen((bands) {
+      if (!_spectrum.isClosed) _spectrum.add(bands);
+    });
+  }
+
+  Player _ensureSecondary() {
+    final existing = _secondary;
+    if (existing != null) return existing;
+    final player = Player();
+    _secondary = player;
+    _bind(player);
+    unawaited(_applyFilters(player));
+    return player;
+  }
+
+  Player get _idle {
+    final secondary = _ensureSecondary();
+    return identical(_front, _primary) ? secondary : _primary;
+  }
 
   @override
   Future<void> play(Uri uri) async {
     await _cancelFade(snapIncoming: false);
-    await _secondary.stop();
+    await _secondary?.stop();
     _front = _primary;
     _ui = _primary;
     _prepared = null;
@@ -62,7 +91,7 @@ class MediaKitAudioEngine implements AudioEngine {
     await _applyFilters(_primary);
     await _setPlayerVolume(_primary, 1);
     await _primary.open(Media(uri.toString()));
-    unawaited(_tap.play(uri));
+    unawaited(_ensureTap().play(uri));
   }
 
   @override
@@ -95,7 +124,7 @@ class MediaKitAudioEngine implements AudioEngine {
     _ui = incoming;
     _fading = true;
     _fadeElapsed = Duration.zero;
-    unawaited(_tap.play(uri));
+    unawaited(_ensureTap().play(uri));
     _applyFadeGains(0);
     _startFadeTimer();
   }
@@ -105,24 +134,26 @@ class MediaKitAudioEngine implements AudioEngine {
     _paused = true;
     _fadeTimer?.cancel();
     _fadeTimer = null;
-    await Future.wait([_primary.pause(), _secondary.pause(), _tap.pause()]);
     _emitPlaying(false);
+    _setPaused(_front, true);
+    final outgoing = _outgoing;
+    if (outgoing != null) _setPaused(outgoing, true);
+    unawaited(_tap?.pause());
   }
 
   @override
   Future<void> resume() async {
     _paused = false;
+    _emitPlaying(true);
+    unawaited(_tap?.resume());
     if (_fading) {
-      await Future.wait([
-        _outgoing?.play() ?? Future.value(),
-        _ui.play(),
-        _tap.resume(),
-      ]);
+      final outgoing = _outgoing;
+      if (outgoing != null) _setPaused(outgoing, false);
+      _setPaused(_ui, false);
       _startFadeTimer();
     } else {
-      await Future.wait([_front.play(), _tap.resume()]);
+      _setPaused(_front, false);
     }
-    _emitPlaying(true);
   }
 
   @override
@@ -131,7 +162,11 @@ class MediaKitAudioEngine implements AudioEngine {
     _started = false;
     _paused = true;
     _prepared = null;
-    await Future.wait([_primary.stop(), _secondary.stop(), _tap.stop()]);
+    await Future.wait([
+      _primary.stop(),
+      if (_secondary != null) _secondary!.stop(),
+      if (_tap != null) _tap!.stop(),
+    ]);
     _front = _primary;
     _ui = _primary;
     _emitPlaying(false);
@@ -139,9 +174,12 @@ class MediaKitAudioEngine implements AudioEngine {
 
   @override
   Future<void> seek(Duration position) async {
+    final gen = ++_seekGen;
     if (_fading) await _cancelFade(snapIncoming: true);
+    if (gen != _seekGen) return;
     await _front.seek(position);
-    unawaited(_tap.seek(position));
+    if (gen != _seekGen) return;
+    unawaited(_tap?.seek(position) ?? Future.value());
   }
 
   @override
@@ -155,28 +193,30 @@ class MediaKitAudioEngine implements AudioEngine {
   }
 
   @override
-  Future<void> setReplayGain(ReplayGainMode mode) {
+  Future<void> setReplayGain(ReplayGainMode mode) async {
     _replayGain = mode;
-    return Future.wait([
-      _applyFilters(_primary),
-      _applyFilters(_secondary),
-      _tap.setReplayGain(mode),
-    ]);
+    unawaited(_applyFilters(_primary));
+    if (_secondary != null) unawaited(_applyFilters(_secondary!));
+    // Never setProperty on the live FFT tap — that deadlocks ao=pcm.
+    _tap?.rememberReplayGain(mode);
   }
 
   @override
-  Future<void> setEqualizer(List<double> gains) {
+  Future<void> setEqualizer(List<double> gains) async {
     _equalizer = List<double>.from(gains);
-    return Future.wait([
-      _applyFilters(_primary),
-      _applyFilters(_secondary),
-      _tap.setEqualizer(gains),
-    ]);
+    unawaited(_applyFilters(_primary));
+    if (_secondary != null) unawaited(_applyFilters(_secondary!));
+    _tap?.rememberEqualizer(gains);
   }
 
   @override
   Future<void> setCrossfade(Duration duration) async {
-    _crossfade = duration < Duration.zero ? Duration.zero : duration;
+    if (duration <= Duration.zero) {
+      _crossfade = Duration.zero;
+      return;
+    }
+    final ms = duration.inMilliseconds.clamp(0, Crossfade.max.inMilliseconds);
+    _crossfade = Duration(milliseconds: ms);
   }
 
   @override
@@ -192,7 +232,7 @@ class MediaKitAudioEngine implements AudioEngine {
   Stream<void> get completed => _completed.stream;
 
   @override
-  Stream<List<double>> get spectrum => _tap.bands;
+  Stream<List<double>> get spectrum => _spectrum.stream;
 
   @override
   void dispose() {
@@ -200,13 +240,15 @@ class MediaKitAudioEngine implements AudioEngine {
     for (final sub in _subs) {
       unawaited(sub.cancel());
     }
+    unawaited(_tapBandsSub?.cancel());
     unawaited(_position.close());
     unawaited(_duration.close());
     unawaited(_playing.close());
     unawaited(_completed.close());
-    _tap.dispose();
+    unawaited(_spectrum.close());
+    _tap?.dispose();
     _primary.dispose();
-    _secondary.dispose();
+    _secondary?.dispose();
   }
 
   void _bind(Player player) {
@@ -315,6 +357,21 @@ class MediaKitAudioEngine implements AudioEngine {
     return player.setVolume(
       (_userVolume * fraction.clamp(0.0, 1.0) * 100).clamp(0.0, 100.0),
     );
+  }
+
+  /// Pauses without blocking the UI isolate. Never uses synchronous
+  /// `mpv_set_property_string` — that deadlocks if mpv is in `ao=pcm`.
+  void _setPaused(Player player, bool paused) {
+    final platform = player.platform;
+    if (platform is NativePlayer) {
+      unawaited(
+        paused
+            ? platform.pause(synchronized: false)
+            : platform.play(synchronized: false),
+      );
+      return;
+    }
+    unawaited(paused ? player.pause() : player.play());
   }
 
   void _emitPlaying(bool value) {

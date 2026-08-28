@@ -93,6 +93,16 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   Duration? _queuedPosition;
   var _crossfadeArmed = false;
   var _opening = false;
+  var _openAgain = false;
+  var _openCrossfade = false;
+  var _holdPosition = false;
+  var _scrubbing = false;
+  Duration? _seekFrom;
+  Duration? _seekTarget;
+  var _closeTicks = 0;
+  var _seekGen = 0;
+  Timer? _seekHold;
+  var _wantPlaying = false;
 
   @override
   PlaybackUiState build() {
@@ -134,7 +144,10 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     );
     _subs.add(
       _engine.playing.listen((value) {
-        state = state.copyWith(playing: value);
+        if (value != _wantPlaying) return;
+        if (state.playing != value) {
+          state = state.copyWith(playing: value);
+        }
       }),
     );
     _subs.add(
@@ -145,6 +158,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
 
     ref.onDispose(() {
       _positionFlush?.cancel();
+      _seekHold?.cancel();
       for (final sub in _subs) {
         unawaited(sub.cancel());
       }
@@ -154,8 +168,42 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   }
 
   void _onPosition(Duration value) {
+    if (_holdPosition || _scrubbing) return;
+    if (_seekTarget != null) {
+      if (_tickIsStale(value)) {
+        _closeTicks = 0;
+        return;
+      }
+      _closeTicks++;
+      _applyPosition(value, followPlayback: false);
+      if (_closeTicks >= 2) _clearSeekLock();
+      return;
+    }
+    _applyPosition(value, followPlayback: true);
+  }
+
+  bool _tickIsStale(Duration value) {
+    final target = _seekTarget;
+    if (target == null) return false;
+    final toTarget = (value - target).abs();
+    final from = _seekFrom;
+    if (from != null) {
+      final toFrom = (value - from).abs();
+      if (toFrom + const Duration(milliseconds: 250) < toTarget) {
+        return true;
+      }
+    }
+    return toTarget > const Duration(seconds: 2);
+  }
+
+  void _applyPosition(Duration value, {required bool followPlayback}) {
     if (value < const Duration(milliseconds: 400)) {
       _crossfadeArmed = false;
+    }
+    if (!followPlayback) {
+      _queuedPosition = null;
+      state = state.copyWith(position: value);
+      return;
     }
     _queuedPosition = value;
     if (_positionFlush != null) return;
@@ -165,11 +213,41 @@ class PlaybackController extends Notifier<PlaybackUiState> {
       _positionFlush = null;
       final pending = _queuedPosition;
       _queuedPosition = null;
-      if (pending != null) {
-        state = state.copyWith(position: pending);
-      }
+      if (pending == null) return;
+      if (_seekTarget != null && _tickIsStale(pending)) return;
+      state = state.copyWith(position: pending);
     });
     unawaited(_considerAutoCrossfade(value));
+  }
+
+  void _armSeek(Duration target) {
+    _positionFlush?.cancel();
+    _positionFlush = null;
+    _queuedPosition = null;
+    _seekFrom = state.position;
+    _seekTarget = target;
+    _closeTicks = 0;
+    _seekHold?.cancel();
+    _seekHold = Timer(const Duration(seconds: 3), _clearSeekLock);
+  }
+
+  void _clearSeekLock() {
+    _seekTarget = null;
+    _seekFrom = null;
+    _closeTicks = 0;
+    _seekHold?.cancel();
+    _seekHold = null;
+  }
+
+  void beginScrub() {
+    _scrubbing = true;
+    _positionFlush?.cancel();
+    _positionFlush = null;
+    _queuedPosition = null;
+  }
+
+  void endScrub() {
+    _scrubbing = false;
   }
 
   Future<void> playTracks(
@@ -177,7 +255,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     int startIndex = 0,
     bool? shuffle,
   }) async {
-    if (_opening || ids.isEmpty) return;
+    if (ids.isEmpty) return;
     if (shuffle != null) {
       queue.shuffle = shuffle;
     }
@@ -186,7 +264,6 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   }
 
   Future<void> playQueueIndex(int index) async {
-    if (_opening) return;
     if (index < 0 || index >= queue.ids.length) return;
     queue.index = index;
     await _openCurrent();
@@ -194,7 +271,10 @@ class PlaybackController extends Notifier<PlaybackUiState> {
 
   Future<void> togglePlayPause() async {
     if (state.trackId == null) return;
-    if (state.playing) {
+    final pause = state.playing;
+    _wantPlaying = !pause;
+    state = state.copyWith(playing: _wantPlaying);
+    if (pause) {
       await _engine.pause();
     } else {
       await _engine.resume();
@@ -202,7 +282,6 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   }
 
   Future<void> skipNext() async {
-    if (_opening) return;
     if (!queue.moveNext()) return;
     await _openCurrent(crossfade: true);
   }
@@ -212,11 +291,11 @@ class PlaybackController extends Notifier<PlaybackUiState> {
       _positionFlush?.cancel();
       _positionFlush = null;
       _queuedPosition = null;
-      await _engine.seek(Duration.zero);
+      _armSeek(Duration.zero);
       state = state.copyWith(position: Duration.zero);
+      await _engine.seek(Duration.zero);
       return;
     }
-    if (_opening) return;
     if (!queue.movePrevious()) return;
     await _openCurrent();
   }
@@ -224,12 +303,14 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   Future<void> seekFraction(double fraction) async {
     final total = state.duration;
     if (total <= Duration.zero) return;
-    final next = total * fraction.clamp(0.0, 1.0);
-    _positionFlush?.cancel();
-    _positionFlush = null;
-    _queuedPosition = null;
-    await _engine.seek(next);
+    final next = Duration(
+      milliseconds: (total.inMilliseconds * fraction.clamp(0.0, 1.0)).round(),
+    );
+    final gen = ++_seekGen;
+    _armSeek(next);
     state = state.copyWith(position: next);
+    await _engine.seek(next);
+    if (gen != _seekGen) return;
   }
 
   Future<void> setVolume(double volume) async {
@@ -249,36 +330,57 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   }
 
   Future<void> _openCurrent({bool crossfade = false}) async {
-    if (_opening) return;
+    _openCrossfade = crossfade;
+    if (_opening) {
+      _openAgain = true;
+      return;
+    }
     _opening = true;
+    _holdPosition = true;
     try {
-      final id = queue.currentId;
-      if (id == null) return;
-      final track = await _db.trackById(id);
-      if (track == null) return;
-      final uri = await _resolvers.resolve(
-        TrackLocator(source: track.source, locator: track.locator),
-      );
-      if (crossfade) {
-        await _engine.crossfadeTo(uri);
-      } else {
+      do {
+        _openAgain = false;
+        final useCrossfade = _openCrossfade;
+        final id = queue.currentId;
+        if (id == null) return;
+        final track = await _db.trackById(id);
+        if (track == null) return;
         _crossfadeArmed = false;
-        await _engine.play(uri);
-      }
-      await _engine.setVolume(state.volume);
-      state = state.copyWith(
-        trackId: id,
-        title: track.title,
-        artist: track.artist,
-        artworkPath: track.artworkPath,
-        clearArtist: track.artist == null,
-        clearArtwork: track.artworkPath == null,
-        queueIds: List<int>.of(queue.ids),
-        repeat: queue.repeat,
-        shuffle: queue.shuffle,
-        position: Duration.zero,
-      );
+        _clearSeekLock();
+        _positionFlush?.cancel();
+        _positionFlush = null;
+        _queuedPosition = null;
+        state = state.copyWith(
+          trackId: id,
+          title: track.title,
+          artist: track.artist,
+          artworkPath: track.artworkPath,
+          clearArtist: track.artist == null,
+          clearArtwork: track.artworkPath == null,
+          queueIds: List<int>.of(queue.ids),
+          repeat: queue.repeat,
+          shuffle: queue.shuffle,
+          playing: true,
+          position: Duration.zero,
+        );
+        _wantPlaying = true;
+        final uri = await _resolvers.resolve(
+          TrackLocator(source: track.source, locator: track.locator),
+        );
+        if (_openAgain) continue;
+        if (useCrossfade) {
+          await _engine.crossfadeTo(uri);
+        } else {
+          await _engine.play(uri);
+        }
+        await _engine.setVolume(state.volume);
+        if (!state.playing) {
+          _wantPlaying = false;
+          await _engine.pause();
+        }
+      } while (_openAgain);
     } finally {
+      _holdPosition = false;
       _opening = false;
     }
   }
