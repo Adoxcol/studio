@@ -16,6 +16,7 @@ abstract interface class AudioEngine {
   Stream<Duration> get duration;
   Stream<bool> get playing;
   Stream<void> get completed;
+  Stream<List<double>> get spectrum;
 
   void dispose();
 }

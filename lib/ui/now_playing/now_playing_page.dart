@@ -6,7 +6,7 @@ import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/lyrics/lyrics_scroller.dart';
 import 'package:studio/ui/now_playing/cover_art.dart';
-import 'package:studio/ui/visualizer/amplitude_visualizer.dart';
+import 'package:studio/ui/visualizer/spectrum_visualizer.dart';
 
 class NowPlayingPage extends ConsumerWidget {
   const NowPlayingPage({super.key});
@@ -154,16 +154,11 @@ class _VisualizerSlot extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final snapshot = ref.watch(
-      playbackControllerProvider.select(
-        (s) => (playing: s.playing, position: s.position),
-      ),
+    final playing = ref.watch(
+      playbackControllerProvider.select((s) => s.playing),
     );
-    return AmplitudeVisualizer(
-      playing: snapshot.playing,
-      position: snapshot.position,
-      width: width,
-    );
+    final bands = ref.watch(spectrumBandsProvider).value ?? const [];
+    return SpectrumVisualizer(playing: playing, bands: bands, width: width);
   }
 }
 

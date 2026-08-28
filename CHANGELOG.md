@@ -26,8 +26,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   side notice with Stop, and a refresh control re-scans on demand.
 - Appearance settings: Auto accent from album art or a custom hue swatch,
   both using the same OKLCH chroma/lightness formula.
-- Now Playing shows an amplitude-envelope visualizer under the cover art
-  (position-driven v1, not an FFT tap).
+- Now Playing shows a 32-band FFT spectrum under the cover art, tapped from
+  a silent mpv PCM dump so ReplayGain and EQ are reflected.
 - Library, Now Playing, and Queue sit in a dockable workspace: drag a panel
   by its header, resize the split, or maximize it. Settings stays a full page.
 - ReplayGain Off / Track / Album in Settings, applied through mpv.
@@ -42,8 +42,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   cancellable so the library does not freeze for minutes, and parse tags off
   the UI isolate in batches so large folders stay responsive.
 - Library lists use a fixed row height so long All / Queue views stay smooth
-  when scrolling far down. Playback position ticks only rebuild the scrubber
-  and visualizer.
+  when scrolling far down. Playback position ticks only rebuild the scrubber.
+  The spectrum visualizer listens to its own FFT band stream.
 
 ### Fixed
 

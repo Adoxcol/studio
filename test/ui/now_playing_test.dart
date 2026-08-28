@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/lyrics/lrclib_client.dart';
 import 'package:studio/theming/studio_palette.dart';
-import 'package:studio/ui/visualizer/amplitude_visualizer.dart';
+import 'package:studio/ui/visualizer/spectrum_visualizer.dart';
 
 import '../helpers/pump_studio.dart';
 import '../lyrics/fake_lyrics_lookup.dart';
@@ -52,7 +52,7 @@ void main() {
 
     expect(find.text('Not playing'), findsWidgets);
     expect(find.text('Queue is empty.'), findsOneWidget);
-    expect(find.byType(AmplitudeVisualizer), findsOneWidget);
+    expect(find.byType(SpectrumVisualizer), findsOneWidget);
     expect(
       Theme.of(
         tester.element(find.text('Not playing').first),

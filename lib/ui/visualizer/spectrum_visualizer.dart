@@ -1,22 +1,22 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:studio/theming/studio_palette.dart';
 
-/// v1 visualizer: amplitude-envelope bars driven by playback position.
-/// Not a PCM/FFT tap — that is a later phase.
-class AmplitudeVisualizer extends StatelessWidget {
-  const AmplitudeVisualizer({
+/// 32-band FFT spectrum under the cover art.
+class SpectrumVisualizer extends StatelessWidget {
+  const SpectrumVisualizer({
     super.key,
     required this.playing,
-    required this.position,
+    required this.bands,
     this.barCount = 32,
     this.height = 44,
     this.width = 280,
   });
 
   final bool playing;
-  final Duration position;
+  final List<double> bands;
   final int barCount;
   final double height;
   final double width;
@@ -30,9 +30,9 @@ class AmplitudeVisualizer extends StatelessWidget {
         width: width,
         height: height,
         child: CustomPaint(
-          painter: AmplitudePainter(
+          painter: SpectrumPainter(
             playing: playing,
-            position: position,
+            bands: bands,
             barCount: barCount,
             accent: palette.accent,
             rest: palette.hairlineStrong,
@@ -43,31 +43,22 @@ class AmplitudeVisualizer extends StatelessWidget {
   }
 }
 
-double amplitudeAt({
-  required int index,
-  required Duration position,
-  required bool playing,
-}) {
-  final t = position.inMilliseconds / 1000.0;
+double idleLevel(int index) {
   final n = index + 1;
-  final idle = 0.1 + 0.05 * math.sin(n * 0.73);
-  if (!playing) return idle.clamp(0.06, 0.2);
-  final wave = 0.5 + 0.5 * math.sin(t * (1.4 + n * 0.13) + n * 0.41);
-  final pulse = 0.55 + 0.45 * math.sin(t * 2.1);
-  return (0.16 + 0.84 * wave * pulse).clamp(0.08, 1.0);
+  return (0.1 + 0.05 * math.sin(n * 0.73)).clamp(0.06, 0.2);
 }
 
-class AmplitudePainter extends CustomPainter {
-  const AmplitudePainter({
+class SpectrumPainter extends CustomPainter {
+  const SpectrumPainter({
     required this.playing,
-    required this.position,
+    required this.bands,
     required this.barCount,
     required this.accent,
     required this.rest,
   });
 
   final bool playing;
-  final Duration position;
+  final List<double> bands;
   final int barCount;
   final Color accent;
   final Color rest;
@@ -83,7 +74,10 @@ class AmplitudePainter extends CustomPainter {
     final paint = Paint()..style = PaintingStyle.fill;
 
     for (var i = 0; i < barCount; i++) {
-      final level = amplitudeAt(index: i, position: position, playing: playing);
+      final sample = i < bands.length ? bands[i].clamp(0.0, 1.0) : 0.0;
+      final level = playing && bands.isNotEmpty
+          ? math.max(0.08, sample)
+          : idleLevel(i);
       final barHeight = math.max(2.0, size.height * level);
       final x = i * (barWidth + gap);
       final y = size.height - barHeight;
@@ -93,11 +87,11 @@ class AmplitudePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(AmplitudePainter old) {
+  bool shouldRepaint(SpectrumPainter old) {
     return old.playing != playing ||
-        old.position != position ||
         old.barCount != barCount ||
         old.accent != accent ||
-        old.rest != rest;
+        old.rest != rest ||
+        !listEquals(old.bands, bands);
   }
 }
