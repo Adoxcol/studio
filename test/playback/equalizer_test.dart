@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studio/playback/dsp/crossfade.dart';
 import 'package:studio/playback/dsp/equalizer.dart';
 import 'package:studio/playback/dsp/replay_gain.dart';
 import 'package:studio/playback/playback_settings.dart';
@@ -53,5 +54,21 @@ void main() {
     expect(loaded.replayGain, ReplayGainMode.album);
     expect(loaded.equalizerPreset, EqualizerPreset.flat);
     expect(loaded.equalizerGains, Equalizer.flat);
+  });
+
+  test('file store round-trips a 5s crossfade', () {
+    final file = File(
+      '${Directory.systemTemp.createTempSync('studio-xfade').path}/playback.json',
+    );
+    addTearDown(() {
+      if (file.parent.existsSync()) file.parent.deleteSync(recursive: true);
+    });
+    FilePlaybackSettingsStore(
+      file,
+    ).save(const PlaybackSettings(crossfade: Crossfade.fiveSeconds));
+    expect(
+      FilePlaybackSettingsStore(file).load().crossfade,
+      Crossfade.fiveSeconds,
+    );
   });
 }

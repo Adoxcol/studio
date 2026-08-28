@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/theming/accent_seed.dart';
 import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/playback/dsp/crossfade.dart';
 import 'package:studio/playback/dsp/equalizer.dart';
 import 'package:studio/playback/dsp/replay_gain.dart';
 
@@ -94,5 +95,25 @@ void main() {
     await tester.pump();
 
     expect(engine.lastEqualizer, Equalizer.warm);
+  });
+
+  testWidgets('crossfade 5s is stored on the engine', (tester) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(testStudioApp(db: db, engine: engine));
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pump();
+
+    expect(find.text('Crossfade'), findsOneWidget);
+    await tester.ensureVisible(find.text('5s'));
+    await tester.pump();
+    await tester.tap(find.text('5s'));
+    await tester.pump();
+
+    expect(engine.lastCrossfade, Crossfade.fiveSeconds);
   });
 }

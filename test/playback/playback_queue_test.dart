@@ -22,6 +22,18 @@ void main() {
     expect(queue.currentId, 10);
   });
 
+  test('peekNextId looks ahead without moving', () {
+    final queue = PlaybackQueue(ids: [1, 2, 3]);
+    expect(queue.peekNextId(), 2);
+    expect(queue.currentId, 1);
+    queue.index = 2;
+    expect(queue.peekNextId(), equals(null));
+    queue.repeat = QueueRepeatMode.all;
+    expect(queue.peekNextId(), 1);
+    queue.repeat = QueueRepeatMode.one;
+    expect(queue.peekNextId(), 3);
+  });
+
   test('replace with startIndex selects that track', () {
     final queue = PlaybackQueue();
     queue.replace([4, 5, 6], startIndex: 2);

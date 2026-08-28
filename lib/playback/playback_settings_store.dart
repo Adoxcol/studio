@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:studio/playback/dsp/crossfade.dart';
 import 'package:studio/playback/dsp/equalizer.dart';
 import 'package:studio/playback/dsp/replay_gain.dart';
 import 'package:studio/playback/playback_settings.dart';
@@ -52,6 +53,7 @@ class FilePlaybackSettingsStore implements PlaybackSettingsStore {
         equalizerGains: gains.length == Equalizer.bandsHz.length
             ? gains
             : Equalizer.flat,
+        crossfade: Crossfade.fromMilliseconds(json['crossfadeMs'] as int?),
       );
     } on Object {
       return PlaybackSettings.defaults;
@@ -66,6 +68,7 @@ class FilePlaybackSettingsStore implements PlaybackSettingsStore {
         'replayGain': settings.replayGain.name,
         'equalizerPreset': settings.equalizerPreset.name,
         'equalizerGains': settings.equalizerGains,
+        'crossfadeMs': settings.crossfade.inMilliseconds,
       }),
     );
   }

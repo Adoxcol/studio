@@ -10,6 +10,9 @@ class FakeAudioEngine implements AudioEngine {
   double lastVolume = 1;
   ReplayGainMode lastReplayGain = ReplayGainMode.off;
   List<double> lastEqualizer = const [];
+  Duration lastCrossfade = Duration.zero;
+  Uri? lastPrepared;
+  Uri? lastCrossfadeTo;
 
   final _position = StreamController<Duration>.broadcast();
   final _duration = StreamController<Duration>.broadcast();
@@ -24,6 +27,17 @@ class FakeAudioEngine implements AudioEngine {
     _playing.add(true);
     _duration.add(const Duration(minutes: 3));
     _position.add(Duration.zero);
+  }
+
+  @override
+  Future<void> prepare(Uri uri) async {
+    lastPrepared = uri;
+  }
+
+  @override
+  Future<void> crossfadeTo(Uri uri) async {
+    lastCrossfadeTo = uri;
+    await play(uri);
   }
 
   @override
@@ -63,6 +77,11 @@ class FakeAudioEngine implements AudioEngine {
   @override
   Future<void> setEqualizer(List<double> gains) async {
     lastEqualizer = List<double>.from(gains);
+  }
+
+  @override
+  Future<void> setCrossfade(Duration duration) async {
+    lastCrossfade = duration;
   }
 
   @override
