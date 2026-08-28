@@ -1,17 +1,25 @@
-# studio
+# Studio
 
-A new Flutter project.
+A fast, customizable desktop music player. Local library first; a Spotify-style
+streaming linkup is planned later.
 
-## Getting Started
+**Stack:** Flutter (Windows, macOS, Linux) · Riverpod · drift/sqlite3 · media_kit ·
+window_manager · tray_manager / hotkey_manager.
 
-This project is a starting point for a Flutter application.
+This is a solo-maintained open source project run with production-grade process.
+Read [AGENTS.md](./AGENTS.md) before changing anything.
 
-A few resources to get you started if this is your first Flutter project:
+## Run
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```bash
+flutter pub get
+flutter run -d windows   # or macos / linux
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Contribute
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md). After cloning:
+
+```bash
+git config core.hooksPath .githooks
+```
