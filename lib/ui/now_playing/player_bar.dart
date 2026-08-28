@@ -4,6 +4,7 @@ import 'package:studio/core/time_format.dart';
 import 'package:studio/playback/playback_queue.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/ui/now_playing/cover_art.dart';
 
 class PlayerBar extends ConsumerWidget {
   const PlayerBar({super.key});
@@ -40,11 +41,7 @@ class PlayerBar extends ConsumerWidget {
                   width: 260,
                   child: Row(
                     children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        color: palette.artSwatch,
-                      ),
+                      CoverArt(path: playback.artworkPath, size: 40),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(

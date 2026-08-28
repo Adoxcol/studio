@@ -18,6 +18,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Library browser matching the Editorial Mono All view: collapsible artist
   sidebar, tabs, search, typographic sort/order, and TITLE/ARTIST/ALBUM/TIME
   columns.
+- Now Playing hero: Spectral display title, embedded cover art, and a 280px
+  Up Next queue panel.
 
 ### Changed
 ### Fixed

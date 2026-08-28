@@ -15,6 +15,7 @@ class PlaybackUiState {
     this.trackId,
     this.title = 'Not playing',
     this.artist,
+    this.artworkPath,
     this.playing = false,
     this.position = Duration.zero,
     this.duration = Duration.zero,
@@ -27,6 +28,7 @@ class PlaybackUiState {
   final int? trackId;
   final String title;
   final String? artist;
+  final String? artworkPath;
   final bool playing;
   final Duration position;
   final Duration duration;
@@ -34,6 +36,14 @@ class PlaybackUiState {
   final QueueRepeatMode repeat;
   final bool shuffle;
   final List<int> queueIds;
+
+  List<int> get upcomingIds {
+    final id = trackId;
+    if (id == null || queueIds.isEmpty) return const [];
+    final index = queueIds.indexOf(id);
+    if (index < 0 || index >= queueIds.length - 1) return const [];
+    return queueIds.sublist(index + 1);
+  }
 
   double get progress {
     final total = duration.inMilliseconds;
@@ -45,6 +55,7 @@ class PlaybackUiState {
     int? trackId,
     String? title,
     String? artist,
+    String? artworkPath,
     bool? playing,
     Duration? position,
     Duration? duration,
@@ -53,11 +64,13 @@ class PlaybackUiState {
     bool? shuffle,
     List<int>? queueIds,
     bool clearArtist = false,
+    bool clearArtwork = false,
   }) {
     return PlaybackUiState(
       trackId: trackId ?? this.trackId,
       title: title ?? this.title,
       artist: clearArtist ? null : artist ?? this.artist,
+      artworkPath: clearArtwork ? null : artworkPath ?? this.artworkPath,
       playing: playing ?? this.playing,
       position: position ?? this.position,
       duration: duration ?? this.duration,
@@ -125,6 +138,12 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     await _openCurrent();
   }
 
+  Future<void> playQueueIndex(int index) async {
+    if (index < 0 || index >= queue.ids.length) return;
+    queue.index = index;
+    await _openCurrent();
+  }
+
   Future<void> togglePlayPause() async {
     if (state.trackId == null) return;
     if (state.playing) {
@@ -184,7 +203,9 @@ class PlaybackController extends Notifier<PlaybackUiState> {
       trackId: id,
       title: track.title,
       artist: track.artist,
+      artworkPath: track.artworkPath,
       clearArtist: track.artist == null,
+      clearArtwork: track.artworkPath == null,
       queueIds: List<int>.of(queue.ids),
       repeat: queue.repeat,
       shuffle: queue.shuffle,
