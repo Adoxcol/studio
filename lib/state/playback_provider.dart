@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/playback/audio_engine.dart';
 import 'package:studio/playback/playback_queue.dart';
+import 'package:studio/playback/playback_settings_provider.dart';
 import 'package:studio/providers/playable_resolver.dart';
 import 'package:studio/providers/resolver_registry.dart';
 import 'package:studio/state/library_providers.dart';
@@ -94,6 +95,12 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     _engine = ref.watch(audioEngineProvider);
     _db = ref.watch(studioDatabaseProvider);
     _resolvers = ref.watch(resolverRegistryProvider);
+    ref.listen(playbackSettingsProvider.select((s) => s.replayGain), (_, mode) {
+      unawaited(_engine.setReplayGain(mode));
+    });
+    unawaited(
+      _engine.setReplayGain(ref.read(playbackSettingsProvider).replayGain),
+    );
 
     _subs.add(
       _engine.position.listen((value) {

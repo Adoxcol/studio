@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:studio/playback/dsp/replay_gain.dart';
+import 'package:studio/playback/playback_settings_provider.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/accent_seed.dart';
 import 'package:studio/theming/appearance_provider.dart';
@@ -114,8 +116,48 @@ class SettingsPage extends ConsumerWidget {
               ),
             ],
           ),
+          const SizedBox(height: 32),
+          _SectionLabel(text: 'PLAYBACK & SOUND'),
+          const SizedBox(height: 16),
+          Text('ReplayGain', style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 10),
+          _ReplayGainRow(
+            selected: ref.watch(playbackSettingsProvider).replayGain,
+            onSelect: (mode) =>
+                ref.read(playbackSettingsProvider.notifier).setReplayGain(mode),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Matches loudness across tracks using each file's ReplayGain tags.",
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _ReplayGainRow extends StatelessWidget {
+  const _ReplayGainRow({required this.selected, required this.onSelect});
+
+  final ReplayGainMode selected;
+  final ValueChanged<ReplayGainMode> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (final mode in ReplayGainMode.values) ...[
+          if (mode != ReplayGainMode.values.first) const SizedBox(width: 24),
+          LibraryTextAction(
+            label: mode.label,
+            onTap: () => onSelect(mode),
+            muted: mode != selected,
+          ),
+        ],
+      ],
     );
   }
 }

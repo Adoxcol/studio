@@ -1,14 +1,17 @@
 import 'package:media_kit/media_kit.dart';
 import 'package:studio/playback/audio_engine.dart';
+import 'package:studio/playback/dsp/replay_gain.dart';
 
 class MediaKitAudioEngine implements AudioEngine {
   MediaKitAudioEngine({Player? player}) : _player = player ?? Player();
 
   final Player _player;
+  ReplayGainMode _replayGain = ReplayGainMode.off;
 
   @override
-  Future<void> play(Uri uri) {
-    return _player.open(Media(uri.toString()));
+  Future<void> play(Uri uri) async {
+    await _applyReplayGain();
+    await _player.open(Media(uri.toString()));
   }
 
   @override
@@ -26,6 +29,19 @@ class MediaKitAudioEngine implements AudioEngine {
   @override
   Future<void> setVolume(double volume) {
     return _player.setVolume((volume.clamp(0.0, 1.0) * 100));
+  }
+
+  @override
+  Future<void> setReplayGain(ReplayGainMode mode) {
+    _replayGain = mode;
+    return _applyReplayGain();
+  }
+
+  Future<void> _applyReplayGain() async {
+    final platform = _player.platform;
+    if (platform is NativePlayer) {
+      await platform.setProperty('replaygain', _replayGain.mpvValue);
+    }
   }
 
   @override
