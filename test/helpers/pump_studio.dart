@@ -16,6 +16,7 @@ Widget testStudioApp({
   List<LibraryFolder> folders = const [],
   List extraOverrides = const [],
   LyricsLookup? lyricsLookup,
+  bool stubPlaylists = true,
 }) {
   return ProviderScope(
     overrides: [
@@ -23,6 +24,10 @@ Widget testStudioApp({
       audioEngineProvider.overrideWithValue(engine),
       libraryTracksProvider.overrideWith((ref) => Stream.value(tracks)),
       libraryFoldersProvider.overrideWith((ref) => Stream.value(folders)),
+      if (stubPlaylists)
+        playlistsProvider.overrideWith(
+          (ref) => Stream.value(const <Playlist>[]),
+        ),
       lyricsLookupProvider.overrideWithValue(
         lyricsLookup ?? FakeLyricsLookup(),
       ),

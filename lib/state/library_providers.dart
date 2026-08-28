@@ -43,6 +43,17 @@ final libraryTracksProvider = StreamProvider<List<Track>>((ref) {
   );
 });
 
+final playlistsProvider = StreamProvider<List<Playlist>>((ref) {
+  return ref.watch(studioDatabaseProvider).watchPlaylists();
+});
+
+final playlistTracksProvider = StreamProvider.family<List<Track>, int>((
+  ref,
+  playlistId,
+) {
+  return ref.watch(studioDatabaseProvider).watchPlaylistTracks(playlistId);
+});
+
 /// Emits immediately, then at most once per [window], always flushing the
 /// latest value so a scan batch does not rebuild the library on every write.
 Stream<T> coalesceLatest<T>(Stream<T> source, Duration window) {

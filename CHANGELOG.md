@@ -36,6 +36,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Dual-player crossfade in Settings as a 0–15s slider. Skip and
   end-of-track overlap with an equal-power fade; the FFT tap follows
   the incoming track.
+- Local playlists: create a list from the Playlists tab, right-click a
+  track to add it, then Play All / Shuffle that list.
 
 ### Changed
 
@@ -63,6 +65,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Pause never calls blocking libmpv from the UI isolate (that froze the
   window when the FFT tap was dumping PCM). ReplayGain and EQ changes
   never touch the live FFT player either.
+- FFT tap no longer crashes the Windows process when mpv is slow to
+  connect to the PCM pipe (`TimeoutException: PCM pipe connect` then
+  `Lost connection to device`). The pipe stays duplex and non-blocking,
+  and a stuck tap is abandoned instead of disposed.
 - Now Playing no longer overflows by a few pixels when the pane is short or
   the title wraps.
 - Linux CI installs `libkeybinder-3.0-dev` and `libayatana-appindicator3-dev` so

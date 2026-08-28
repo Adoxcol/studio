@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:studio/library/database.dart';
 import 'package:studio/library/library_query.dart';
 import 'package:studio/theming/studio_palette.dart';
 
@@ -9,18 +10,22 @@ class LibraryBrowseView extends StatelessWidget {
     required this.artists,
     required this.albums,
     required this.genres,
+    this.playlists = const [],
     required this.onSelectArtist,
     required this.onSelectAlbum,
     required this.onSelectGenre,
+    this.onSelectPlaylist,
   });
 
   final LibraryTab tab;
   final List<LibraryGroup> artists;
   final List<AlbumSection> albums;
   final List<LibraryGroup> genres;
+  final List<Playlist> playlists;
   final ValueChanged<String> onSelectArtist;
   final void Function(String artist, String album) onSelectAlbum;
   final ValueChanged<String> onSelectGenre;
+  final ValueChanged<Playlist>? onSelectPlaylist;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +39,10 @@ class LibraryBrowseView extends StatelessWidget {
         onSelect: onSelectAlbum,
       ),
       LibraryTab.genres => _GenreGrid(groups: genres, onSelect: onSelectGenre),
-      LibraryTab.playlists => const _EmptyCopy(text: 'No playlists yet.'),
+      LibraryTab.playlists => PlaylistListView(
+        playlists: playlists,
+        onSelect: onSelectPlaylist ?? (_) {},
+      ),
       _ => const SizedBox.shrink(),
     };
   }
@@ -56,6 +64,50 @@ class _EmptyCopy extends StatelessWidget {
           context,
         ).textTheme.bodyMedium?.copyWith(color: palette.inkMuted),
       ),
+    );
+  }
+}
+
+class PlaylistListView extends StatelessWidget {
+  const PlaylistListView({
+    super.key,
+    required this.playlists,
+    required this.onSelect,
+  });
+
+  final List<Playlist> playlists;
+  final ValueChanged<Playlist> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    if (playlists.isEmpty) {
+      return const _EmptyCopy(text: 'No playlists yet.');
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _CountLabel(count: playlists.length, noun: 'PLAYLIST'),
+        Expanded(
+          child: GridView.builder(
+            padding: const EdgeInsets.only(top: 12, bottom: 16),
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 240,
+              mainAxisExtent: 72,
+              crossAxisSpacing: 24,
+              mainAxisSpacing: 8,
+            ),
+            itemCount: playlists.length,
+            itemBuilder: (context, index) {
+              final playlist = playlists[index];
+              return _NameTile(
+                name: playlist.name,
+                detail: 'Playlist',
+                onTap: () => onSelect(playlist),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
