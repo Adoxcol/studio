@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:studio/core/desktop/close_preference.dart';
+import 'package:studio/core/desktop/close_preference_provider.dart';
 import 'package:studio/playback/dsp/crossfade.dart';
 import 'package:studio/playback/dsp/equalizer.dart';
 import 'package:studio/playback/dsp/replay_gain.dart';
@@ -29,9 +31,8 @@ class SettingsPage extends ConsumerWidget {
         ),
       ),
     );
-    final seed = AccentSeed.nearest(hue);
     final previewLabel =
-        '${appearance.mode == AccentMode.auto ? 'AUTO' : 'CUSTOM'} · ${seed.label.toUpperCase()}';
+        '${appearance.mode == AccentMode.auto ? 'AUTO' : 'CUSTOM'} · ${AccentSeed.labelFor(hue)}';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(32, 24, 32, 24),
@@ -64,7 +65,7 @@ class SettingsPage extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Every swatch here uses the same tonal formula as the auto engine — same chroma, same lightness, only the hue changes — so any pick stays exactly as clean.',
+            'Named swatches are shortcuts. Drag the hue bar for any accent — chroma and lightness stay the same as Auto.',
             style: Theme.of(
               context,
             ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
@@ -79,13 +80,21 @@ class SettingsPage extends ConsumerWidget {
                     seed: seed,
                     selected:
                         appearance.mode == AccentMode.custom &&
-                        AccentSeed.nearest(appearance.customHue) == seed,
+                        seed.matches(appearance.customHue),
                     onTap: () => ref
                         .read(appearanceProvider.notifier)
                         .setCustomHue(seed.hue),
                   ),
                 ),
             ],
+          ),
+          const SizedBox(height: 16),
+          _HueSlider(
+            hue: appearance.mode == AccentMode.custom
+                ? appearance.customHue
+                : hue,
+            onChanged: (next) =>
+                ref.read(appearanceProvider.notifier).setCustomHue(next),
           ),
           const SizedBox(height: 32),
           _SectionLabel(text: 'PREVIEW'),
@@ -175,6 +184,28 @@ class SettingsPage extends ConsumerWidget {
             onChanged: (index, gain) => ref
                 .read(playbackSettingsProvider.notifier)
                 .setEqualizerBand(index, gain),
+          ),
+          const SizedBox(height: 32),
+          _SectionLabel(text: 'WINDOW'),
+          const SizedBox(height: 16),
+          Text(
+            'When closing the window',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 10),
+          _ClosePreferenceRow(
+            preference: ref.watch(closePreferenceProvider),
+            onAsk: () =>
+                ref.read(closePreferenceProvider.notifier).askEveryTime(),
+            onRemember: (action) =>
+                ref.read(closePreferenceProvider.notifier).remember(action),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Ask each time, hide to the tray, or quit. "Don\'t show again" on the close dialog remembers this.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
           ),
         ],
       ),
@@ -402,6 +433,40 @@ class _EqSlider extends StatelessWidget {
   }
 }
 
+class _ClosePreferenceRow extends StatelessWidget {
+  const _ClosePreferenceRow({
+    required this.preference,
+    required this.onAsk,
+    required this.onRemember,
+  });
+
+  final ClosePreference preference;
+  final VoidCallback onAsk;
+  final ValueChanged<CloseAction> onRemember;
+
+  @override
+  Widget build(BuildContext context) {
+    final ask = preference.ask;
+    return Wrap(
+      spacing: 24,
+      runSpacing: 8,
+      children: [
+        LibraryTextAction(label: 'Ask every time', onTap: onAsk, muted: !ask),
+        LibraryTextAction(
+          label: 'Hide to tray',
+          onTap: () => onRemember(CloseAction.background),
+          muted: ask || preference.remember != CloseAction.background,
+        ),
+        LibraryTextAction(
+          label: 'Quit',
+          onTap: () => onRemember(CloseAction.quit),
+          muted: ask || preference.remember != CloseAction.quit,
+        ),
+      ],
+    );
+  }
+}
+
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.text});
 
@@ -417,6 +482,88 @@ class _SectionLabel extends StatelessWidget {
         letterSpacing: 1.4,
         fontSize: 11,
       ),
+    );
+  }
+}
+
+class _HueSlider extends StatelessWidget {
+  const _HueSlider({required this.hue, required this.onChanged});
+
+  static const _height = 20.0;
+
+  final double hue;
+  final ValueChanged<double> onChanged;
+
+  static final _spectrum = [
+    for (var h = 0; h <= 360; h += 30)
+      StudioPalette.light(hue: h.toDouble()).accent,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StudioPalette.of(context);
+    final t = (AccentSeed.wrap(hue) / 360).clamp(0.0, 1.0);
+    return Row(
+      children: [
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              void at(double dx) {
+                final width = constraints.maxWidth;
+                if (width <= 0) return;
+                onChanged((dx / width) * 360);
+              }
+
+              return MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  key: const ValueKey('hue-slider'),
+                  behavior: HitTestBehavior.opaque,
+                  onTapDown: (details) => at(details.localPosition.dx),
+                  onHorizontalDragUpdate: (details) =>
+                      at(details.localPosition.dx),
+                  child: SizedBox(
+                    height: _height,
+                    child: Stack(
+                      alignment: Alignment.centerLeft,
+                      children: [
+                        Container(
+                          height: 2,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: _spectrum),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment(t * 2 - 1, 0),
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: StudioPalette.light(hue: hue).accent,
+                              border: Border.all(color: palette.ink, width: 1),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(width: 16),
+        SizedBox(
+          width: 36,
+          child: Text(
+            '${AccentSeed.wrap(hue).round()}°',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+          ),
+        ),
+      ],
     );
   }
 }

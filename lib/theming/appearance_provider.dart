@@ -18,7 +18,10 @@ class AppearanceNotifier extends Notifier<AppearanceState> {
   }
 
   void setCustomHue(double hue) {
-    state = state.copyWith(mode: AccentMode.custom, customHue: hue);
+    state = state.copyWith(
+      mode: AccentMode.custom,
+      customHue: AccentSeed.wrap(hue),
+    );
     ref.read(appearanceStoreProvider).save(state);
   }
 }

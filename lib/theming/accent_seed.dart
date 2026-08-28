@@ -22,14 +22,36 @@ enum AccentSeed {
     var best = terracotta;
     var bestDelta = 360.0;
     for (final seed in values) {
-      final raw = (seed.hue - hue).abs() % 360;
-      final delta = raw > 180 ? 360 - raw : raw;
+      final delta = hueDelta(seed.hue, hue);
       if (delta < bestDelta) {
         bestDelta = delta;
         best = seed;
       }
     }
     return best;
+  }
+
+  static double hueDelta(double a, double b) {
+    final raw = (a - b).abs() % 360;
+    return raw > 180 ? 360 - raw : raw;
+  }
+
+  static double wrap(double hue) {
+    final n = hue % 360;
+    return n < 0 ? n + 360 : n;
+  }
+
+  /// Named seed when [hue] sits on one; otherwise the degree.
+  static String labelFor(double hue) {
+    final nearestSeed = nearest(hue);
+    if (hueDelta(nearestSeed.hue, hue) <= 8) {
+      return nearestSeed.label.toUpperCase();
+    }
+    return '${wrap(hue).round()}°';
+  }
+
+  bool matches(double hue, {double tolerance = 8}) {
+    return hueDelta(this.hue, hue) <= tolerance;
   }
 }
 

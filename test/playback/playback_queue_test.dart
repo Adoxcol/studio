@@ -39,4 +39,28 @@ void main() {
     queue.replace([4, 5, 6], startIndex: 2);
     expect(queue.currentId, 6);
   });
+
+  test('setShuffle keeps the current track first and restores order', () {
+    final queue = PlaybackQueue(ids: [1, 2, 3, 4], index: 1);
+    queue.setShuffle(true);
+    expect(queue.shuffle, isTrue);
+    expect(queue.currentId, 2);
+    expect(queue.index, 0);
+    expect(queue.ids.toSet(), {1, 2, 3, 4});
+    expect(queue.ids.first, 2);
+
+    queue.setShuffle(false);
+    expect(queue.shuffle, isFalse);
+    expect(queue.ids, [1, 2, 3, 4]);
+    expect(queue.currentId, 2);
+    expect(queue.index, 1);
+  });
+
+  test('replace while shuffle is on keeps the start track first', () {
+    final queue = PlaybackQueue(shuffle: true);
+    queue.replace([10, 20, 30, 40], startIndex: 2);
+    expect(queue.currentId, 30);
+    expect(queue.index, 0);
+    expect(queue.ids.toSet(), {10, 20, 30, 40});
+  });
 }

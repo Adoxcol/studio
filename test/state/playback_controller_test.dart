@@ -143,4 +143,32 @@ void main() {
       const Duration(minutes: 1, seconds: 30),
     );
   });
+
+  test('toggleShuffle reorders upcoming ids and restores them', () async {
+    final ids = await insertTitles(['A', 'B', 'C', 'D']);
+    await controller().playTracks(ids, startIndex: 1);
+    expect(ui().queueIds, ids);
+    expect(ui().trackId, ids[1]);
+
+    controller().toggleShuffle();
+    expect(ui().shuffle, isTrue);
+    expect(ui().queueIds.first, ids[1]);
+    expect(ui().queueIds.toSet(), ids.toSet());
+    expect(ui().trackId, ids[1]);
+
+    controller().toggleShuffle();
+    expect(ui().shuffle, isFalse);
+    expect(ui().queueIds, ids);
+    expect(ui().trackId, ids[1]);
+  });
+
+  test('skipNext after shuffle keeps playing', () async {
+    final ids = await insertTitles(['A', 'B', 'C']);
+    await controller().playTracks(ids);
+    controller().toggleShuffle();
+    await controller().skipNext();
+    expect(ui().playing, isTrue);
+    expect(engine.paused, isFalse);
+    expect(ui().title, isNot('A'));
+  });
 }

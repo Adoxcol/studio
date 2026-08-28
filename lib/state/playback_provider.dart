@@ -160,6 +160,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     );
     _subs.add(
       _engine.completed.listen((_) {
+        if (_opening || _restoring) return;
         unawaited(skipNext());
       }),
     );
@@ -320,9 +321,17 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   Future<void> seekFraction(double fraction) async {
     final total = state.duration;
     if (total <= Duration.zero) return;
-    final next = Duration(
-      milliseconds: (total.inMilliseconds * fraction.clamp(0.0, 1.0)).round(),
+    await seekTo(
+      Duration(
+        milliseconds: (total.inMilliseconds * fraction.clamp(0.0, 1.0)).round(),
+      ),
     );
+  }
+
+  Future<void> seekTo(Duration position) async {
+    final total = state.duration;
+    var next = position < Duration.zero ? Duration.zero : position;
+    if (total > Duration.zero && next > total) next = total;
     final gen = ++_seekGen;
     _armSeek(next);
     state = state.copyWith(position: next);
@@ -344,8 +353,11 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   }
 
   void toggleShuffle() {
-    queue.shuffle = !queue.shuffle;
-    state = state.copyWith(shuffle: queue.shuffle);
+    queue.setShuffle(!queue.shuffle);
+    state = state.copyWith(
+      shuffle: queue.shuffle,
+      queueIds: List<int>.of(queue.ids),
+    );
     _scheduleSessionSave(flush: true);
   }
 
@@ -393,8 +405,13 @@ class PlaybackController extends Notifier<PlaybackUiState> {
         } else {
           await _engine.play(uri);
         }
+        if (_openAgain) continue;
         await _engine.setVolume(state.volume);
-        if (!play || !state.playing) {
+        if (play) {
+          _wantPlaying = true;
+          state = state.copyWith(playing: true);
+          await _engine.resume();
+        } else {
           _wantPlaying = false;
           await _engine.pause();
         }
@@ -443,8 +460,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
       if (session.isEmpty || queue.ids.isNotEmpty) return;
       queue.shuffle = session.shuffle;
       queue.repeat = session.repeat;
-      queue.ids = List<int>.of(session.queueIds);
-      queue.index = session.index;
+      queue.load(session.queueIds, nextIndex: session.index);
       await _openCurrent(play: false);
       final position = session.position;
       if (position <= Duration.zero) return;

@@ -37,10 +37,4 @@ void main() {
     expect(desktopTransportForMenuKey('quit'), DesktopTransport.quit);
     expect(desktopTransportForMenuKey('nope'), isNull);
   });
-
-  test('close hides to tray only after the icon exists', () {
-    expect(shouldHideToTray(trayReady: false, quitting: false), isFalse);
-    expect(shouldHideToTray(trayReady: true, quitting: false), isTrue);
-    expect(shouldHideToTray(trayReady: true, quitting: true), isFalse);
-  });
 }
