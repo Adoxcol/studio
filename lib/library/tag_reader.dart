@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:path/path.dart' as p;
@@ -11,6 +12,8 @@ class ParsedTags {
     this.duration,
     this.trackNumber,
     this.genre,
+    this.artwork,
+    this.artworkMime,
   });
 
   final String title;
@@ -19,6 +22,8 @@ class ParsedTags {
   final Duration? duration;
   final int? trackNumber;
   final String? genre;
+  final Uint8List? artwork;
+  final String? artworkMime;
 }
 
 class TagReader {
@@ -27,7 +32,8 @@ class TagReader {
   ParsedTags read(File file) {
     final fallbackTitle = p.basenameWithoutExtension(file.path);
     try {
-      final meta = readMetadata(file, getImage: false);
+      final meta = readMetadata(file, getImage: true);
+      final picture = _cover(meta.pictures);
       return ParsedTags(
         title: _nonEmpty(meta.title) ?? fallbackTitle,
         artist: _nonEmpty(meta.artist),
@@ -35,10 +41,26 @@ class TagReader {
         duration: meta.duration,
         trackNumber: meta.trackNumber,
         genre: _firstGenre(meta.genres),
+        artwork: picture?.bytes,
+        artworkMime: picture?.mimetype,
       );
     } on Object {
       return ParsedTags(title: fallbackTitle);
     }
+  }
+
+  static Picture? _cover(List<Picture> pictures) {
+    if (pictures.isEmpty) return null;
+    for (final picture in pictures) {
+      if (picture.pictureType == PictureType.coverFront &&
+          picture.bytes.isNotEmpty) {
+        return picture;
+      }
+    }
+    for (final picture in pictures) {
+      if (picture.bytes.isNotEmpty) return picture;
+    }
+    return null;
   }
 
   static String? _nonEmpty(String? value) {

@@ -16,6 +16,7 @@ class Tracks extends Table {
   IntColumn get trackNumber => integer().nullable()();
   TextColumn get genre => text().nullable()();
   DateTimeColumn get indexedAt => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get artworkPath => text().nullable()();
   IntColumn get folderId =>
       integer().nullable().references(LibraryFolders, #id)();
 }

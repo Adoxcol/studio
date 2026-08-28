@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:drift/drift.dart';
 import 'package:path/path.dart' as p;
+import 'package:studio/library/artwork_store.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/library/tag_reader.dart';
 import 'package:studio/providers/playable_resolver.dart';
@@ -11,11 +12,14 @@ class FolderScanner {
   FolderScanner({
     required StudioDatabase db,
     TagReader tagReader = const TagReader(),
+    ArtworkStore? artwork,
   }) : _db = db,
-       _tags = tagReader;
+       _tags = tagReader,
+       _artwork = artwork;
 
   final StudioDatabase _db;
   final TagReader _tags;
+  final ArtworkStore? _artwork;
 
   Future<int> scan(String folderPath) async {
     final folderId = await _db.upsertFolder(folderPath);
@@ -27,6 +31,11 @@ class FolderScanner {
       if (entity is! File) continue;
       if (!_isAudio(entity.path)) continue;
       final tags = _tags.read(entity);
+      String? artworkPath;
+      final bytes = tags.artwork;
+      if (bytes != null && _artwork != null) {
+        artworkPath = await _artwork.save(bytes, mime: tags.artworkMime);
+      }
       await _db.upsertTrack(
         TracksCompanion.insert(
           source: const Value(TrackLocator.local),
@@ -37,6 +46,7 @@ class FolderScanner {
           durationMs: Value(tags.duration?.inMilliseconds),
           trackNumber: Value(tags.trackNumber),
           genre: Value(tags.genre),
+          artworkPath: Value(artworkPath),
           folderId: Value(folderId),
         ),
       );
