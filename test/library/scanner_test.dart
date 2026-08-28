@@ -62,5 +62,67 @@ void main() {
     final track = (await db.allTracks()).single;
     expect(track.artworkPath, isA<String>());
     expect(File(track.artworkPath!).existsSync(), isTrue);
+
+    await FolderScanner(db: db).scan(music.path);
+    expect((await db.allTracks()).single.artworkPath, track.artworkPath);
   });
+
+  test('rescanKnown indexes new files in stored folders', () async {
+    final db = StudioDatabase.memory();
+    addTearDown(db.close);
+    final dir = Directory.systemTemp.createTempSync('studio-rescan');
+    addTearDown(() {
+      if (dir.existsSync()) dir.deleteSync(recursive: true);
+    });
+    File(p.join(dir.path, 'One.flac')).writeAsStringSync('not audio');
+    final scanner = FolderScanner(db: db);
+    await scanner.scan(dir.path);
+
+    File(p.join(dir.path, 'Two.flac')).writeAsStringSync('not audio');
+    await scanner.rescanKnown();
+
+    final titles = (await db.allTracks()).map((t) => t.title).toSet();
+    expect(titles, {'One', 'Two'});
+  });
+
+  test('rescan drops tracks whose files were deleted', () async {
+    final db = StudioDatabase.memory();
+    addTearDown(db.close);
+    final dir = Directory.systemTemp.createTempSync('studio-prune');
+    addTearDown(() {
+      if (dir.existsSync()) dir.deleteSync(recursive: true);
+    });
+    final gone = File(p.join(dir.path, 'Gone.flac'))
+      ..writeAsStringSync('not audio');
+    File(p.join(dir.path, 'Stay.flac')).writeAsStringSync('not audio');
+    final scanner = FolderScanner(db: db);
+    await scanner.scan(dir.path);
+    expect(await db.allTracks(), hasLength(2));
+
+    gone.deleteSync();
+    await scanner.rescanKnown();
+
+    final tracks = await db.allTracks();
+    expect(tracks, hasLength(1));
+    expect(tracks.single.title, 'Stay');
+    expect(await db.allFolders(), hasLength(1));
+  });
+
+  test(
+    'rescan of a missing folder clears its tracks but keeps the folder',
+    () async {
+      final db = StudioDatabase.memory();
+      addTearDown(db.close);
+      final dir = Directory.systemTemp.createTempSync('studio-missing');
+      File(p.join(dir.path, 'Temp.flac')).writeAsStringSync('not audio');
+      final scanner = FolderScanner(db: db);
+      await scanner.scan(dir.path);
+      dir.deleteSync(recursive: true);
+
+      await scanner.rescanKnown();
+
+      expect(await db.allTracks(), isEmpty);
+      expect(await db.allFolders(), hasLength(1));
+    },
+  );
 }

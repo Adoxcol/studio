@@ -21,15 +21,30 @@ class FolderScanner {
   final TagReader _tags;
   final ArtworkStore? _artwork;
 
+  /// Re-index every folder already stored in the library.
+  Future<int> rescanKnown() async {
+    final folders = await _db.allFolders();
+    var count = 0;
+    for (final folder in folders) {
+      count += await scan(folder.path);
+    }
+    return count;
+  }
+
   Future<int> scan(String folderPath) async {
     final folderId = await _db.upsertFolder(folderPath);
     final dir = Directory(folderPath);
-    if (!dir.existsSync()) return 0;
+    if (!dir.existsSync()) {
+      await _db.deleteTracksNotKept(folderId: folderId, keepLocators: const {});
+      return 0;
+    }
 
     var count = 0;
+    final seen = <String>{};
     await for (final entity in dir.list(recursive: true, followLinks: false)) {
       if (entity is! File) continue;
       if (!_isAudio(entity.path)) continue;
+      seen.add(entity.path);
       final tags = _tags.read(entity);
       String? artworkPath;
       final bytes = tags.artwork;
@@ -46,12 +61,15 @@ class FolderScanner {
           durationMs: Value(tags.duration?.inMilliseconds),
           trackNumber: Value(tags.trackNumber),
           genre: Value(tags.genre),
-          artworkPath: Value(artworkPath),
+          artworkPath: artworkPath == null
+              ? const Value.absent()
+              : Value(artworkPath),
           folderId: Value(folderId),
         ),
       );
       count++;
     }
+    await _db.deleteTracksNotKept(folderId: folderId, keepLocators: seen);
     return count;
   }
 

@@ -20,6 +20,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   columns.
 - Now Playing hero: Spectral display title, embedded cover art, and a 280px
   Up Next queue panel.
+- Known music folders are re-scanned on launch so new and removed files show
+  up without adding the folder again.
 
 ### Changed
 ### Fixed
