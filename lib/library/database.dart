@@ -26,11 +26,35 @@ class StudioDatabase extends _$StudioDatabase {
     onCreate: (m) async => m.createAll(),
     onUpgrade: (m, from, to) async {
       if (from < 2) {
-        await m.addColumn(tracks, tracks.genre);
-        await m.addColumn(tracks, tracks.indexedAt);
+        await _migrateToV2(m);
       }
     },
   );
+
+  /// SQLite rejects `ALTER TABLE ... ADD COLUMN` when the default is
+  /// `CURRENT_TIMESTAMP`, so `indexed_at` is added with a constant 0 and
+  /// then backfilled. Column adds are skipped if a previous attempt already
+  /// applied them before `user_version` moved to 2.
+  Future<void> _migrateToV2(Migrator m) async {
+    final columns = await _columnNames('tracks');
+    if (!columns.contains('genre')) {
+      await m.addColumn(tracks, tracks.genre);
+    }
+    if (!columns.contains('indexed_at')) {
+      await customStatement(
+        'ALTER TABLE tracks ADD COLUMN indexed_at INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+    await customStatement(
+      "UPDATE tracks SET indexed_at = CAST(strftime('%s', CURRENT_TIMESTAMP) "
+      'AS INTEGER) WHERE indexed_at = 0',
+    );
+  }
+
+  Future<Set<String>> _columnNames(String table) async {
+    final rows = await customSelect('PRAGMA table_info($table)').get();
+    return {for (final row in rows) row.read<String>('name')};
+  }
 
   Stream<List<Track>> watchTracks() {
     return (select(tracks)..orderBy([

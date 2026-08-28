@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqlite3/sqlite3.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/providers/playable_resolver.dart';
 
@@ -52,5 +54,74 @@ void main() {
     expect(second.title, 'Track A (remaster)');
     expect(second.genre, 'Blues');
     expect(second.indexedAt, first.indexedAt);
+  });
+
+  test(
+    'upgrades a v1 library past the non-constant indexed_at default',
+    () async {
+      final sqlite = sqlite3.openInMemory();
+      sqlite.execute('''
+CREATE TABLE library_folders (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  path TEXT NOT NULL UNIQUE
+);
+''');
+      sqlite.execute('''
+CREATE TABLE tracks (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  source TEXT NOT NULL DEFAULT 'local',
+  locator TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  artist TEXT NULL,
+  album TEXT NULL,
+  duration_ms INTEGER NULL,
+  track_number INTEGER NULL,
+  folder_id INTEGER NULL REFERENCES library_folders (id)
+);
+''');
+      sqlite.execute('PRAGMA user_version = 1');
+      sqlite.execute(
+        "INSERT INTO tracks (locator, title) VALUES ('/music/a.flac', 'Old Track')",
+      );
+
+      final db = StudioDatabase(NativeDatabase.opened(sqlite));
+      addTearDown(db.close);
+
+      final rows = await db.allTracks();
+      expect(rows, hasLength(1));
+      expect(rows.single.title, 'Old Track');
+      expect(rows.single.genre, equals(null));
+      expect(rows.single.indexedAt, isA<DateTime>());
+      expect(rows.single.indexedAt.isAfter(DateTime.utc(2020)), isTrue);
+    },
+  );
+
+  test('retries v2 after genre was added but indexed_at was not', () async {
+    final sqlite = sqlite3.openInMemory();
+    sqlite.execute('''
+CREATE TABLE tracks (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  source TEXT NOT NULL DEFAULT 'local',
+  locator TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  artist TEXT NULL,
+  album TEXT NULL,
+  duration_ms INTEGER NULL,
+  track_number INTEGER NULL,
+  genre TEXT NULL,
+  folder_id INTEGER NULL
+);
+''');
+    sqlite.execute('PRAGMA user_version = 1');
+    sqlite.execute(
+      "INSERT INTO tracks (locator, title) VALUES ('/music/b.flac', 'Partial')",
+    );
+
+    final db = StudioDatabase(NativeDatabase.opened(sqlite));
+    addTearDown(db.close);
+
+    final rows = await db.allTracks();
+    expect(rows.single.title, 'Partial');
+    expect(rows.single.indexedAt, isA<DateTime>());
   });
 }
