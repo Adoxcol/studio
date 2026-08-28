@@ -18,10 +18,15 @@ void main() {
     expect(mid.incoming, closeTo(math.sqrt1_2, 0.0001));
   });
 
-  test('labels and presets', () {
+  test('labels and stored durations', () {
     expect(Crossfade.label(Duration.zero), 'Off');
     expect(Crossfade.label(Crossfade.fiveSeconds), '5s');
     expect(Crossfade.fromMilliseconds(5000), Crossfade.fiveSeconds);
     expect(Crossfade.fromMilliseconds(null), Duration.zero);
+    expect(Crossfade.fromMilliseconds(20000).inSeconds, Crossfade.maxSeconds);
+    expect(Crossfade.fromSeconds(7), const Duration(seconds: 7));
+    expect(Crossfade.fromSeconds(15), Crossfade.max);
+    expect(Crossfade.fromSeconds(0), Crossfade.off);
+    expect(Crossfade.label(Crossfade.max), '15s');
   });
 }

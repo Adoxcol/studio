@@ -1,12 +1,14 @@
+import 'dart:async';
 import 'dart:ffi';
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 
 /// Named FIFO that mpv's `ao=pcm` can fopen() while Dart reads float32 frames.
+///
+/// Windows uses `PIPE_NOWAIT` so [read] never blocks the UI isolate.
 class PcmFifo {
   PcmFifo._({
     required this.writerPath,
@@ -44,7 +46,7 @@ class _PosixFifo {
     return PcmFifo._(
       writerPath: path,
       read: (maxBytes) async {
-        raf ??= await opener;
+        raf ??= await opener.timeout(const Duration(seconds: 5));
         return raf!.read(max(1, maxBytes));
       },
       close: () async {
@@ -67,11 +69,14 @@ class _WindowsPipe {
   static const _pipeAccessInbound = 0x00000001;
   static const _fileFlagFirstPipeInstance = 0x00080000;
   static const _pipeTypeByte = 0x00000000;
-  static const _pipeWait = 0x00000000;
+  static const _pipeNoWait = 0x00000001;
   static const _errorPipeConnected = 535;
+  static const _errorPipeListening = 536;
+  static const _errorNoData = 232;
 
   static Future<PcmFifo> create() async {
-    final name = '\\\\.\\pipe\\studio-fft-$pid';
+    final name =
+        '\\\\.\\pipe\\studio-fft-$pid-${DateTime.now().microsecondsSinceEpoch}';
     final kernel32 = DynamicLibrary.open('kernel32.dll');
     final createNamedPipe = kernel32
         .lookupFunction<
@@ -96,6 +101,11 @@ class _WindowsPipe {
             Pointer<Void>,
           )
         >('CreateNamedPipeW');
+    final connectNamedPipe = kernel32
+        .lookupFunction<
+          Int32 Function(IntPtr, Pointer<Void>),
+          int Function(int, Pointer<Void>)
+        >('ConnectNamedPipe');
     final readFile = kernel32
         .lookupFunction<
           Int32 Function(
@@ -111,35 +121,63 @@ class _WindowsPipe {
         .lookupFunction<Int32 Function(IntPtr), int Function(int)>(
           'CloseHandle',
         );
+    final getLastError = kernel32
+        .lookupFunction<Uint32 Function(), int Function()>('GetLastError');
 
     final namePtr = name.toNativeUtf16();
     final handle = createNamedPipe(
       namePtr,
       _pipeAccessInbound | _fileFlagFirstPipeInstance,
-      _pipeTypeByte | _pipeWait,
+      _pipeTypeByte | _pipeNoWait,
       1,
-      65536,
-      65536,
+      262144,
+      262144,
       0,
       nullptr,
     );
     calloc.free(namePtr);
     if (handle == 0 || handle == -1) {
-      throw StateError('CreateNamedPipe failed');
+      throw StateError('CreateNamedPipe failed (${getLastError()})');
     }
 
-    final connected = Isolate.run(() => _connect(handle));
+    var connected = false;
+    var closed = false;
+
+    Future<void> ensureConnected() async {
+      if (connected) return;
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (!closed && DateTime.now().isBefore(deadline)) {
+        final ok = connectNamedPipe(handle, nullptr);
+        final err = getLastError();
+        if (ok != 0 || err == _errorPipeConnected) {
+          connected = true;
+          return;
+        }
+        if (err != _errorPipeListening && err != _errorNoData) {
+          throw StateError('ConnectNamedPipe failed ($err)');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+      throw TimeoutException('PCM pipe connect');
+    }
 
     return PcmFifo._(
       writerPath: name,
       read: (maxBytes) async {
-        await connected;
+        if (closed) return Uint8List(0);
+        await ensureConnected();
         final n = max(1, maxBytes);
         final buffer = calloc<Uint8>(n);
         final readPtr = calloc<Uint32>();
         try {
           final ok = readFile(handle, buffer.cast(), n, readPtr, nullptr);
-          if (ok == 0) return Uint8List(0);
+          if (ok == 0) {
+            final err = getLastError();
+            if (err == _errorNoData || err == _errorPipeListening) {
+              return Uint8List(0);
+            }
+            return Uint8List(0);
+          }
           return Uint8List.fromList(buffer.asTypedList(readPtr.value));
         } finally {
           calloc.free(buffer);
@@ -147,24 +185,9 @@ class _WindowsPipe {
         }
       },
       close: () async {
+        closed = true;
         closeHandle(handle);
       },
     );
-  }
-
-  static int _connect(int handle) {
-    final kernel32 = DynamicLibrary.open('kernel32.dll');
-    final connectNamedPipe = kernel32
-        .lookupFunction<
-          Int32 Function(IntPtr, Pointer<Void>),
-          int Function(int, Pointer<Void>)
-        >('ConnectNamedPipe');
-    final getLastError = kernel32
-        .lookupFunction<Uint32 Function(), int Function()>('GetLastError');
-    final ok = connectNamedPipe(handle, nullptr);
-    if (ok == 0 && getLastError() != _errorPipeConnected) {
-      throw StateError('ConnectNamedPipe failed (${getLastError()})');
-    }
-    return 0;
   }
 }

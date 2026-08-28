@@ -7,20 +7,20 @@ import 'package:studio/playback/dsp/replay_gain.dart';
 import 'package:studio/playback/dsp/spectrum_analyzer.dart';
 import 'package:studio/playback/pcm_fifo.dart';
 
-/// Silent second mpv instance that dumps post-DSP PCM into a FIFO for FFT.
+/// Silent mpv instance that dumps post-DSP PCM into a FIFO for FFT.
+///
+/// Created lazily. Pipe reads are non-blocking so a stuck tap cannot freeze
+/// the Windows UI isolate.
+///
+/// After [play] opens the file, never call synchronous `setProperty` (or
+/// blocking `pause`/`stop`) on this instance. libmpv's `ao=pcm` writer blocks
+/// in `fwrite` when the pipe is full; a sync property set from Dart then
+/// deadlocks the UI isolate (Windows Not Responding). ReplayGain and EQ are
+/// remembered and applied only before the next `open()`.
 class MpvSpectrumTap {
-  MpvSpectrumTap() : _player = Player(configuration: _tapConfig) {
-    _paramsSub = _player.stream.audioParams.listen((params) {
-      final rate = params.sampleRate;
-      if (rate != null && rate >= 8000) _analyzer.sampleRate = rate;
-      final channels = params.channelCount;
-      if (channels != null && channels > 0) _channels = channels;
-    });
-  }
-
   static const _tapConfig = PlayerConfiguration(vo: 'null', muted: true);
 
-  final Player _player;
+  Player? _player;
   final _bands = StreamController<List<double>>.broadcast();
   final _analyzer = SpectrumAnalyzer();
 
@@ -28,6 +28,7 @@ class MpvSpectrumTap {
   PcmFifo? _fifo;
   Future<void>? _loop;
   var _running = false;
+  var _hold = false;
   var _failed = false;
   var _channels = 2;
   ReplayGainMode _replayGain = ReplayGainMode.off;
@@ -41,12 +42,13 @@ class MpvSpectrumTap {
     try {
       final fifo = await PcmFifo.create();
       _fifo = fifo;
-      await _configure(fifo.writerPath);
-      await _applyFilters();
+      final player = _ensurePlayer();
+      await _configure(player, fifo.writerPath);
+      await _applyFilters(player);
       _running = true;
+      _hold = false;
       _loop = _readLoop();
-      await _player.open(Media(uri.toString()));
-      await _applyFilters();
+      await player.open(Media(uri.toString()));
     } on Object catch (error, stack) {
       debugPrint('Spectrum tap failed: $error\n$stack');
       _failed = true;
@@ -54,48 +56,90 @@ class MpvSpectrumTap {
     }
   }
 
-  Future<void> pause() => _player.pause();
+  /// Stops emitting bands but keeps draining the pipe. Never talks to libmpv
+  /// here — `pause`/`setProperty` on a live `ao=pcm` instance deadlocks the
+  /// UI isolate if the writer is blocked in `fwrite`.
+  Future<void> pause() async {
+    _hold = true;
+  }
 
-  Future<void> resume() => _player.play();
+  Future<void> resume() async {
+    _hold = false;
+  }
 
-  Future<void> seek(Duration position) {
+  Future<void> seek(Duration position) async {
     _analyzer.reset();
-    return _player.seek(position);
+    final platform = _player?.platform;
+    if (platform is NativePlayer) {
+      unawaited(platform.seek(position, synchronized: false));
+    }
   }
 
   Future<void> stop() async {
     _running = false;
-    try {
-      await _player.stop();
-    } on Object {
-      // Player may already be idle.
-    }
-    await _fifo?.close();
+    _hold = false;
+    final fifo = _fifo;
     _fifo = null;
-    _analyzer.reset();
-    await _loop;
+    await fifo?.close();
+    // Let the ao thread fail the write before we touch libmpv again.
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    try {
+      await _loop?.timeout(const Duration(milliseconds: 200));
+    } on Object {
+      // Reader may already be gone.
+    }
     _loop = null;
+    _analyzer.reset();
+    final player = _player;
+    _player = null;
+    final paramsSub = _paramsSub;
+    _paramsSub = null;
+    unawaited(paramsSub?.cancel());
+    if (player != null) unawaited(_tearDownPlayer(player));
   }
 
-  Future<void> setReplayGain(ReplayGainMode mode) {
+  void rememberReplayGain(ReplayGainMode mode) {
     _replayGain = mode;
-    return _applyReplayGain();
   }
 
-  Future<void> setEqualizer(List<double> gains) {
+  void rememberEqualizer(List<double> gains) {
     _equalizer = List<double>.from(gains);
-    return _applyEqualizer();
   }
 
   void dispose() {
     unawaited(stop());
-    unawaited(_paramsSub?.cancel());
     unawaited(_bands.close());
-    _player.dispose();
   }
 
-  Future<void> _configure(String fifoPath) async {
-    final platform = _player.platform;
+  Future<void> _tearDownPlayer(Player player) async {
+    try {
+      await player.stop().timeout(const Duration(milliseconds: 300));
+    } on Object {
+      // Pipe already closed; mpv may error on the way out.
+    }
+    try {
+      player.dispose();
+    } on Object {
+      // Best-effort.
+    }
+  }
+
+  Player _ensurePlayer() {
+    final existing = _player;
+    if (existing != null) return existing;
+    final player = Player(configuration: _tapConfig);
+    _player = player;
+    _paramsSub = player.stream.audioParams.listen((params) {
+      final rate = params.sampleRate;
+      if (rate != null && rate >= 8000) _analyzer.sampleRate = rate;
+      final channels = params.channelCount;
+      if (channels != null && channels > 0) _channels = channels;
+    });
+    return player;
+  }
+
+  Future<void> _configure(Player player, String fifoPath) async {
+    final platform = player.platform;
     if (platform is! NativePlayer) {
       throw StateError('Spectrum tap needs NativePlayer');
     }
@@ -108,20 +152,20 @@ class MpvSpectrumTap {
     await platform.setProperty('ao-pcm-file', fifoPath);
   }
 
-  Future<void> _applyFilters() async {
-    await _applyReplayGain();
-    await _applyEqualizer();
+  Future<void> _applyFilters(Player player) async {
+    await _applyReplayGain(player);
+    await _applyEqualizer(player);
   }
 
-  Future<void> _applyReplayGain() async {
-    final platform = _player.platform;
+  Future<void> _applyReplayGain(Player? player) async {
+    final platform = player?.platform;
     if (platform is NativePlayer) {
       await platform.setProperty('replaygain', _replayGain.mpvValue);
     }
   }
 
-  Future<void> _applyEqualizer() async {
-    final platform = _player.platform;
+  Future<void> _applyEqualizer(Player? player) async {
+    final platform = player?.platform;
     if (platform is NativePlayer) {
       await platform.setProperty('af', Equalizer.afFilter(_equalizer));
     }
@@ -136,18 +180,22 @@ class MpvSpectrumTap {
         const tickMs = 16;
         final bytesWanted =
             (_analyzer.sampleRate * _channels * 4 * tickMs) ~/ 1000;
-        final bytes = await fifo.read(bytesWanted);
+        // Drain extra so mpv's fwrite cannot fill the pipe and block.
+        final drain = bytesWanted < 65536 ? 65536 : bytesWanted;
+        final bytes = await fifo.read(drain);
         if (!_running) break;
-        if (bytes.isEmpty) {
-          await Future<void>.delayed(const Duration(milliseconds: tickMs));
-          continue;
-        }
-        final frame = _analyzer.addInterleavedFloat32(
-          bytes,
-          channels: _channels,
-        );
-        if (frame != null && !_bands.isClosed) {
-          _bands.add(frame);
+        if (bytes.isNotEmpty && !_hold) {
+          final keep = _analyzer.fftSize * _channels * 4;
+          final slice = bytes.length > keep
+              ? bytes.sublist(bytes.length - keep)
+              : bytes;
+          final frame = _analyzer.addInterleavedFloat32(
+            slice,
+            channels: _channels,
+          );
+          if (frame != null && !_bands.isClosed) {
+            _bands.add(frame);
+          }
         }
         final left = tickMs - sw.elapsedMilliseconds;
         if (left > 0) {

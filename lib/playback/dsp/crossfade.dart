@@ -1,13 +1,11 @@
 import 'dart:math' as math;
 
-/// Equal-power crossfade curve and the durations exposed in Settings.
+/// Equal-power crossfade curve. Duration is 0 (off) through [max].
 abstract final class Crossfade {
   static const off = Duration.zero;
-  static const twoSeconds = Duration(seconds: 2);
   static const fiveSeconds = Duration(seconds: 5);
-  static const eightSeconds = Duration(seconds: 8);
-
-  static const options = [off, twoSeconds, fiveSeconds, eightSeconds];
+  static const max = Duration(seconds: 15);
+  static const maxSeconds = 15;
 
   static String label(Duration duration) {
     if (duration <= Duration.zero) return 'Off';
@@ -16,10 +14,12 @@ abstract final class Crossfade {
 
   static Duration fromMilliseconds(int? ms) {
     if (ms == null || ms <= 0) return off;
-    for (final option in options) {
-      if (option.inMilliseconds == ms) return option;
-    }
-    return Duration(milliseconds: ms.clamp(0, 12000));
+    return Duration(milliseconds: ms.clamp(0, max.inMilliseconds));
+  }
+
+  static Duration fromSeconds(int seconds) {
+    if (seconds <= 0) return off;
+    return Duration(seconds: seconds.clamp(0, maxSeconds));
   }
 
   /// [t] is 0 at the start of the fade (outgoing full) and 1 at the end.

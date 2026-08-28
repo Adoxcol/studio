@@ -142,4 +142,33 @@ void main() {
       palette.accent,
     );
   });
+
+  testWidgets('hero fits a short pane with a long title', (tester) async {
+    await db.upsertTrack(
+      TracksCompanion.insert(
+        locator: '/music/a.flac',
+        title: '(Do the) Act Like You Never Met Me',
+        artist: const Value('Aria'),
+      ),
+    );
+    final rows = await db.allTracks();
+    tester.view.physicalSize = const Size(1400, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      testStudioApp(db: db, engine: engine, tracks: rows),
+    );
+    await tester.pump();
+    await tester.tap(find.byTooltip('Library'));
+    await tester.pump();
+    await tester.tap(find.text('(Do the) Act Like You Never Met Me'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byTooltip('Now Playing'));
+    await tester.pump();
+
+    expect(find.text('now playing'), findsOneWidget);
+    expect(find.text('(Do the) Act Like You Never Met Me'), findsWidgets);
+  });
 }

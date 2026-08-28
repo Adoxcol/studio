@@ -109,9 +109,10 @@ void main() {
     await tester.pump();
 
     expect(find.text('Crossfade'), findsOneWidget);
-    await tester.ensureVisible(find.text('5s'));
+    await tester.ensureVisible(find.byKey(const ValueKey('crossfade-slider')));
     await tester.pump();
-    await tester.tap(find.text('5s'));
+    final bar = tester.getRect(find.byKey(const ValueKey('crossfade-slider')));
+    await tester.tapAt(Offset(bar.left + bar.width * 5 / 15, bar.center.dy));
     await tester.pump();
 
     expect(engine.lastCrossfade, Crossfade.fiveSeconds);

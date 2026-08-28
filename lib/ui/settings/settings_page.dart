@@ -147,7 +147,7 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 24),
           Text('Crossfade', style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 10),
-          _CrossfadeRow(
+          _CrossfadeSlider(
             selected: ref.watch(playbackSettingsProvider).crossfade,
             onSelect: (duration) => ref
                 .read(playbackSettingsProvider.notifier)
@@ -205,24 +205,80 @@ class _ReplayGainRow extends StatelessWidget {
   }
 }
 
-class _CrossfadeRow extends StatelessWidget {
-  const _CrossfadeRow({required this.selected, required this.onSelect});
+class _CrossfadeSlider extends StatelessWidget {
+  const _CrossfadeSlider({required this.selected, required this.onSelect});
+
+  static const _height = 20.0;
 
   final Duration selected;
   final ValueChanged<Duration> onSelect;
 
   @override
   Widget build(BuildContext context) {
+    final palette = StudioPalette.of(context);
+    final seconds = selected.inSeconds.clamp(0, Crossfade.maxSeconds);
+    final t = Crossfade.maxSeconds == 0 ? 0.0 : seconds / Crossfade.maxSeconds;
     return Row(
       children: [
-        for (final duration in Crossfade.options) ...[
-          if (duration != Crossfade.options.first) const SizedBox(width: 24),
-          LibraryTextAction(
-            label: Crossfade.label(duration),
-            onTap: () => onSelect(duration),
-            muted: duration != selected,
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              void at(double dx) {
+                final width = constraints.maxWidth;
+                if (width <= 0) return;
+                final next = ((dx / width) * Crossfade.maxSeconds)
+                    .round()
+                    .clamp(0, Crossfade.maxSeconds);
+                onSelect(Crossfade.fromSeconds(next));
+              }
+
+              return MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  key: const ValueKey('crossfade-slider'),
+                  behavior: HitTestBehavior.opaque,
+                  onTapDown: (details) => at(details.localPosition.dx),
+                  onHorizontalDragUpdate: (details) =>
+                      at(details.localPosition.dx),
+                  child: SizedBox(
+                    height: _height,
+                    child: Stack(
+                      alignment: Alignment.centerLeft,
+                      children: [
+                        Container(height: 2, color: palette.hairlineStrong),
+                        FractionallySizedBox(
+                          widthFactor: t,
+                          child: Container(height: 2, color: palette.accent),
+                        ),
+                        Align(
+                          alignment: Alignment(t * 2 - 1, 0),
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: palette.accent,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
-        ],
+        ),
+        const SizedBox(width: 16),
+        SizedBox(
+          width: 36,
+          child: Text(
+            Crossfade.label(Duration(seconds: seconds)),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+          ),
+        ),
       ],
     );
   }

@@ -87,14 +87,68 @@ class _Hero extends StatelessWidget {
     final palette = StudioPalette.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
+        const visualizerHeight = 44.0;
+        const visualizerBlock = 16 + visualizerHeight + 24;
+        const verticalPad = 48.0;
+        final titleStyle = Theme.of(context).textTheme.displayLarge;
+        final titleLine =
+            (titleStyle?.fontSize ?? 44) * (titleStyle?.height ?? 1.05);
+        final reserved =
+            verticalPad +
+            visualizerBlock +
+            (hasTrack ? 28.0 : 0.0) +
+            titleLine * (hasTrack ? 2 : 1) +
+            (artist != null ? 26.0 : 0.0);
         final artSize = [
           NowPlayingPage.artSize,
-          (constraints.maxWidth - 64).clamp(96.0, NowPlayingPage.artSize),
-          (constraints.maxHeight * (hasTrack ? 0.28 : 0.42)).clamp(
-            96.0,
+          (constraints.maxWidth - 64).clamp(64.0, NowPlayingPage.artSize),
+          (constraints.maxHeight - reserved).clamp(
+            64.0,
             NowPlayingPage.artSize,
           ),
         ].reduce((a, b) => a < b ? a : b);
+        final innerHeight = (constraints.maxHeight - verticalPad).clamp(
+          0.0,
+          double.infinity,
+        );
+        final header = Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CoverArt(path: artworkPath, size: artSize),
+            const SizedBox(height: 16),
+            _VisualizerSlot(width: artSize),
+            const SizedBox(height: 24),
+            if (hasTrack)
+              Text(
+                'now playing',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: palette.inkMutedAlt,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            if (hasTrack) const SizedBox(height: 8),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.displayLarge,
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (artist != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                artist!,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: palette.inkMuted,
+                  fontStyle: FontStyle.italic,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+        );
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
           child: Column(
@@ -102,43 +156,21 @@ class _Hero extends StatelessWidget {
                 ? MainAxisAlignment.start
                 : MainAxisAlignment.center,
             children: [
-              CoverArt(path: artworkPath, size: artSize),
-              const SizedBox(height: 16),
-              _VisualizerSlot(width: artSize),
-              const SizedBox(height: 24),
-              if (hasTrack)
-                Text(
-                  'now playing',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: palette.inkMutedAlt,
-                    fontStyle: FontStyle.italic,
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: innerHeight),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.topCenter,
+                  child: SizedBox(
+                    width: (constraints.maxWidth - 64).clamp(
+                      0.0,
+                      double.infinity,
+                    ),
+                    child: header,
                   ),
                 ),
-              if (hasTrack) const SizedBox(height: 8),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.displayLarge,
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
               ),
-              if (artist != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  artist!,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: palette.inkMuted,
-                    fontStyle: FontStyle.italic,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              if (hasTrack) ...[
-                const SizedBox(height: 20),
-                const Expanded(child: LyricsPane()),
-              ],
+              if (hasTrack) const Expanded(child: LyricsPane()),
             ],
           ),
         );
