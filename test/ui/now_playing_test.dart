@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/library/database.dart';
+import 'package:studio/ui/visualizer/amplitude_visualizer.dart';
 
 import '../helpers/pump_studio.dart';
 import '../playback/fake_audio_engine.dart';
@@ -48,6 +49,7 @@ void main() {
     expect(find.text('Not playing'), findsWidgets);
     expect(find.text('UP NEXT'), findsOneWidget);
     expect(find.text('Nothing up next.'), findsOneWidget);
+    expect(find.byType(AmplitudeVisualizer), findsOneWidget);
     expect(
       Theme.of(
         tester.element(find.text('Not playing').first),

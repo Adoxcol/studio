@@ -5,6 +5,7 @@ import 'package:studio/state/library_providers.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/now_playing/cover_art.dart';
+import 'package:studio/ui/visualizer/amplitude_visualizer.dart';
 
 class NowPlayingPage extends ConsumerWidget {
   const NowPlayingPage({super.key});
@@ -30,6 +31,8 @@ class NowPlayingPage extends ConsumerWidget {
                 artist: playback.artist,
                 artworkPath: playback.artworkPath,
                 hasTrack: playback.trackId != null,
+                playing: playback.playing,
+                position: playback.position,
               ),
             ),
             if (showUpNext)
@@ -58,12 +61,16 @@ class _Hero extends StatelessWidget {
     required this.artist,
     required this.artworkPath,
     required this.hasTrack,
+    required this.playing,
+    required this.position,
   });
 
   final String title;
   final String? artist;
   final String? artworkPath;
   final bool hasTrack;
+  final bool playing;
+  final Duration position;
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +84,9 @@ class _Hero extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CoverArt(path: artworkPath, size: NowPlayingPage.artSize),
-              const SizedBox(height: 28),
+              const SizedBox(height: 16),
+              AmplitudeVisualizer(playing: playing, position: position),
+              const SizedBox(height: 24),
               if (hasTrack)
                 Text(
                   'now playing',
