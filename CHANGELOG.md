@@ -24,6 +24,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   up without adding the folder again.
 - Library folders can be removed from the sidebar. Scan progress appears in a
   side notice with Stop, and a refresh control re-scans on demand.
+- Appearance settings: Auto accent from album art or a custom hue swatch,
+  both using the same OKLCH chroma/lightness formula.
 
 ### Changed
 

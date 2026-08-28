@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:studio/theming/accent_seed.dart';
+import 'package:studio/theming/oklch.dart';
 
 /// Editorial Mono color tokens. OKLCH comments are the design source of truth.
 @immutable
@@ -20,43 +22,43 @@ class StudioPalette extends ThemeExtension<StudioPalette> {
     required this.accentPressed,
   });
 
-  /// Light theme. Accent is terracotta, seed hue 30.
-  factory StudioPalette.light() {
-    return const StudioPalette(
-      bg: Color(0xFFF9F4EE), // oklch(97% 0.01 80)
-      ink: Color(0xFF181611), // oklch(20% 0.01 80)
-      inkMuted: Color(0xFF696257), // oklch(50% 0.02 80)
-      inkMutedAlt: Color(0xFF787165), // oklch(55% 0.02 80)
-      inkDim: Color(0xFF696257),
-      inkBright: Color(0xFF181611),
-      hairline: Color(0xFFE1DDD7), // oklch(90% 0.01 80)
-      hairlineSoft: Color(0xFFEBE7E1), // oklch(93% 0.01 80)
-      hairlineStrong: Color(0xFFD1CDC7), // oklch(85% 0.01 80)
-      hairlineAlt: Color(0xFFD1CDC7),
-      artSwatch: Color(0xFFE8DBD1), // oklch(90% 0.02 60)
-      accent: Color(0xFFAC5346), // oklch(55% 0.12 30)
-      accentHover: Color(0xFF8C352A), // oklch(45% 0.12 30)
-      accentPressed: Color(0xFF6C170E), // oklch(35% 0.12 30)
+  /// Light theme. Surfaces stay editorial; only accent hue changes.
+  factory StudioPalette.light({double hue = AccentSeed.defaultHue}) {
+    return StudioPalette(
+      bg: const Color(0xFFF9F4EE), // oklch(97% 0.01 80)
+      ink: const Color(0xFF181611), // oklch(20% 0.01 80)
+      inkMuted: const Color(0xFF696257), // oklch(50% 0.02 80)
+      inkMutedAlt: const Color(0xFF787165), // oklch(55% 0.02 80)
+      inkDim: const Color(0xFF696257),
+      inkBright: const Color(0xFF181611),
+      hairline: const Color(0xFFE1DDD7), // oklch(90% 0.01 80)
+      hairlineSoft: const Color(0xFFEBE7E1), // oklch(93% 0.01 80)
+      hairlineStrong: const Color(0xFFD1CDC7), // oklch(85% 0.01 80)
+      hairlineAlt: const Color(0xFFD1CDC7),
+      artSwatch: const Color(0xFFE8DBD1), // oklch(90% 0.02 60)
+      accent: Oklch.color(l: 0.55, c: 0.12, h: hue),
+      accentHover: Oklch.color(l: 0.45, c: 0.12, h: hue),
+      accentPressed: Oklch.color(l: 0.35, c: 0.12, h: hue),
     );
   }
 
   /// Dark theme. Same hue, brighter accent (chroma 0.14, lightness 68%).
-  factory StudioPalette.dark() {
-    return const StudioPalette(
-      bg: Color(0xFF13110F), // oklch(18% 0.005 80)
-      ink: Color(0xFFEAE7E4), // oklch(93% 0.005 80)
-      inkMuted: Color(0xFF898680), // oklch(62% 0.01 80)
-      inkMutedAlt: Color(0xFFA29E98),
-      inkDim: Color(0xFFA29E98), // oklch(70% 0.01 80)
-      inkBright: Color(0xFFBFBDBA), // oklch(80% 0.005 80)
-      hairline: Color(0xFF2B2823), // oklch(28% 0.01 80)
-      hairlineSoft: Color(0xFF2B2823),
-      hairlineStrong: Color(0xFF36322D), // oklch(32% 0.01 80)
-      hairlineAlt: Color(0xFF302D28), // oklch(30% 0.01 80)
-      artSwatch: Color(0xFF392A1E), // oklch(30% 0.03 60)
-      accent: Color(0xFFE17363), // oklch(68% 0.14 30)
-      accentHover: Color(0xFFE17363),
-      accentPressed: Color(0xFFAC5346),
+  factory StudioPalette.dark({double hue = AccentSeed.defaultHue}) {
+    return StudioPalette(
+      bg: const Color(0xFF13110F), // oklch(18% 0.005 80)
+      ink: const Color(0xFFEAE7E4), // oklch(93% 0.005 80)
+      inkMuted: const Color(0xFF898680), // oklch(62% 0.01 80)
+      inkMutedAlt: const Color(0xFFA29E98),
+      inkDim: const Color(0xFFA29E98), // oklch(70% 0.01 80)
+      inkBright: const Color(0xFFBFBDBA), // oklch(80% 0.005 80)
+      hairline: const Color(0xFF2B2823), // oklch(28% 0.01 80)
+      hairlineSoft: const Color(0xFF2B2823),
+      hairlineStrong: const Color(0xFF36322D), // oklch(32% 0.01 80)
+      hairlineAlt: const Color(0xFF302D28), // oklch(30% 0.01 80)
+      artSwatch: const Color(0xFF392A1E), // oklch(30% 0.03 60)
+      accent: Oklch.color(l: 0.68, c: 0.14, h: hue),
+      accentHover: Oklch.color(l: 0.58, c: 0.14, h: hue),
+      accentPressed: Oklch.color(l: 0.55, c: 0.12, h: hue),
     );
   }
 
