@@ -19,6 +19,7 @@ class PlaybackUiState {
     this.trackId,
     this.title = 'Not playing',
     this.artist,
+    this.album,
     this.artworkPath,
     this.playing = false,
     this.position = Duration.zero,
@@ -32,6 +33,7 @@ class PlaybackUiState {
   final int? trackId;
   final String title;
   final String? artist;
+  final String? album;
   final String? artworkPath;
   final bool playing;
   final Duration position;
@@ -59,6 +61,7 @@ class PlaybackUiState {
     int? trackId,
     String? title,
     String? artist,
+    String? album,
     String? artworkPath,
     bool? playing,
     Duration? position,
@@ -68,12 +71,14 @@ class PlaybackUiState {
     bool? shuffle,
     List<int>? queueIds,
     bool clearArtist = false,
+    bool clearAlbum = false,
     bool clearArtwork = false,
   }) {
     return PlaybackUiState(
       trackId: trackId ?? this.trackId,
       title: title ?? this.title,
       artist: clearArtist ? null : artist ?? this.artist,
+      album: clearAlbum ? null : album ?? this.album,
       artworkPath: clearArtwork ? null : artworkPath ?? this.artworkPath,
       playing: playing ?? this.playing,
       position: position ?? this.position,
@@ -147,6 +152,8 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     _subs.add(_engine.position.listen(_onPosition));
     _subs.add(
       _engine.duration.listen((value) {
+        if (value <= Duration.zero) return;
+        if (state.duration == value) return;
         state = state.copyWith(duration: value);
       }),
     );
@@ -386,14 +393,17 @@ class PlaybackController extends Notifier<PlaybackUiState> {
           trackId: id,
           title: track.title,
           artist: track.artist,
+          album: track.album,
           artworkPath: track.artworkPath,
           clearArtist: track.artist == null,
+          clearAlbum: track.album == null,
           clearArtwork: track.artworkPath == null,
           queueIds: List<int>.of(queue.ids),
           repeat: queue.repeat,
           shuffle: queue.shuffle,
           playing: play,
           position: Duration.zero,
+          duration: _taggedDuration(track),
         );
         _wantPlaying = play;
         final uri = await _resolvers.resolve(
@@ -402,8 +412,10 @@ class PlaybackController extends Notifier<PlaybackUiState> {
         if (_openAgain) continue;
         if (useCrossfade) {
           await _engine.crossfadeTo(uri);
-        } else {
+        } else if (play) {
           await _engine.play(uri);
+        } else {
+          await _engine.load(uri);
         }
         if (_openAgain) continue;
         await _engine.setVolume(state.volume);
@@ -420,6 +432,12 @@ class PlaybackController extends Notifier<PlaybackUiState> {
       _holdPosition = false;
       _opening = false;
     }
+  }
+
+  static Duration _taggedDuration(Track track) {
+    final ms = track.durationMs;
+    if (ms == null || ms <= 0) return Duration.zero;
+    return Duration(milliseconds: ms);
   }
 
   Future<void> _considerAutoCrossfade(Duration position) async {

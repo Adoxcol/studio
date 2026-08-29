@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:window_manager/window_manager.dart';
@@ -17,6 +19,15 @@ Future<void> bootstrapWindow({Color? backgroundColor}) async {
   );
 
   await windowManager.waitUntilReadyToShow(options, () async {
+    try {
+      await windowManager.setIcon(
+        Platform.isWindows
+            ? 'assets/tray/app_icon.ico'
+            : 'assets/tray/app_icon.png',
+      );
+    } on Object catch (error, stack) {
+      debugPrint('Window icon update failed: $error\n$stack');
+    }
     await windowManager.show();
     await windowManager.focus();
   });

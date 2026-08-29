@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/core/desktop/close_preference.dart';
 import 'package:studio/core/desktop/close_preference_provider.dart';
+import 'package:studio/discord/discord_settings_provider.dart';
 import 'package:studio/playback/dsp/crossfade.dart';
 import 'package:studio/playback/dsp/equalizer.dart';
 import 'package:studio/playback/dsp/replay_gain.dart';
@@ -293,6 +294,39 @@ class SettingsPage extends ConsumerWidget {
             onChanged: (index, gain) => ref
                 .read(playbackSettingsProvider.notifier)
                 .setEqualizerBand(index, gain),
+          ),
+          const SizedBox(height: 32),
+          _SectionLabel(text: 'DISCORD'),
+          const SizedBox(height: 16),
+          Text(
+            'Show what is playing',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              LibraryTextAction(
+                label: 'On',
+                onTap: () =>
+                    ref.read(discordSettingsProvider.notifier).setEnabled(true),
+                muted: !ref.watch(discordSettingsProvider).enabled,
+              ),
+              const SizedBox(width: 24),
+              LibraryTextAction(
+                label: 'Off',
+                onTap: () => ref
+                    .read(discordSettingsProvider.notifier)
+                    .setEnabled(false),
+                muted: ref.watch(discordSettingsProvider).enabled,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Friends see the track, artist, and cover while Discord is running. Off by default.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
           ),
           const SizedBox(height: 32),
           _SectionLabel(text: 'WINDOW'),

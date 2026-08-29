@@ -78,16 +78,22 @@ class MediaKitAudioEngine implements AudioEngine {
   }
 
   @override
-  Future<void> play(Uri uri) async {
+  Future<void> play(Uri uri) => _openOnPrimary(uri, play: true);
+
+  @override
+  Future<void> load(Uri uri) => _openOnPrimary(uri, play: false);
+
+  Future<void> _openOnPrimary(Uri uri, {required bool play}) async {
     await _cancelFade(snapIncoming: false);
     await _secondary?.stop();
     _front = _primary;
     _ui = _primary;
     _prepared = null;
     _started = true;
-    _paused = false;
+    _paused = !play;
     _fading = false;
-    await _startAudible(_primary, uri: uri, volume: 1);
+    await _startAudible(_primary, uri: uri, volume: 1, play: play);
+    if (!play) _emitPlaying(false);
   }
 
   @override
@@ -336,11 +342,18 @@ class MediaKitAudioEngine implements AudioEngine {
     Player player, {
     required Uri uri,
     required double volume,
+    bool play = true,
   }) async {
     await _configureOutput(player);
-    await player.open(Media(uri.toString()), play: volume > 0);
+    final audible = play && volume > 0;
+    if (!audible) await player.setVolume(0);
+    await player.open(Media(uri.toString()), play: audible);
     await _configureOutput(player);
-    if (volume > 0) await player.play();
+    if (audible) {
+      await player.play();
+    } else {
+      await player.pause();
+    }
     await _setPlayerVolume(player, volume);
     await _applyReplayGain(player);
   }

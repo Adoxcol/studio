@@ -14,6 +14,8 @@ class FakeAudioEngine implements AudioEngine {
   Uri? lastPrepared;
   Uri? lastCrossfadeTo;
   var seekCount = 0;
+  var playCount = 0;
+  var loadCount = 0;
   Completer<void>? playBlock;
   Completer<void>? pauseBlock;
 
@@ -28,8 +30,19 @@ class FakeAudioEngine implements AudioEngine {
     final gate = playBlock;
     if (gate != null) await gate.future;
     lastUri = uri;
+    playCount++;
     paused = false;
     _playing.add(true);
+    _duration.add(const Duration(minutes: 3));
+    _position.add(Duration.zero);
+  }
+
+  @override
+  Future<void> load(Uri uri) async {
+    lastUri = uri;
+    loadCount++;
+    paused = true;
+    _playing.add(false);
     _duration.add(const Duration(minutes: 3));
     _position.add(Duration.zero);
   }
@@ -73,6 +86,8 @@ class FakeAudioEngine implements AudioEngine {
   }
 
   void emitPosition(Duration position) => _position.add(position);
+
+  void emitDuration(Duration duration) => _duration.add(duration);
 
   @override
   Future<void> setVolume(double volume) async {

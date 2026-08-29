@@ -65,6 +65,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  buffer:
+    dependency: transitive
+    description:
+      name: buffer
+      sha256: "389da2ec2c16283c8787e0adaede82b1842102f8c8aae2f49003a766c5c6b3d1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.3"
   build:
     dependency: transitive
     description:
@@ -210,7 +218,7 @@ packages:
     source: hosted
     version: "0.3.5+5"
   crypto:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: crypto
       sha256: c8ea0233063ba03258fbcf2ca4d6dadfefe14f02fab57702265467a19f27fadf
@@ -241,6 +249,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.15"
+  discord_rich_presence:
+    dependency: "direct main"
+    description:
+      path: "third_party/discord_rich_presence"
+      relative: true
+    source: path
+    version: "1.1.1"
   docking:
     dependency: "direct main"
     description:
@@ -465,7 +480,7 @@ packages:
     source: hosted
     version: "0.2.0"
   http:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http
       sha256: "87721a4a50b19c7f1d49001e51409bddc46303966ce89a65af4f4e6004896412"
@@ -481,7 +496,7 @@ packages:
     source: hosted
     version: "3.2.2"
   http_parser:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http_parser
       sha256: "178d74305e7866013777bab2c3d8726205dc5a4dd935297175b19a23a2e66571"

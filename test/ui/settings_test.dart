@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/theming/accent_seed.dart';
 import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/discord/discord_settings_provider.dart';
+import 'package:studio/discord/discord_settings_store.dart';
 import 'package:studio/playback/dsp/crossfade.dart';
 import 'package:studio/playback/dsp/equalizer.dart';
 import 'package:studio/playback/dsp/replay_gain.dart';
@@ -140,7 +142,7 @@ void main() {
     await tester.pump();
 
     await tester.scrollUntilVisible(
-      find.text('Local only'),
+      find.text('Missing covers'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
@@ -227,5 +229,37 @@ void main() {
     await tester.pump();
 
     expect(engine.lastCrossfade, Crossfade.fiveSeconds);
+  });
+
+  testWidgets('Discord presence can be turned on in settings', (tester) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final store = MemoryDiscordSettingsStore();
+    await tester.pumpWidget(
+      testStudioApp(
+        db: db,
+        engine: engine,
+        extraOverrides: [discordSettingsStoreProvider.overrideWithValue(store)],
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pump();
+
+    await tester.scrollUntilVisible(
+      find.text('Show what is playing'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
+    expect(find.text('DISCORD'), findsOneWidget);
+    expect(store.load().enabled, isFalse);
+
+    await tester.tap(find.text('On'));
+    await tester.pump();
+    expect(store.load().enabled, isTrue);
   });
 }

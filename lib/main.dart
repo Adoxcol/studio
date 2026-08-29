@@ -8,6 +8,9 @@ import 'package:media_kit/media_kit.dart';
 import 'package:studio/app.dart';
 import 'package:studio/core/desktop/close_preference_provider.dart';
 import 'package:studio/core/desktop/close_preference_store.dart';
+import 'package:studio/discord/discord_artwork.dart';
+import 'package:studio/discord/discord_settings_provider.dart';
+import 'package:studio/discord/discord_settings_store.dart';
 import 'package:studio/core/desktop/studio_desktop_host.dart';
 import 'package:studio/core/window/window_bootstrap.dart';
 import 'package:studio/library/artwork_store.dart';
@@ -48,6 +51,12 @@ Future<void> main() async {
   final closePreference = FileClosePreferenceStore(
     File(p.join(support.path, 'close.json')),
   );
+  final discordSettings = FileDiscordSettingsStore(
+    File(p.join(support.path, 'discord.json')),
+  );
+  final discordArtwork = CatboxArtworkUploader(
+    cacheFile: File(p.join(support.path, 'discord-art.json')),
+  );
   runApp(
     ProviderScope(
       overrides: [
@@ -73,6 +82,8 @@ Future<void> main() async {
         playbackSettingsStoreProvider.overrideWithValue(playbackSettings),
         playbackSessionStoreProvider.overrideWithValue(playbackSession),
         closePreferenceStoreProvider.overrideWithValue(closePreference),
+        discordSettingsStoreProvider.overrideWithValue(discordSettings),
+        discordArtworkUploaderProvider.overrideWithValue(discordArtwork),
         lyricsCacheProvider.overrideWithValue(
           FileLyricsCache(Directory(p.join(support.path, 'lyrics'))),
         ),

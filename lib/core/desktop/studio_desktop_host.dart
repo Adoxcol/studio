@@ -10,6 +10,8 @@ import 'package:studio/core/desktop/close_preference.dart';
 import 'package:studio/core/desktop/close_preference_provider.dart';
 import 'package:studio/core/desktop/close_window_dialog.dart';
 import 'package:studio/core/desktop/desktop_transport.dart';
+import 'package:studio/discord/discord_presence_controller.dart';
+import 'package:studio/discord/discord_settings_provider.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/studio_theme.dart';
@@ -38,12 +40,17 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
   var _started = false;
   var _trayReady = false;
   var _closePromptOpen = false;
+  late final DiscordPresenceController _discord;
 
   bool get _useWindowsTray => !kIsWeb && Platform.isWindows;
 
   @override
   void initState() {
     super.initState();
+    _discord = DiscordPresenceController(
+      client: ref.read(discordRpcClientProvider),
+      artwork: ref.read(discordArtworkUploaderProvider),
+    );
     WidgetsBinding.instance.addObserver(this);
     if (!_useWindowsTray) {
       trayManager.addListener(this);
@@ -65,6 +72,7 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
       unawaited(trayManager.destroy());
     }
     unawaited(hotKeyManager.unregisterAll());
+    unawaited(_discord.dispose());
     super.dispose();
   }
 
@@ -93,6 +101,7 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
     if (!_useWindowsTray) {
       await _registerMediaKeys();
     }
+    await _syncDiscord();
   }
 
   Future<void> _registerMediaKeys() async {
@@ -230,6 +239,17 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
     unawaited(_syncWindowBackground());
   }
 
+  Future<void> _syncDiscord() async {
+    try {
+      await _discord.sync(
+        enabled: ref.read(discordSettingsProvider).enabled,
+        playback: ref.read(playbackControllerProvider),
+      );
+    } on Object catch (error, stack) {
+      debugPrint('Discord RPC sync failed: $error\n$stack');
+    }
+  }
+
   Future<void> _syncWindowBackground() async {
     final color = StudioTheme.windowBackground(
       ref.read(appearanceProvider).themeMode,
@@ -265,6 +285,7 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
     _quitting = true;
     try {
       ref.read(playbackControllerProvider.notifier).saveSession();
+      await _discord.dispose();
       await hotKeyManager.unregisterAll();
       if (_useWindowsTray) {
         await StudioDesktopHost.windowsChannel.invokeMethod('destroy');
@@ -352,12 +373,24 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
   Widget build(BuildContext context) {
     ref.listen(
       playbackControllerProvider.select(
-        (s) => (s.trackId, s.playing, s.title, s.artist),
+        (s) => (
+          s.trackId,
+          s.playing,
+          s.title,
+          s.artist,
+          s.album,
+          s.duration,
+          s.artworkPath,
+        ),
       ),
       (_, _) {
         unawaited(_refreshTray(ref.read(playbackControllerProvider)));
+        unawaited(_syncDiscord());
       },
     );
+    ref.listen(discordSettingsProvider.select((s) => s.enabled), (_, _) {
+      unawaited(_syncDiscord());
+    });
     ref.listen(appearanceProvider.select((s) => s.themeMode), (_, _) {
       unawaited(_syncWindowBackground());
     });

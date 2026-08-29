@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studio/library/database.dart';
@@ -114,6 +115,8 @@ void main() {
     expect(ui().playing, isFalse);
     expect(ui().position, const Duration(seconds: 42));
     expect(engine.paused, isTrue);
+    expect(engine.playCount, 0);
+    expect(engine.loadCount, 1);
     expect(engine.lastSeek, const Duration(seconds: 42));
   });
 
@@ -160,6 +163,53 @@ void main() {
     expect(ui().shuffle, isFalse);
     expect(ui().queueIds, ids);
     expect(ui().trackId, ids[1]);
+  });
+
+  test(
+    'opening a track keeps tagged duration until the engine reports',
+    () async {
+      await db.upsertTrack(
+        TracksCompanion.insert(
+          locator: '/music/First.flac',
+          title: 'First',
+          durationMs: const Value(180000),
+        ),
+      );
+      await db.upsertTrack(
+        TracksCompanion.insert(
+          locator: '/music/Second.flac',
+          title: 'Second',
+          durationMs: const Value(240000),
+        ),
+      );
+      final rows = await db.allTracks();
+      final byTitle = {for (final track in rows) track.title: track.id};
+      final ids = [byTitle['First']!, byTitle['Second']!];
+      await controller().playTracks(ids);
+      expect(ui().duration, const Duration(minutes: 3));
+      engine.playBlock = Completer<void>();
+      final skipped = controller().skipNext();
+      await Future<void>.delayed(Duration.zero);
+      expect(ui().title, 'Second');
+      expect(ui().duration, const Duration(minutes: 4));
+      engine.playBlock!.complete();
+      engine.playBlock = null;
+      await skipped;
+      expect(ui().duration, const Duration(minutes: 3));
+    },
+  );
+
+  test('engine duration 0 does not clear a known length', () async {
+    final ids = await insertTitles(['First']);
+    await controller().playTracks(ids);
+    expect(ui().duration, const Duration(minutes: 3));
+    engine.emitDuration(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+    expect(ui().duration, const Duration(minutes: 3));
+    engine.emitPosition(const Duration(seconds: 12));
+    await Future<void>.delayed(Duration.zero);
+    expect(ui().position, const Duration(seconds: 12));
+    expect(ui().progress, greaterThan(0));
   });
 
   test('skipNext after shuffle keeps playing', () async {
