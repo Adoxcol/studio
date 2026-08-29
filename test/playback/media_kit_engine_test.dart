@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:studio/playback/media_kit_engine.dart';
 
 void main() {
-  test('OSC missing and disk-cache failures are not printed', () {
+  test('only expected mpv compatibility noise is suppressed', () {
     expect(
       isBenignMpvLog(
         prefix: 'media_kit',
@@ -20,6 +20,17 @@ void main() {
     );
     expect(
       isBenignMpvLog(prefix: 'cplayer', text: 'Opening file failed'),
+      isFalse,
+    );
+    expect(
+      isBenignMpvLog(
+        prefix: 'ffmpeg',
+        text: "'aresample' filter not present, cannot convert formats.",
+      ),
+      isFalse,
+    );
+    expect(
+      isBenignMpvLog(prefix: 'ffmpeg', text: "No such filter: 'equalizer'"),
       isFalse,
     );
   });

@@ -178,7 +178,7 @@ void main() {
     expect(engine.lastReplayGain, ReplayGainMode.album);
   });
 
-  testWidgets('equalizer Warm preset is stored on the engine', (tester) async {
+  testWidgets('equalizer Rock preset is stored on the engine', (tester) async {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -196,12 +196,12 @@ void main() {
     );
     await tester.pump();
     expect(find.text('Equalizer'), findsOneWidget);
-    await tester.ensureVisible(find.text('Warm'));
+    await tester.ensureVisible(find.text('Rock'));
     await tester.pump();
-    await tester.tap(find.text('Warm'));
+    await tester.tap(find.text('Rock'));
     await tester.pump();
 
-    expect(engine.lastEqualizer, Equalizer.warm);
+    expect(engine.lastEqualizer, Equalizer.rock);
   });
 
   testWidgets('crossfade 5s is stored on the engine', (tester) async {

@@ -10,6 +10,7 @@ class FakeAudioEngine implements AudioEngine {
   double lastVolume = 1;
   ReplayGainMode lastReplayGain = ReplayGainMode.off;
   List<double> lastEqualizer = const [];
+  double lastEqualizerPreamp = 0;
   Duration lastCrossfade = Duration.zero;
   Uri? lastPrepared;
   Uri? lastCrossfadeTo;
@@ -100,8 +101,9 @@ class FakeAudioEngine implements AudioEngine {
   }
 
   @override
-  Future<void> setEqualizer(List<double> gains) async {
+  Future<void> setEqualizer(List<double> gains, {double preamp = 0}) async {
     lastEqualizer = List<double>.from(gains);
+    lastEqualizerPreamp = preamp;
   }
 
   @override

@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- ISO 10-band graphic equalizer (31 Hz–16 kHz) with the usual named
+  presets (Bass, Rock, Pop, Dance, and the rest) plus Import for
+  Equalizer APO GraphicEQ, parametric Filter lines (AutoEQ / Peace), or
+  a 10-gain JSON/text dump. Those curves are mapped onto the 10 ISO
+  bands. The curve runs in one persistent libmpv audio graph with automatic
+  headroom, while mpv renders directly to the platform's realtime output.
 - Discord Rich Presence. Settings → Discord can show the current track
   as Listening while the Discord desktop app is running. Off by default.
   The card lists track, artist, and album; the compact 🎵 line is
@@ -19,6 +25,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Playback with EQ enabled no longer stalls or crackles after pause,
+  seek, skip, or rapid slider changes. mpv now owns the realtime audio
+  output, and EQ changes update named filters in its persistent graph without
+  reopening the track or blocking transport commands. Windows builds pin the
+  checksum-verified 2024 media-kit core because the published package's 2023
+  mpv cannot address an individual filter inside that graph.
 - Discord presence updates skip and play/pause without dropping every
   other track. A dead Windows pipe no longer throws `Write error`
   from close, and presence reconnects on the next update.

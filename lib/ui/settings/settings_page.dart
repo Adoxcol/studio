@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/core/desktop/close_preference.dart';
@@ -16,6 +19,23 @@ import 'package:studio/ui/now_playing/cover_art.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
+
+  Future<void> _importEqualizer(WidgetRef ref) async {
+    final file = await FilePicker.pickFile(
+      dialogTitle: 'Import equalizer',
+      type: FileType.custom,
+      allowedExtensions: const ['txt', 'json', 'cfg', 'conf'],
+    );
+    final path = file?.path;
+    if (path == null) return;
+    try {
+      ref
+          .read(playbackSettingsProvider.notifier)
+          .importEqualizerText(await File(path).readAsString());
+    } on Object catch (error) {
+      debugPrint('Equalizer import failed: $error');
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -287,6 +307,14 @@ class SettingsPage extends ConsumerWidget {
             onSelect: (preset) => ref
                 .read(playbackSettingsProvider.notifier)
                 .setEqualizerPreset(preset),
+            onImport: () => _importEqualizer(ref),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'ISO 10-band graphic EQ. The curve and automatic headroom run in playback’s persistent realtime audio graph, so sliders update smoothly without reopening the track. Import Equalizer APO GraphicEQ or parametric Filter lines (AutoEQ / Peace), or a 10-gain JSON; those curves are mapped onto these bands.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
           ),
           const SizedBox(height: 16),
           _EqualizerBands(
@@ -459,10 +487,15 @@ class _CrossfadeSlider extends StatelessWidget {
 }
 
 class _EqualizerPresetRow extends StatelessWidget {
-  const _EqualizerPresetRow({required this.selected, required this.onSelect});
+  const _EqualizerPresetRow({
+    required this.selected,
+    required this.onSelect,
+    required this.onImport,
+  });
 
   final EqualizerPreset selected;
   final ValueChanged<EqualizerPreset> onSelect;
+  final VoidCallback onImport;
 
   @override
   Widget build(BuildContext context) {
@@ -476,6 +509,7 @@ class _EqualizerPresetRow extends StatelessWidget {
             onTap: () => onSelect(preset),
             muted: preset != selected,
           ),
+        LibraryTextAction(label: 'Import', onTap: onImport, muted: true),
       ],
     );
   }
