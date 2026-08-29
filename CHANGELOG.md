@@ -7,6 +7,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Discord Rich Presence. Settings → Discord can show the current track
+  as Listening while the Discord desktop app is running. Off by default.
+  The card lists track, artist, and album; the compact 🎵 line is
+  `artist - track`. Cover art is uploaded to catbox.moe so Discord
+  can display it. Play/Pause follows playback (Discord buttons are
+  links, they cannot control the player). Playing tracks show a
+  progress bar.
+
+### Fixed
+
+- Discord presence updates skip and play/pause without dropping every
+  other track. A dead Windows pipe no longer throws `Write error`
+  from close, and presence reconnects on the next update.
+- Windows (and macOS) use the Studio tray artwork instead of Flutter's
+  default logo.
+- Restoring the last session no longer plays a burst of audio before
+  pausing.
+- Discord cover uploads go to catbox.moe. Presence is sent
+  immediately; the cover is filled in when the upload lands.
+- The playhead no longer sticks at 0:00 when a track is playing:
+  tagged length is used until mpv reports, and a later 0 duration
+  does not wipe it.
+
 ## [0.1.1] - 2026-08-29
 
 ### Added

@@ -4,6 +4,9 @@ import 'package:studio/playback/dsp/replay_gain.dart';
 /// never a filesystem path or a "local vs streaming" branch.
 abstract interface class AudioEngine {
   Future<void> play(Uri uri);
+
+  /// Decode [uri] and sit paused. Must not emit audible samples.
+  Future<void> load(Uri uri);
   Future<void> prepare(Uri uri);
   Future<void> crossfadeTo(Uri uri);
   Future<void> pause();
