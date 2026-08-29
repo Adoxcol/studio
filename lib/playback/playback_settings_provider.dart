@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/playback/dsp/equalizer.dart';
+import 'package:studio/playback/dsp/equalizer_import.dart';
 import 'package:studio/playback/dsp/replay_gain.dart';
 import 'package:studio/playback/playback_settings.dart';
 import 'package:studio/playback/playback_settings_store.dart';
@@ -23,21 +24,46 @@ class PlaybackSettingsNotifier extends Notifier<PlaybackSettings> {
 
   void setEqualizerPreset(EqualizerPreset preset) {
     final gains = Equalizer.gainsFor(preset, state.equalizerGains);
-    state = state.copyWith(equalizerPreset: preset, equalizerGains: gains);
+    final preamp = preset == EqualizerPreset.custom
+        ? state.equalizerPreamp
+        : 0.0;
+    state = state.copyWith(
+      equalizerPreset: preset,
+      equalizerGains: gains,
+      equalizerPreamp: preamp,
+    );
     ref.read(playbackSettingsStoreProvider).save(state);
-    ref.read(audioEngineProvider).setEqualizer(gains);
+    ref.read(audioEngineProvider).setEqualizer(gains, preamp: preamp);
   }
 
   void setEqualizerBand(int index, double gain) {
     if (index < 0 || index >= Equalizer.bandsHz.length) return;
     final next = List<double>.from(state.activeEqualizerGains);
-    next[index] = gain.clamp(Equalizer.minGain, Equalizer.maxGain).toDouble();
+    next[index] = Equalizer.clampGain(gain);
     state = state.copyWith(
       equalizerPreset: EqualizerPreset.custom,
       equalizerGains: next,
     );
     ref.read(playbackSettingsStoreProvider).save(state);
-    ref.read(audioEngineProvider).setEqualizer(next);
+    ref
+        .read(audioEngineProvider)
+        .setEqualizer(next, preamp: state.equalizerPreamp);
+  }
+
+  void importEqualizer(ImportedEqualizer imported) {
+    state = state.copyWith(
+      equalizerPreset: EqualizerPreset.custom,
+      equalizerGains: imported.gains,
+      equalizerPreamp: Equalizer.clampGain(imported.preamp),
+    );
+    ref.read(playbackSettingsStoreProvider).save(state);
+    ref
+        .read(audioEngineProvider)
+        .setEqualizer(imported.gains, preamp: state.equalizerPreamp);
+  }
+
+  void importEqualizerText(String contents) {
+    importEqualizer(EqualizerImport.parse(contents));
   }
 
   void setCrossfade(Duration duration) {

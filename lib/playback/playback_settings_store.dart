@@ -39,20 +39,21 @@ class FilePlaybackSettingsStore implements PlaybackSettingsStore {
       final gains = rawGains is List
           ? [
               for (final value in rawGains)
-                (value as num)
-                    .toDouble()
-                    .clamp(Equalizer.minGain, Equalizer.maxGain)
-                    .toDouble(),
+                Equalizer.clampGain((value as num).toDouble()),
             ]
           : Equalizer.flat;
+      final ten = gains.length == Equalizer.bandsHz.length;
       return PlaybackSettings(
         replayGain: ReplayGainMode.fromName(json['replayGain'] as String?),
-        equalizerPreset: EqualizerPreset.fromName(
-          json['equalizerPreset'] as String?,
-        ),
-        equalizerGains: gains.length == Equalizer.bandsHz.length
-            ? gains
-            : Equalizer.flat,
+        equalizerPreset: ten
+            ? EqualizerPreset.fromName(json['equalizerPreset'] as String?)
+            : EqualizerPreset.flat,
+        equalizerGains: ten ? gains : Equalizer.flat,
+        equalizerPreamp: ten
+            ? Equalizer.clampGain(
+                (json['equalizerPreamp'] as num?)?.toDouble() ?? 0,
+              )
+            : 0,
         crossfade: Crossfade.fromMilliseconds(json['crossfadeMs'] as int?),
       );
     } on Object {
@@ -68,6 +69,7 @@ class FilePlaybackSettingsStore implements PlaybackSettingsStore {
         'replayGain': settings.replayGain.name,
         'equalizerPreset': settings.equalizerPreset.name,
         'equalizerGains': settings.equalizerGains,
+        'equalizerPreamp': settings.equalizerPreamp,
         'crossfadeMs': settings.crossfade.inMilliseconds,
       }),
     );

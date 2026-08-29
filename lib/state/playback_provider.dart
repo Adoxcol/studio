@@ -128,15 +128,18 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     unawaited(
       _engine.setReplayGain(ref.read(playbackSettingsProvider).replayGain),
     );
-    ref.listen(playbackSettingsProvider.select((s) => s.activeEqualizerGains), (
-      _,
-      gains,
-    ) {
-      unawaited(_engine.setEqualizer(gains));
-    });
+    ref.listen(
+      playbackSettingsProvider.select(
+        (s) => (s.activeEqualizerGains, s.equalizerPreamp),
+      ),
+      (_, next) {
+        unawaited(_engine.setEqualizer(next.$1, preamp: next.$2));
+      },
+    );
     unawaited(
       _engine.setEqualizer(
         ref.read(playbackSettingsProvider).activeEqualizerGains,
+        preamp: ref.read(playbackSettingsProvider).equalizerPreamp,
       ),
     );
     ref.listen(playbackSettingsProvider.select((s) => s.crossfade), (
