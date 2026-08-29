@@ -20,8 +20,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - Discord presence updates skip and play/pause without dropping every
-  other track. Windows pipe write errors are contained so they no
-  longer crash the app.
+  other track. A dead Windows pipe no longer throws `Write error`
+  from close, and presence reconnects on the next update.
 - Windows (and macOS) use the Studio tray artwork instead of Flutter's
   default logo.
 - Restoring the last session no longer plays a burst of audio before

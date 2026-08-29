@@ -46,16 +46,27 @@ class UnixTransport extends Transport {
 
   @override
   Future<void> close() async {
-    send(<dynamic, dynamic>{}, op: OPCodes.close);
-    await _socket?.close();
+    try {
+      send(<dynamic, dynamic>{}, op: OPCodes.close);
+    } catch (_) {}
+    try {
+      await _socket?.close();
+    } catch (_) {}
     _socket = null;
   }
 
   @override
   void send(dynamic data, {OPCodes op = OPCodes.frame}) {
+    final socket = _socket;
+    if (socket == null) {
+      if (op == OPCodes.close) return;
+      throw "Couldn't write to the IPC connection";
+    }
     try {
-      _socket?.add(encode(op, data));
+      socket.add(encode(op, data));
     } catch (err) {
+      _socket = null;
+      if (op == OPCodes.close) return;
       throw "Couldn't write to the IPC connection";
     }
   }

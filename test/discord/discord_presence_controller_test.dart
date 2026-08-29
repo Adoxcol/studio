@@ -13,26 +13,35 @@ class FakeDiscordRpcClient implements DiscordRpcClient {
   var disconnectCount = 0;
   final views = <DiscordPresenceView>[];
   Object? connectError;
+  Object? activityError;
+  var _live = false;
+
+  @override
+  bool get isConnected => _live;
 
   @override
   Future<void> connect() async {
     if (connectError != null) throw connectError!;
     connectCount++;
+    _live = true;
   }
 
   @override
   Future<void> setActivity(DiscordPresenceView view) async {
+    if (activityError != null) throw activityError!;
     views.add(view);
   }
 
   @override
   Future<void> clear() async {
     clearCount++;
+    _live = false;
   }
 
   @override
   Future<void> disconnect() async {
     disconnectCount++;
+    _live = false;
   }
 }
 
@@ -123,6 +132,37 @@ void main() {
     expect(client.views.last.buttonLabel, 'Pause');
     expect(client.views.last.start, isNull);
   });
+
+  test('reconnects after a failed activity write', () async {
+    final client = FakeDiscordRpcClient()..activityError = 'Write error.';
+    final controller = controllerFor(
+      client,
+      retryEvery: const Duration(milliseconds: 10),
+      now: () => now,
+    );
+    await controller.sync(enabled: true, playback: playing);
+    expect(controller.isConnected, isFalse);
+    expect(client.views, isEmpty);
+    client.activityError = null;
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(client.connectCount, 2);
+    expect(client.views, hasLength(1));
+    await controller.dispose();
+  });
+
+  test(
+    'reconnects when Discord dropped the pipe under an unchanged track',
+    () async {
+      final client = FakeDiscordRpcClient();
+      final controller = controllerFor(client, now: () => now);
+      await controller.sync(enabled: true, playback: playing);
+      await client.disconnect();
+      await controller.sync(enabled: true, playback: playing);
+      expect(client.connectCount, 2);
+      expect(client.views, hasLength(2));
+      expect(controller.isConnected, isTrue);
+    },
+  );
 
   test('retries after Discord was not running', () async {
     final client = FakeDiscordRpcClient()..connectError = 'no ipc';

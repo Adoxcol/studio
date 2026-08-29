@@ -8,6 +8,7 @@ class Client {
 
   final String clientId;
   late Transport? _transport;
+  void Function()? onClosed;
 
   Future<void> connect() async {
     _transport = Transport.create(this);
@@ -47,7 +48,10 @@ class Client {
   void _rpcMessage(Event message) async {
     switch (message.type) {
       case 'close':
-        await disconnect();
+        try {
+          await disconnect();
+        } catch (_) {}
+        onClosed?.call();
 
       default:
     }

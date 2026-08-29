@@ -12,7 +12,10 @@ class IpcDiscordRpcClient implements DiscordRpcClient {
     : _zone = Zone.current.fork(
         specification: ZoneSpecification(
           handleUncaughtError: (_, _, _, error, stack) {
-            debugPrint('Discord IPC: $error\n$stack');
+            debugPrint('Discord IPC: $error');
+            if (error != 'Write error.') {
+              debugPrint('$stack');
+            }
           },
         ),
       );
@@ -22,15 +25,17 @@ class IpcDiscordRpcClient implements DiscordRpcClient {
   Client? _client;
 
   @override
+  bool get isConnected => _client != null;
+
+  @override
   Future<void> connect() => _run(() async {
     await _dropClient();
     final client = Client(clientId: applicationId);
+    client.onClosed = () {
+      if (identical(_client, client)) _client = null;
+    };
     await client.connect();
     _client = client;
-    // Success is otherwise silent: a write into a pipe Discord has stopped
-    // reading from (e.g. it hung, or bound the wrong instance) can succeed
-    // at the OS level with no exception, so without this a "connected fine
-    // but nothing shows on Discord" report leaves no trace either way.
     debugPrint('Discord IPC: connected');
   });
 
@@ -40,26 +45,34 @@ class IpcDiscordRpcClient implements DiscordRpcClient {
     if (client == null) {
       throw StateError('Discord RPC is not connected');
     }
-    await client.setActivity(
-      _StudioActivity(
-        name: view.name,
-        type: ActivityType.listening,
-        details: view.details,
-        state: view.state,
-        timestamps: view.start == null
-            ? null
-            : ActivityTimestamps(start: view.start, end: view.end),
-        assets: ActivityAssets(
-          largeImage: view.largeImage,
-          largeText: view.album,
-          smallImage: view.smallImageKey,
-          smallText: view.smallImageText,
+    try {
+      await client.setActivity(
+        _StudioActivity(
+          name: view.name,
+          type: ActivityType.listening,
+          details: view.details,
+          state: view.state,
+          timestamps: view.start == null
+              ? null
+              : ActivityTimestamps(start: view.start, end: view.end),
+          assets: ActivityAssets(
+            largeImage: view.largeImage,
+            largeText: view.album,
+            smallImage: view.smallImageKey,
+            smallText: view.smallImageText,
+          ),
+          buttons: [
+            {'label': view.buttonLabel, 'url': view.buttonUrl},
+          ],
         ),
-        buttons: [
-          {'label': view.buttonLabel, 'url': view.buttonUrl},
-        ],
-      ),
-    );
+      );
+    } on Object {
+      if (identical(_client, client)) _client = null;
+      try {
+        await client.disconnect();
+      } catch (_) {}
+      rethrow;
+    }
     debugPrint('Discord IPC: sent "${view.details}" (${view.state ?? '–'})');
   });
 
@@ -75,8 +88,8 @@ class IpcDiscordRpcClient implements DiscordRpcClient {
     if (client == null) return;
     try {
       await client.disconnect();
-    } on Object catch (error, stack) {
-      debugPrint('Discord IPC disconnect: $error\n$stack');
+    } on Object catch (error) {
+      debugPrint('Discord IPC disconnect: $error');
     }
     // Extra margin on top of the now-awaited pipe close (see
     // third_party/discord_rich_presence): Windows only allows one client on

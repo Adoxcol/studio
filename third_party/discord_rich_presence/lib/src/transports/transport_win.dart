@@ -8,6 +8,7 @@ class WindowsTransport extends Transport {
   WindowsTransport(super._client);
   RandomAccessFile? _file;
   Timer? _timer;
+  var _closing = false;
 
   @override
   Future<void> connect() async {
@@ -30,29 +31,33 @@ class WindowsTransport extends Transport {
     await read();
 
     _timer = Timer.periodic(Duration(seconds: 1), (_) {
-      readLoop();
+      unawaited(readLoop());
     });
   }
 
   Future<void> readLoop() async {
-    final List<int> data = await read();
-    if (data.isEmpty) return;
+    try {
+      final List<int> data = await read();
+      if (data.isEmpty) return;
 
-    final (OPCodes? code, Map<String, dynamic> cmd) = decode(data);
-    if (code == null) return;
+      final (OPCodes? code, Map<String, dynamic> cmd) = decode(data);
+      if (code == null) return;
 
-    switch (code) {
-      case OPCodes.ping:
-        send(cmd, op: OPCodes.pong);
+      switch (code) {
+        case OPCodes.ping:
+          send(cmd, op: OPCodes.pong);
 
-      case OPCodes.frame:
-        events.add(Event('message', cmd));
+        case OPCodes.frame:
+          events.add(Event('message', cmd));
 
-      case OPCodes.close:
-        events.add(Event('close', cmd));
+        case OPCodes.close:
+          events.add(Event('close', cmd));
 
-      default:
-      // Do nothing
+        default:
+        // Do nothing
+      }
+    } on Object {
+      await _dropPipe(notify: true);
     }
   }
 
@@ -91,25 +96,44 @@ class WindowsTransport extends Transport {
 
   @override
   Future<void> close() async {
+    if (_closing) return;
+    _closing = true;
     _timer?.cancel();
+    _timer = null;
     try {
       send(<dynamic, dynamic>{}, op: OPCodes.close);
     } catch (_) {
-      // Best-effort goodbye frame: the pipe may already be dead. The handle
-      // still has to be released below regardless, or it leaks until GC
-      // finalizes it and the next connect() can race a still-open pipe.
+      // Best-effort goodbye frame: the pipe may already be dead.
     }
-    final file = _file;
-    _file = null;
-    await file?.close();
+    await _dropPipe(notify: false);
   }
 
   @override
   void send(dynamic data, {OPCodes op = OPCodes.frame}) {
-    try {
-      _file?.writeFromSync(encode(op, data));
-    } catch (err) {
+    final file = _file;
+    if (file == null) {
+      if (op == OPCodes.close) return;
       throw 'Write error.';
+    }
+    try {
+      file.writeFromSync(encode(op, data));
+    } catch (_) {
+      _file = null;
+      if (op == OPCodes.close) return;
+      throw 'Write error.';
+    }
+  }
+
+  Future<void> _dropPipe({required bool notify}) async {
+    _timer?.cancel();
+    _timer = null;
+    final file = _file;
+    _file = null;
+    try {
+      await file?.close();
+    } catch (_) {}
+    if (notify && !_closing) {
+      events.add(Event('close'));
     }
   }
 }

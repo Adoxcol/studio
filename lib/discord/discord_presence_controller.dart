@@ -114,6 +114,10 @@ class DiscordPresenceController {
       await _clear();
       return;
     }
+    if (_connected && !_client.isConnected) {
+      _connected = false;
+      _last = null;
+    }
     final cover = _artwork?.cachedUrl(playback.artworkPath);
     final view = discordPresenceFor(playback, now: _now(), largeImage: cover);
     if (view == null) {
@@ -135,8 +139,8 @@ class DiscordPresenceController {
       _last = view;
       _retry?.cancel();
       _retry = null;
-    } on Object catch (error, stack) {
-      debugPrint('Discord RPC update failed: $error\n$stack');
+    } on Object catch (error) {
+      debugPrint('Discord RPC update failed: $error');
       _connected = false;
       _last = null;
       _scheduleRetry();
@@ -161,8 +165,8 @@ class DiscordPresenceController {
     _connected = false;
     try {
       await _client.clear();
-    } on Object catch (error, stack) {
-      debugPrint('Discord RPC clear failed: $error\n$stack');
+    } on Object catch (error) {
+      debugPrint('Discord RPC clear failed: $error');
     }
   }
 
