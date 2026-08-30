@@ -75,58 +75,61 @@ class _PlayerBarBody extends ConsumerWidget {
       height: PlayerBar.contentHeight,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            SizedBox(
-              width: 260,
-              child: Row(
-                children: [
-                  CoverArt(path: playback.artworkPath, size: 40),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          playback.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(color: palette.ink),
+            Row(
+              children: [
+                SizedBox(
+                  width: 260,
+                  child: Row(
+                    children: [
+                      CoverArt(path: playback.artworkPath, size: 40),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              playback.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: palette.ink),
+                            ),
+                            if (playback.artist != null)
+                              Text(
+                                playback.artist!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: palette.inkMuted),
+                              ),
+                          ],
                         ),
-                        if (playback.artist != null)
-                          Text(
-                            playback.artist!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: palette.inkMuted),
-                          ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const Spacer(),
+                SizedBox(
+                  width: 130,
+                  child: _VolumeCluster(
+                    volume: playback.volume,
+                    onChanged: (value) {
+                      ref
+                          .read(playbackControllerProvider.notifier)
+                          .setVolume(value);
+                    },
+                  ),
+                ),
+              ],
             ),
-            const Spacer(),
             _Transport(
               playing: playback.playing,
               shuffle: playback.shuffle,
               repeat: playback.repeat,
-            ),
-            const Spacer(),
-            SizedBox(
-              width: 130,
-              child: _VolumeCluster(
-                volume: playback.volume,
-                onChanged: (value) {
-                  ref
-                      .read(playbackControllerProvider.notifier)
-                      .setVolume(value);
-                },
-              ),
             ),
           ],
         ),
