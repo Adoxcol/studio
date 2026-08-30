@@ -7,10 +7,6 @@ final closePreferenceStoreProvider = Provider<ClosePreferenceStore>((ref) {
   return MemoryClosePreferenceStore();
 });
 
-final studioNavigatorKeyProvider = Provider<GlobalKey<NavigatorState>>((ref) {
-  return GlobalKey<NavigatorState>();
-});
-
 class ClosePreferenceNotifier extends Notifier<ClosePreference> {
   @override
   ClosePreference build() => ref.watch(closePreferenceStoreProvider).load();
