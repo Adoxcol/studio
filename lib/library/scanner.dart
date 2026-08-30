@@ -289,7 +289,7 @@ class FolderScanner {
     final dir = p.dirname(locator);
     final key = dir.toLowerCase();
     if (cache.containsKey(key)) return cache[key];
-    final file = FolderCover.find(dir);
+    final file = await FolderCover.find(dir);
     if (file == null) {
       cache[key] = null;
       return null;
