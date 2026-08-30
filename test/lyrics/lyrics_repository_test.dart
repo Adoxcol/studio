@@ -83,4 +83,21 @@ void main() {
     );
     expect(cache.read(query)?.record?.plainLyrics, 'Hello');
   });
+
+  test('file cache read returns null on invalid JSON', () {
+    final dir = Directory.systemTemp.createTempSync('studio-lyrics');
+    addTearDown(() {
+      if (dir.existsSync()) dir.deleteSync(recursive: true);
+    });
+    final cache = FileLyricsCache(dir);
+    cache.write(query, null);
+
+    final files = dir.listSync().whereType<File>().toList();
+    expect(files.length, 1);
+    final cacheFile = files.first;
+
+    cacheFile.writeAsStringSync('{ invalid JSON }');
+
+    expect(cache.read(query), isNull);
+  });
 }
