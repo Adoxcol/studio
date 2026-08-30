@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:studio/features/artist_artwork/presentation/fanart_settings.dart';
+import 'package:studio/features/library_folders/presentation/library_folders_panel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/core/desktop/close_preference.dart';
 import 'package:studio/core/desktop/close_preference_provider.dart';
@@ -184,6 +186,8 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 32),
           _SectionLabel(text: 'LIBRARY'),
           const SizedBox(height: 16),
+          const LibraryFoldersPanel(embedded: true),
+          const SizedBox(height: 24),
           Text('Track layout', style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 10),
           Row(
@@ -266,6 +270,40 @@ class SettingsPage extends ConsumerWidget {
               context,
             ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
           ),
+          const SizedBox(height: 32),
+          Text(
+            'Artist pictures',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 24,
+            children: [
+              LibraryTextAction(
+                label: 'Fetch automatically',
+                muted: !appearance.fetchArtistPictures,
+                onTap: () => ref
+                    .read(appearanceProvider.notifier)
+                    .setFetchArtistPictures(true),
+              ),
+              LibraryTextAction(
+                label: 'Cached / custom only',
+                muted: appearance.fetchArtistPictures,
+                onTap: () => ref
+                    .read(appearanceProvider.notifier)
+                    .setFetchArtistPictures(false),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Finds photos for all library artists in the background using MusicBrainz, fanart.tv (when configured), TheAudioDB (public free key), and Wikimedia. TheAudioDB requests stay below its 30-per-minute limit. Sends artist names and, for ambiguous matches, album titles; never sends your audio files. Images are cached locally, and your chosen pictures always take priority.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+          ),
+          const SizedBox(height: 32),
+          const FanartSettingsPanel(),
           const SizedBox(height: 32),
           _SectionLabel(text: 'PLAYBACK & SOUND'),
           const SizedBox(height: 16),
