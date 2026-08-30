@@ -15,8 +15,7 @@ class QueuePage extends ConsumerWidget {
         (s) => (queueIds: s.queueIds, trackId: s.trackId),
       ),
     );
-    final tracks = ref.watch(libraryTracksProvider).value ?? const [];
-    final byId = {for (final track in tracks) track.id: track};
+    final byId = ref.watch(libraryTracksByIdProvider);
 
     if (playback.queueIds.isEmpty) {
       return Padding(
