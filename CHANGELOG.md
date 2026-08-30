@@ -58,6 +58,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Resolve the Now Playing build failure after integrating the shared track map;
+  queue lookups stay in Queue and the reusable Up Next panel, not the hero.
 - Artist lookup retains resolved MusicBrainz identities across retries/restarts.
   Portrait downloads use inactivity timeouts and a bounded overall deadline,
   so a slow but progressing transfer is not cancelled after 15 seconds.

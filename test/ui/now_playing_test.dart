@@ -1,10 +1,12 @@
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/lyrics/lrclib_client.dart';
+import 'package:studio/state/library_providers.dart';
 import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/theming/studio_theme.dart';
 import 'package:studio/ui/now_playing/now_playing_page.dart';
 import 'package:studio/ui/visualizer/spectrum_visualizer.dart';
 
@@ -72,6 +74,28 @@ void main() {
       tester.getSize(find.byType(NowPlayingPage)).width,
       greaterThanOrEqualTo(800),
     );
+    expect(find.text('UP NEXT'), findsNothing);
+  });
+
+  testWidgets('Now Playing does not load the queue track map', (tester) async {
+    await tester.pumpWidget(
+      testStudioApp(
+        db: db,
+        engine: engine,
+        extraOverrides: [
+          libraryTracksByIdProvider.overrideWith((ref) {
+            throw StateError('The Now Playing hero must not load queue tracks');
+          }),
+        ],
+        child: MaterialApp(
+          theme: StudioTheme.light(),
+          home: const Scaffold(body: NowPlayingPage()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Not playing'), findsOneWidget);
     expect(find.text('UP NEXT'), findsNothing);
   });
 

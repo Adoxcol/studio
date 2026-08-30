@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:studio/state/library_providers.dart' show spectrumBandsProvider;
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/lyrics/lyrics_scroller.dart';
@@ -13,6 +14,8 @@ class NowPlayingPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Queue and the reusable UpNextPanel own queue lookups. This hero needs
+    // only current-track metadata, not queue IDs or the library's track map.
     final snapshot = ref.watch(
       playbackControllerProvider.select(
         (s) => (
