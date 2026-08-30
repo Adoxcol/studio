@@ -1,10 +1,13 @@
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/lyrics/lrclib_client.dart';
+import 'package:studio/state/library_providers.dart';
 import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/theming/studio_theme.dart';
+import 'package:studio/ui/now_playing/now_playing_page.dart';
 import 'package:studio/ui/visualizer/spectrum_visualizer.dart';
 
 import '../helpers/pump_studio.dart';
@@ -32,8 +35,9 @@ void main() {
   Future<void> pumpNowPlaying(
     WidgetTester tester, {
     List<Track> tracks = const [],
+    double width = 1400,
   }) async {
-    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.physicalSize = Size(width, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -45,7 +49,7 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('hero uses display type and shows an empty Up Next panel', (
+  testWidgets('hero uses display type beside the dedicated Queue panel', (
     tester,
   ) async {
     await pumpNowPlaying(tester);
@@ -61,30 +65,38 @@ void main() {
     );
   });
 
-  testWidgets('Up Next lists upcoming queue titles after play starts', (
+  testWidgets('regular Now Playing never adds an Up Next sidebar', (
     tester,
   ) async {
-    await db.upsertTrack(
-      TracksCompanion.insert(locator: '/music/a.flac', title: 'First'),
+    await pumpNowPlaying(tester, width: 2400);
+
+    expect(
+      tester.getSize(find.byType(NowPlayingPage)).width,
+      greaterThanOrEqualTo(800),
     );
-    await db.upsertTrack(
-      TracksCompanion.insert(locator: '/music/b.flac', title: 'Second'),
+    expect(find.text('UP NEXT'), findsNothing);
+  });
+
+  testWidgets('Now Playing does not load the queue track map', (tester) async {
+    await tester.pumpWidget(
+      testStudioApp(
+        db: db,
+        engine: engine,
+        extraOverrides: [
+          libraryTracksByIdProvider.overrideWith((ref) {
+            throw StateError('The Now Playing hero must not load queue tracks');
+          }),
+        ],
+        child: MaterialApp(
+          theme: StudioTheme.light(),
+          home: const Scaffold(body: NowPlayingPage()),
+        ),
+      ),
     );
-    final rows = await db.allTracks();
-    await pumpNowPlaying(tester, tracks: rows);
-
-    await tester.tap(find.byTooltip('Library'));
-    await tester.pump();
-    await tester.tap(find.text('First'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
-
-    await tester.tap(find.byTooltip('Now Playing'));
-    await tester.pump();
-
-    expect(find.text('now playing'), findsOneWidget);
-    expect(find.text('First'), findsWidgets);
-    expect(find.text('Second'), findsWidgets);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Not playing'), findsOneWidget);
+    expect(find.text('UP NEXT'), findsNothing);
   });
 
   testWidgets('hero lyrics highlight the current line in accent', (
