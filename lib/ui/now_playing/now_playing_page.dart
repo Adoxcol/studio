@@ -27,8 +27,7 @@ class NowPlayingPage extends ConsumerWidget {
         ),
       ),
     );
-    final tracks = ref.watch(libraryTracksProvider).value ?? const [];
-    final byId = {for (final track in tracks) track.id: track};
+    final byId = ref.watch(libraryTracksByIdProvider);
     final currentIndex = snapshot.trackId == null
         ? -1
         : snapshot.queueIds.indexOf(snapshot.trackId!);

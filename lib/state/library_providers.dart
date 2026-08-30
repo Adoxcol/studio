@@ -43,6 +43,16 @@ final libraryTracksProvider = StreamProvider<List<Track>>((ref) {
   );
 });
 
+/// ⚡ Bolt Optimization:
+/// Previously, widgets like `NowPlayingPage` and `QueuePage` were doing O(N) map creations
+/// inside their build methods for tens of thousands of tracks.
+/// We moved this calculation here to get O(1) lookups during widget rebuilds,
+/// recalculating only when the underlying `libraryTracksProvider` stream emits.
+final libraryTracksByIdProvider = Provider<Map<int, Track>>((ref) {
+  final tracks = ref.watch(libraryTracksProvider).value ?? const [];
+  return {for (final track in tracks) track.id: track};
+});
+
 final playlistsProvider = StreamProvider<List<Playlist>>((ref) {
   return ref.watch(studioDatabaseProvider).watchPlaylists();
 });
