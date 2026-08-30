@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:studio/features/artist_artwork/presentation/artist_portrait.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/library/library_query.dart';
 import 'package:studio/theming/studio_palette.dart';
@@ -133,8 +134,8 @@ class _ArtistGrid extends StatelessWidget {
           child: GridView.builder(
             padding: const EdgeInsets.only(top: 12, bottom: 16),
             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 240,
-              mainAxisExtent: 72,
+              maxCrossAxisExtent: 200,
+              mainAxisExtent: 220,
               crossAxisSpacing: 24,
               mainAxisSpacing: 8,
             ),
@@ -142,10 +143,40 @@ class _ArtistGrid extends StatelessWidget {
             itemBuilder: (context, index) {
               final group = groups[index];
               final albums = group.albumCount ?? 0;
-              return _NameTile(
-                name: group.name,
-                detail: _plural(albums, 'album'),
-                onTap: () => onSelect(group.name),
+              return LayoutBuilder(
+                builder: (context, constraints) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GestureDetector(
+                      onTap: () => onSelect(group.name),
+                      child: ArtistPortrait(
+                        artist: group.name,
+                        size: constraints.maxWidth.clamp(0.0, 136.0),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 64,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _NameTile(
+                              name: group.name,
+                              detail: _plural(albums, 'album'),
+                              compact: true,
+                              onTap: () => onSelect(group.name),
+                            ),
+                          ),
+                          ArtistImageControls(
+                            key: ValueKey(group.name),
+                            artist: group.name,
+                            compact: true,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               );
             },
           ),
@@ -324,11 +355,13 @@ class _NameTile extends StatelessWidget {
     required this.name,
     required this.detail,
     required this.onTap,
+    this.compact = false,
   });
 
   final String name;
   final String detail;
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -345,11 +378,15 @@ class _NameTile extends StatelessWidget {
               name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.headlineMedium,
+              style: compact
+                  ? Theme.of(context).textTheme.bodyMedium
+                  : Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 2),
             Text(
               detail,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),

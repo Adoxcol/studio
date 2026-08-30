@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/ui/layout/title_bar.dart';
 
 import 'helpers/pump_studio.dart';
 import 'playback/fake_audio_engine.dart';
@@ -48,7 +49,8 @@ void main() {
     expect(find.byTooltip('Now Playing'), findsOneWidget);
     expect(find.byTooltip('Queue'), findsOneWidget);
     expect(find.byTooltip('Settings'), findsOneWidget);
-    expect(find.text('Add folder'), findsOneWidget);
+    expect(find.text('Add folder'), findsNothing);
+    expect(find.text('Folders'), findsOneWidget);
     expect(find.text('Queue'), findsWidgets);
   });
 
@@ -59,6 +61,50 @@ void main() {
     await tester.pump();
 
     expect(find.text('Settings'), findsWidgets);
+  });
+
+  testWidgets('title bar uses recognizable controls on the right', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    final titleBar = find.byType(StudioTitleBar);
+    final minimize = find.byTooltip('Minimize');
+    final maximize = find.byTooltip('Maximize or restore');
+    final close = find.byTooltip('Close');
+    final titleBarCenter = tester.getCenter(titleBar);
+
+    expect(minimize, findsOneWidget);
+    expect(maximize, findsOneWidget);
+    expect(close, findsOneWidget);
+    expect(tester.getCenter(minimize).dx, greaterThan(titleBarCenter.dx));
+    expect(
+      tester.getCenter(minimize).dx,
+      lessThan(tester.getCenter(maximize).dx),
+    );
+    expect(tester.getCenter(maximize).dx, lessThan(tester.getCenter(close).dx));
+    expect(
+      tester.getCenter(find.text('Studio')).dx,
+      closeTo(titleBarCenter.dx, 0.1),
+    );
+    expect(
+      find.descendant(
+        of: titleBar,
+        matching: find.byIcon(Icons.remove_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: titleBar,
+        matching: find.byIcon(Icons.crop_square_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: titleBar, matching: find.byIcon(Icons.close_rounded)),
+      findsOneWidget,
+    );
   });
 
   testWidgets('light theme uses Editorial Mono background', (tester) async {

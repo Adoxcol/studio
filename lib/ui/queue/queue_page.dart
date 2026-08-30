@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/state/library_providers.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/ui/queue/queue_track_row.dart';
 
 class QueuePage extends ConsumerWidget {
   const QueuePage({super.key});
@@ -31,7 +32,7 @@ class QueuePage extends ConsumerWidget {
 
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(32, 24, 32, 16),
-      itemExtent: 45,
+      itemExtent: QueueTrackRow.height + 1,
       addAutomaticKeepAlives: false,
       itemCount: playback.queueIds.length,
       itemBuilder: (context, index) {
@@ -42,17 +43,12 @@ class QueuePage extends ConsumerWidget {
           decoration: BoxDecoration(
             border: Border(bottom: BorderSide(color: palette.hairlineSoft)),
           ),
-          child: SizedBox(
-            height: 44,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                track?.title ?? 'Unknown track',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: current ? palette.accent : palette.ink,
-                ),
-              ),
-            ),
+          child: QueueTrackRow(
+            track: track,
+            current: current,
+            onTap: () => ref
+                .read(playbackControllerProvider.notifier)
+                .playQueueIndex(index),
           ),
         );
       },
