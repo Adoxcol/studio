@@ -15,6 +15,7 @@ class LibraryTrackTable extends ConsumerWidget {
     required this.tracks,
     required this.onPlay,
     this.onTrackMenu,
+    this.bottomInset = 0,
   });
 
   static const double rowExtent = 45;
@@ -24,6 +25,9 @@ class LibraryTrackTable extends ConsumerWidget {
   final List<Track> tracks;
   final void Function(int index) onPlay;
   final void Function(Track track, Offset globalPosition)? onTrackMenu;
+
+  /// Extra scrollable space so floating navigation never traps the final row.
+  final double bottomInset;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,6 +42,7 @@ class LibraryTrackTable extends ConsumerWidget {
         showArtwork: appearance.showTrackArtwork,
         onPlay: onPlay,
         onTrackMenu: onTrackMenu,
+        bottomInset: bottomInset,
       );
     }
     return _TrackList(
@@ -46,6 +51,7 @@ class LibraryTrackTable extends ConsumerWidget {
       showArtwork: appearance.showTrackArtwork,
       onPlay: onPlay,
       onTrackMenu: onTrackMenu,
+      bottomInset: bottomInset,
     );
   }
 }
@@ -56,19 +62,21 @@ class _TrackCardGrid extends StatelessWidget {
     required this.playingId,
     required this.showArtwork,
     required this.onPlay,
+    required this.bottomInset,
     this.onTrackMenu,
   });
 
   final List<Track> tracks;
   final int? playingId;
   final bool showArtwork;
+  final double bottomInset;
   final void Function(int index) onPlay;
   final void Function(Track track, Offset globalPosition)? onTrackMenu;
 
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
-      padding: const EdgeInsets.only(top: 8, bottom: 16),
+      padding: EdgeInsets.only(top: 8, bottom: 16 + bottomInset),
       addAutomaticKeepAlives: false,
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 340,
@@ -184,12 +192,14 @@ class _TrackList extends StatelessWidget {
     required this.playingId,
     required this.showArtwork,
     required this.onPlay,
+    required this.bottomInset,
     this.onTrackMenu,
   });
 
   final List<Track> tracks;
   final int? playingId;
   final bool showArtwork;
+  final double bottomInset;
   final void Function(int index) onPlay;
   final void Function(Track track, Offset globalPosition)? onTrackMenu;
 
@@ -204,6 +214,7 @@ class _TrackList extends StatelessWidget {
         ),
         Expanded(
           child: ListView.builder(
+            padding: EdgeInsets.only(bottom: bottomInset),
             itemExtent: LibraryTrackTable.rowExtent,
             addAutomaticKeepAlives: false,
             itemCount: tracks.length,
