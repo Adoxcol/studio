@@ -156,35 +156,39 @@ class LibraryFoldersPanel extends ConsumerWidget {
         );
       },
     );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: embedded ? MainAxisSize.min : MainAxisSize.max,
-      children: [
-        Wrap(
-          spacing: 24,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Text(
-              'Music folders',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            TextButton.icon(
-              key: const ValueKey('add-music-folder'),
-              onPressed: busy ? null : () => _add(context, ref),
-              icon: const Icon(Icons.create_new_folder_outlined, size: 18),
-              label: const Text('Add folder'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        if (embedded)
-          body
-        else
-          Expanded(
-            child: Align(alignment: Alignment.topLeft, child: body),
+    // Folder rows share an ink surface above the host's painted background.
+    return Material(
+      type: MaterialType.transparency,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: embedded ? MainAxisSize.min : MainAxisSize.max,
+        children: [
+          Wrap(
+            spacing: 24,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                'Music folders',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              TextButton.icon(
+                key: const ValueKey('add-music-folder'),
+                onPressed: busy ? null : () => _add(context, ref),
+                icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+                label: const Text('Add folder'),
+              ),
+            ],
           ),
-      ],
+          const SizedBox(height: 12),
+          if (embedded)
+            body
+          else
+            Expanded(
+              child: Align(alignment: Alignment.topLeft, child: body),
+            ),
+        ],
+      ),
     );
   }
 }

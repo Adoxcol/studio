@@ -167,4 +167,51 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+
+  for (final embedded in [false, true]) {
+    testWidgets('folder ink stays above the host background ($embedded)', (
+      tester,
+    ) async {
+      LibraryFolder? opened;
+      const folder = LibraryFolder(id: 1, path: '/music/Records');
+      final panel = LibraryFoldersPanel(
+        embedded: embedded,
+        onOpen: (value) => opened = value,
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            libraryFoldersProvider.overrideWith(
+              (ref) => Stream.value([folder]),
+            ),
+            libraryScanProvider.overrideWith(() => scan),
+          ],
+          child: MaterialApp(
+            theme: StudioTheme.light(),
+            home: Scaffold(
+              body: DecoratedBox(
+                decoration: const BoxDecoration(color: Colors.white),
+                child: embedded ? SingleChildScrollView(child: panel) : panel,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      var hasVisibleInkSurface = false;
+      tester.element(find.byType(ListTile)).visitAncestorElements((element) {
+        if (element.widget is Material) {
+          hasVisibleInkSurface = true;
+          return false;
+        }
+        return element.widget is! DecoratedBox;
+      });
+      expect(hasVisibleInkSurface, isTrue);
+      await tester.tap(find.text('Records'));
+      await tester.pumpAndSettle();
+      expect(opened, folder);
+      expect(tester.takeException(), isNull);
+    });
+  }
 }
