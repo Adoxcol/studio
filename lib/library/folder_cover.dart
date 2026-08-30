@@ -7,13 +7,12 @@ abstract final class FolderCover {
   static const stems = {'cover', 'folder', 'album', 'front', 'albumart'};
   static const extensions = {'.jpg', '.jpeg', '.png', '.webp'};
 
-  static Future<File?> find(String directory) async {
+  static File? find(String directory) {
     try {
-      final dir = Directory(directory);
-      await for (final entity in dir.list(followLinks: false)) {
+      for (final entity in Directory(directory).listSync(followLinks: false)) {
         if (entity is! File) continue;
         if (!_matches(entity.path)) continue;
-        if (await entity.length() > 0) return entity;
+        if (entity.lengthSync() > 0) return entity;
       }
     } on FileSystemException {
       return null;

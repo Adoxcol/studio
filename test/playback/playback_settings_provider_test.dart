@@ -39,9 +39,9 @@ void main() {
   });
 
   test('setReplayGain updates state, store, and engine', () {
-    container.read(playbackSettingsProvider.notifier).setReplayGain(
-      ReplayGainMode.album,
-    );
+    container
+        .read(playbackSettingsProvider.notifier)
+        .setReplayGain(ReplayGainMode.album);
     expect(
       container.read(playbackSettingsProvider).replayGain,
       ReplayGainMode.album,
@@ -51,9 +51,9 @@ void main() {
   });
 
   test('setEqualizerPreset updates state, store, and engine', () {
-    container.read(playbackSettingsProvider.notifier).setEqualizerPreset(
-      EqualizerPreset.rock,
-    );
+    container
+        .read(playbackSettingsProvider.notifier)
+        .setEqualizerPreset(EqualizerPreset.rock);
     final state = container.read(playbackSettingsProvider);
     expect(state.equalizerPreset, EqualizerPreset.rock);
     expect(
@@ -83,9 +83,9 @@ void main() {
     );
 
     // Switch to rock, should reset preamp to 0
-    container.read(playbackSettingsProvider.notifier).setEqualizerPreset(
-      EqualizerPreset.pop,
-    );
+    container
+        .read(playbackSettingsProvider.notifier)
+        .setEqualizerPreset(EqualizerPreset.pop);
     expect(container.read(playbackSettingsProvider).equalizerPreamp, 0.0);
     expect(engine.lastEqualizerPreamp, 0.0);
 
@@ -98,9 +98,9 @@ void main() {
       ],
     );
 
-    container.read(playbackSettingsProvider.notifier).setEqualizerPreset(
-      EqualizerPreset.custom,
-    );
+    container
+        .read(playbackSettingsProvider.notifier)
+        .setEqualizerPreset(EqualizerPreset.custom);
     expect(container.read(playbackSettingsProvider).equalizerPreamp, 4.2);
     expect(engine.lastEqualizerPreamp, 4.2);
   });
@@ -124,15 +124,13 @@ void main() {
   });
 
   test('setEqualizerBand clamps gain', () {
-    container.read(playbackSettingsProvider.notifier).setEqualizerBand(
-      2,
-      200.0,
-    );
+    container
+        .read(playbackSettingsProvider.notifier)
+        .setEqualizerBand(2, 200.0);
     expect(container.read(playbackSettingsProvider).equalizerGains[2], 15.0);
-    container.read(playbackSettingsProvider.notifier).setEqualizerBand(
-      2,
-      -200.0,
-    );
+    container
+        .read(playbackSettingsProvider.notifier)
+        .setEqualizerBand(2, -200.0);
     expect(container.read(playbackSettingsProvider).equalizerGains[2], -15.0);
   });
 
@@ -154,10 +152,7 @@ void main() {
   });
 
   test('importEqualizer clamps preamp', () {
-    final imported = ImportedEqualizer(
-      gains: Equalizer.flat,
-      preamp: 50.0,
-    );
+    final imported = ImportedEqualizer(gains: Equalizer.flat, preamp: 50.0);
     container.read(playbackSettingsProvider.notifier).importEqualizer(imported);
     expect(container.read(playbackSettingsProvider).equalizerPreamp, 15.0);
   });
@@ -174,9 +169,9 @@ void main() {
   });
 
   test('setCrossfade updates state, store, and engine', () {
-    container.read(playbackSettingsProvider.notifier).setCrossfade(
-      const Duration(seconds: 2),
-    );
+    container
+        .read(playbackSettingsProvider.notifier)
+        .setCrossfade(const Duration(seconds: 2));
     expect(
       container.read(playbackSettingsProvider).crossfade,
       const Duration(seconds: 2),
