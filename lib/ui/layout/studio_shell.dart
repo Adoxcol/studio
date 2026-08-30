@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
 import 'package:studio/state/library_providers.dart';
 import 'package:studio/state/nav_provider.dart';
 import 'package:studio/state/nav_state.dart';
@@ -17,39 +18,47 @@ class StudioShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final destination = ref.watch(studioNavProvider);
     ref.watch(libraryBootstrapProvider);
+    ref.watch(artistPicturesBootstrapProvider);
     return Scaffold(
-      body: Row(
+      body: Column(
         children: [
-          StudioIconRail(
-            selected: destination,
-            onSelect: (next) =>
-                ref.read(studioNavProvider.notifier).select(next),
-          ),
           Expanded(
-            child: Column(
+            child: Row(
               children: [
-                const StudioTitleBar(),
+                StudioIconRail(
+                  selected: destination,
+                  onSelect: (next) =>
+                      ref.read(studioNavProvider.notifier).select(next),
+                ),
                 Expanded(
-                  child: Stack(
+                  child: Column(
                     children: [
-                      Offstage(
-                        offstage: destination == StudioDestination.settings,
-                        child: const StudioWorkspace(),
-                      ),
-                      if (destination == StudioDestination.settings)
-                        const SettingsPage(),
-                      const Positioned(
-                        right: 20,
-                        bottom: 72,
-                        child: ScanNotice(),
+                      const StudioTitleBar(),
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            Offstage(
+                              offstage:
+                                  destination == StudioDestination.settings,
+                              child: const StudioWorkspace(),
+                            ),
+                            if (destination == StudioDestination.settings)
+                              const SettingsPage(),
+                            const Positioned(
+                              right: 20,
+                              bottom: 72,
+                              child: ScanNotice(),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-                const PlayerBar(),
               ],
             ),
           ),
+          const PlayerBar(),
         ],
       ),
     );

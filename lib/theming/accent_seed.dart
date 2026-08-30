@@ -98,10 +98,12 @@ class AppearanceState {
     TrackLayout? trackLayout,
     bool? showTrackArtwork,
     bool? fetchMissingArtwork,
+    bool? fetchArtistPictures,
     AppThemeMode? themeMode,
   }) : _trackLayout = trackLayout,
        _showTrackArtwork = showTrackArtwork,
        _fetchMissingArtwork = fetchMissingArtwork,
+       _fetchArtistPictures = fetchArtistPictures,
        _themeMode = themeMode;
 
   final AccentMode mode;
@@ -109,11 +111,13 @@ class AppearanceState {
   final TrackLayout? _trackLayout;
   final bool? _showTrackArtwork;
   final bool? _fetchMissingArtwork;
+  final bool? _fetchArtistPictures;
   final AppThemeMode? _themeMode;
 
   TrackLayout get trackLayout => _trackLayout ?? TrackLayout.cards;
   bool get showTrackArtwork => _showTrackArtwork ?? true;
   bool get fetchMissingArtwork => _fetchMissingArtwork ?? true;
+  bool get fetchArtistPictures => _fetchArtistPictures ?? true;
   AppThemeMode get themeMode => _themeMode ?? AppThemeMode.light;
 
   static const defaults = AppearanceState();
@@ -124,6 +128,7 @@ class AppearanceState {
     TrackLayout? trackLayout,
     bool? showTrackArtwork,
     bool? fetchMissingArtwork,
+    bool? fetchArtistPictures,
     AppThemeMode? themeMode,
   }) {
     return AppearanceState(
@@ -132,6 +137,7 @@ class AppearanceState {
       trackLayout: trackLayout ?? this.trackLayout,
       showTrackArtwork: showTrackArtwork ?? this.showTrackArtwork,
       fetchMissingArtwork: fetchMissingArtwork ?? this.fetchMissingArtwork,
+      fetchArtistPictures: fetchArtistPictures ?? this.fetchArtistPictures,
       themeMode: themeMode ?? this.themeMode,
     );
   }
