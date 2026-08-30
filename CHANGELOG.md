@@ -7,8 +7,41 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Wikimedia artist portraits now download even with incomplete credit metadata.
+  Available credits are retained, missing details are marked as unknown, and old
+  misses are retried without replacing saved or custom images.
+- Library navigation now uses a Folders tab beside Playlists instead of the
+  inner sidebar and Recently Added tab. Folder lists and Add folder controls
+  are shared with Settings; opening a folder shows its tracks.
+- Window controls now sit on the right with recognizable minimize, maximize,
+  and close icons. Queue rows consistently show compact artwork, track title,
+  artist credit, and duration across Queue and Up Next.
+- The player bar spans the full window below the navigation rail, with transport
+  controls anchored to the window's true center at every window size.
+- Now Playing no longer duplicates the queue with an Up Next sidebar. The
+  queue-backed panel is retained for the future full-screen playback view.
+
 ### Added
 
+- Floating library Back button restores the previous artist, album, genre,
+  playlist, or folder catalogue with its scroll position, search, and sorting.
+  Selecting the original tab also returns to the saved catalogue position.
+- TheAudioDB's public free API is an additional artist-portrait source, with
+  MusicBrainz-ID matching, free-tier request pacing, source credits, and cached
+  images. Previous missing portraits are retried without replacing saved images.
+- Optional fanart.tv artist portraits with local project/personal key settings,
+  source credits, and Wikimedia fallback. API keys are never bundled or logged.
+- Artist-picture console diagnostics show artist names, cache hits, lookup stages,
+  HTTP results, skipped-match reasons, downloads, cancellations and retry errors.
+- Automatic artist portraits for the whole library using MusicBrainz / Wikimedia,
+  with rate-limited background fetching, persistent local caching, image credits,
+  manual image overrides and portrait placeholders in Artist and library views.
+  Settings can disable online fetching without losing cached or custom pictures.
+- Dockable Artist, Album, and Track detail tabs alongside Now Playing, using
+  local library metadata. They follow playback or a track chosen through the
+  library's View details action without interrupting the music.
 - ISO 10-band graphic equalizer (31 Hz–16 kHz) with the usual named
   presets (Bass, Rock, Pop, Dance, and the rest) plus Import for
   Equalizer APO GraphicEQ, parametric Filter lines (AutoEQ / Peace), or
@@ -25,6 +58,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Artist lookup retains resolved MusicBrainz identities across retries/restarts.
+  Portrait downloads use inactivity timeouts and a bounded overall deadline,
+  so a slow but progressing transfer is not cancelled after 15 seconds.
+  Temporary service failures respect Retry-After and resume the interrupted
+  artist with the queue, instead of imposing a separate one-hour artist delay.
+  Changing image sources retries misses without replacing existing pictures.
 - Playback with EQ enabled no longer stalls or crackles after pause,
   seek, skip, or rapid slider changes. mpv now owns the realtime audio
   output, and EQ changes update named filters in its persistent graph without

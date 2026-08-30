@@ -40,6 +40,7 @@ class FileAppearanceStore implements AppearanceStore {
         trackLayout: TrackLayout.fromName(json['trackLayout'] as String?),
         showTrackArtwork: json['showTrackArtwork'] as bool? ?? true,
         fetchMissingArtwork: json['fetchMissingArtwork'] as bool? ?? true,
+        fetchArtistPictures: json['fetchArtistPictures'] as bool? ?? true,
         themeMode: AppThemeMode.fromName(json['themeMode'] as String?),
       );
     } on Object {
@@ -57,6 +58,7 @@ class FileAppearanceStore implements AppearanceStore {
         'trackLayout': state.trackLayout.name,
         'showTrackArtwork': state.showTrackArtwork,
         'fetchMissingArtwork': state.fetchMissingArtwork,
+        'fetchArtistPictures': state.fetchArtistPictures,
         'themeMode': state.themeMode.name,
       }),
     );

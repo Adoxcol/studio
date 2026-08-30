@@ -1,0 +1,103 @@
+import 'package:flutter/material.dart';
+import 'package:studio/core/time_format.dart';
+import 'package:studio/library/database.dart';
+import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/ui/now_playing/cover_art.dart';
+
+/// The canonical compact presentation for a track in any queue surface.
+class QueueTrackRow extends StatelessWidget {
+  const QueueTrackRow({
+    super.key,
+    required this.track,
+    this.current = false,
+    this.onTap,
+  });
+
+  static const double height = 64;
+  static const double artworkSize = 40;
+
+  final Track? track;
+  final bool current;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StudioPalette.of(context);
+    final title = track?.title ?? 'Unknown track';
+    final rawArtist = track?.artist?.trim();
+    final artist = rawArtist == null || rawArtist.isEmpty
+        ? 'Unknown artist'
+        : rawArtist;
+    final duration = formatDurationMs(track?.durationMs);
+
+    return Semantics(
+      button: onTap != null,
+      selected: current,
+      label: '$title, $artist${duration.isEmpty ? '' : ', $duration'}',
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onTap,
+          mouseCursor: onTap == null
+              ? MouseCursor.defer
+              : SystemMouseCursors.click,
+          hoverColor: palette.hairlineSoft,
+          child: SizedBox(
+            height: height,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(2),
+                    child: CoverArt(
+                      path: track?.artworkPath,
+                      size: artworkSize,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: current ? palette.accent : palette.ink,
+                                fontWeight: FontWeight.w500,
+                              ),
+                        ),
+                        Text(
+                          artist,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: palette.inkMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (duration.isNotEmpty) ...[
+                    const SizedBox(width: 16),
+                    Text(
+                      duration,
+                      textAlign: TextAlign.right,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: palette.inkMuted,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

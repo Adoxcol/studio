@@ -1,6 +1,6 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:studio/features/track_details/presentation/detail_context_provider.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/library/library_query.dart';
 import 'package:studio/state/library_providers.dart';
@@ -9,7 +9,7 @@ import 'package:studio/theming/accent_seed.dart';
 import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/library_browser/library_browse_view.dart';
-import 'package:studio/ui/library_browser/library_sidebar.dart';
+import 'package:studio/features/library_folders/presentation/library_folders_panel.dart';
 import 'package:studio/ui/library_browser/library_text_action.dart';
 import 'package:studio/ui/library_browser/library_track_table.dart';
 
@@ -20,9 +20,23 @@ class LibraryPage extends ConsumerStatefulWidget {
   ConsumerState<LibraryPage> createState() => _LibraryPageState();
 }
 
+typedef _LibraryLocation = ({
+  LibraryTab tab,
+  LibrarySort sort,
+  LibraryOrder order,
+  TextEditingValue search,
+  String? artist,
+  String? album,
+  String? genre,
+  int? playlistId,
+  int? folderId,
+  PageStorageBucket scrollStorage,
+});
+
 class _LibraryPageState extends ConsumerState<LibraryPage> {
   final _search = TextEditingController();
-  var _sidebarOpen = true;
+  final _history = <_LibraryLocation>[];
+  var _scrollStorage = PageStorageBucket();
   var _tab = LibraryTab.all;
   var _sort = LibrarySort.title;
   var _order = LibraryOrder.ascending;
@@ -30,6 +44,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   String? _albumFilter;
   String? _genreFilter;
   int? _playlistId;
+  int? _folderId;
 
   @override
   void dispose() {
@@ -37,17 +52,67 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     super.dispose();
   }
 
-  Future<void> _addFolder() async {
-    final path = await FilePicker.getDirectoryPath(
-      dialogTitle: 'Add music folder',
-    );
-    if (path == null) return;
-    await ref.read(libraryScanProvider.notifier).scanFolder(path);
+  void _open(VoidCallback select) {
+    setState(() {
+      _history.add((
+        tab: _tab,
+        sort: _sort,
+        order: _order,
+        search: _search.value,
+        artist: _artistFilter,
+        album: _albumFilter,
+        genre: _genreFilter,
+        playlistId: _playlistId,
+        folderId: _folderId,
+        scrollStorage: _scrollStorage,
+      ));
+      _scrollStorage = PageStorageBucket();
+      // A catalogue search selects a group, not a subset of its tracks.
+      // Keep the original query in history and open the complete group.
+      _search.clear();
+      select();
+    });
+  }
+
+  void _goBack() {
+    if (_history.isEmpty) return;
+    setState(() {
+      final previous = _history.removeLast();
+      _tab = previous.tab;
+      _sort = previous.sort;
+      _order = previous.order;
+      _search.value = previous.search;
+      _artistFilter = previous.artist;
+      _albumFilter = previous.album;
+      _genreFilter = previous.genre;
+      _playlistId = previous.playlistId;
+      _folderId = previous.folderId;
+      _scrollStorage = previous.scrollStorage;
+    });
+  }
+
+  void _selectTab(LibraryTab tab) {
+    if (_history.isNotEmpty && _history.last.tab == tab) {
+      _goBack();
+      return;
+    }
+    setState(() {
+      if (_tab != tab || _history.isNotEmpty) {
+        _scrollStorage = PageStorageBucket();
+      }
+      _history.clear();
+      _tab = tab;
+      _folderId = null;
+      _playlistId = null;
+      _artistFilter = null;
+      _albumFilter = null;
+      _genreFilter = null;
+    });
   }
 
   void _selectArtist(String name) {
-    setState(() {
-      _artistFilter = _artistFilter == name ? null : name;
+    _open(() {
+      _artistFilter = name;
       _albumFilter = null;
       _genreFilter = null;
       _tab = LibraryTab.all;
@@ -55,7 +120,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   }
 
   void _selectAlbum(String artist, String album) {
-    setState(() {
+    _open(() {
       _artistFilter = artist;
       _albumFilter = album;
       _genreFilter = null;
@@ -66,8 +131,8 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   }
 
   void _selectGenre(String genre) {
-    setState(() {
-      _genreFilter = _genreFilter == genre ? null : genre;
+    _open(() {
+      _genreFilter = genre;
       _artistFilter = null;
       _albumFilter = null;
       _tab = LibraryTab.all;
@@ -148,6 +213,11 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         borderRadius: BorderRadius.zero,
       ),
       items: [
+        const PopupMenuItem<Object>(
+          value: 'details',
+          child: Text('View details'),
+        ),
+        const PopupMenuDivider(),
         for (final list in lists)
           PopupMenuItem<Object>(value: list.id, child: Text(list.name)),
         PopupMenuItem<Object>(
@@ -157,6 +227,10 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       ],
     );
     if (selected == null || !mounted) return;
+    if (selected == 'details') {
+      ref.read(detailSelectionProvider.notifier).inspect(track.id);
+      return;
+    }
     final db = ref.read(studioDatabaseProvider);
     if (selected == 'new') {
       final name = await _promptPlaylistName();
@@ -199,19 +273,22 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       tracks: allTracks,
       query: _search.text,
     );
-    final recentlyAdded = _tab == LibraryTab.recentlyAdded;
+    final folder = _tab == LibraryTab.folders
+        ? folders.where((f) => f.id == _folderId).firstOrNull
+        : null;
+    final viewingFolder = folder != null;
     final visible = LibraryQuery.sorted(
       tracks: LibraryQuery.filter(
-        tracks: searched,
+        tracks: viewingFolder
+            ? searched.where((t) => t.folderId == folder.id).toList()
+            : searched,
         artist: _artistFilter,
         album: _albumFilter,
         genre: _genreFilter,
       ),
       sort: _sort,
-      order: recentlyAdded ? LibraryOrder.descending : _order,
-      byIndexedAt: recentlyAdded,
+      order: _order,
     );
-    final artists = LibraryQuery.groupArtists(searched);
     final playlists = ref.watch(playlistsProvider).value ?? const [];
     final viewingPlaylist = _tab == LibraryTab.playlists && _playlistId != null;
     final playlistTracks = viewingPlaylist
@@ -219,29 +296,14 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         : const <Track>[];
     final tableTracks = viewingPlaylist ? playlistTracks : visible;
     final showTable =
-        _tab == LibraryTab.all ||
-        _tab == LibraryTab.recentlyAdded ||
-        viewingPlaylist;
+        _tab == LibraryTab.all || viewingFolder || viewingPlaylist;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final sidebarExpanded =
-            _sidebarOpen && constraints.maxWidth >= LibrarySidebar.width + 200;
         final tight = constraints.maxWidth < 360;
         return Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            LibrarySidebar(
-              expanded: sidebarExpanded,
-              folders: folders,
-              artists: artists,
-              selectedArtist: _artistFilter,
-              onToggle: () => setState(() => _sidebarOpen = !_sidebarOpen),
-              onSelectArtist: _selectArtist,
-              onRemoveFolder: (id) {
-                ref.read(libraryScanProvider.notifier).removeFolder(id);
-              },
-            ),
             Expanded(
               child: Stack(
                 children: [
@@ -258,156 +320,219 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                         _Header(
                           controller: _search,
                           onSearch: () => setState(() {}),
-                          onAddFolder: scanning ? null : _addFolder,
+                          hint: _tab == LibraryTab.folders && !viewingFolder
+                              ? 'Search folders'
+                              : 'Search your library',
                         ),
                         const SizedBox(height: 16),
-                        _Tabs(
-                          selected: _tab,
-                          onSelect: (tab) => setState(() {
-                            if (tab == LibraryTab.playlists &&
-                                _tab == LibraryTab.playlists) {
-                              _playlistId = null;
-                            }
-                            _tab = tab;
-                            if (tab != LibraryTab.playlists) {
-                              _playlistId = null;
-                            }
-                          }),
-                        ),
+                        _Tabs(selected: _tab, onSelect: _selectTab),
                         const SizedBox(height: 12),
-                        _Actions(
-                          sort: _sort,
-                          order: _order,
-                          canPlay: tableTracks.isNotEmpty,
-                          showSort: _tab != LibraryTab.playlists,
-                          showView: showTable,
-                          trackLayout: ref
-                              .watch(appearanceProvider)
-                              .trackLayout,
-                          onPlayAll: () {
-                            ref
-                                .read(playbackControllerProvider.notifier)
-                                .playTracks(
-                                  tableTracks.map((t) => t.id).toList(),
-                                  shuffle: false,
-                                );
-                          },
-                          onShuffle: () {
-                            ref
-                                .read(playbackControllerProvider.notifier)
-                                .playTracks(
-                                  tableTracks.map((t) => t.id).toList(),
-                                  shuffle: true,
-                                );
-                          },
-                          onCycleSort: () => setState(
-                            () => _sort = LibraryQuery.nextSort(_sort),
-                          ),
-                          onToggleOrder: () => setState(
-                            () => _order = LibraryQuery.toggleOrder(_order),
-                          ),
-                          onCycleLayout: () {
-                            final next =
-                                ref.read(appearanceProvider).trackLayout ==
-                                    TrackLayout.cards
-                                ? TrackLayout.list
-                                : TrackLayout.cards;
-                            ref
-                                .read(appearanceProvider.notifier)
-                                .setTrackLayout(next);
-                          },
-                          extras: [
-                            if (_tab == LibraryTab.playlists)
+                        if (viewingFolder) ...[
+                          Row(
+                            children: [
                               LibraryTextAction(
-                                label: 'New playlist',
-                                onTap: _createPlaylist,
+                                label: 'All folders',
+                                onTap: () => _selectTab(LibraryTab.folders),
                               ),
-                            if (viewingPlaylist)
-                              LibraryTextAction(
-                                label: 'Delete playlist',
-                                onTap: () async {
-                                  final id = _playlistId;
-                                  if (id == null) return;
-                                  await ref
-                                      .read(studioDatabaseProvider)
-                                      .deletePlaylist(id);
-                                  if (!mounted) return;
-                                  setState(() => _playlistId = null);
-                                },
-                                muted: true,
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  folder.path,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: palette.inkMuted),
+                                ),
                               ),
-                          ],
-                        ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        if (_tab != LibraryTab.folders || viewingFolder)
+                          _Actions(
+                            sort: _sort,
+                            order: _order,
+                            canPlay: tableTracks.isNotEmpty,
+                            showSort: _tab != LibraryTab.playlists,
+                            showView: showTable,
+                            trackLayout: ref
+                                .watch(appearanceProvider)
+                                .trackLayout,
+                            onPlayAll: () {
+                              ref
+                                  .read(playbackControllerProvider.notifier)
+                                  .playTracks(
+                                    tableTracks.map((t) => t.id).toList(),
+                                    shuffle: false,
+                                  );
+                            },
+                            onShuffle: () {
+                              ref
+                                  .read(playbackControllerProvider.notifier)
+                                  .playTracks(
+                                    tableTracks.map((t) => t.id).toList(),
+                                    shuffle: true,
+                                  );
+                            },
+                            onCycleSort: () => setState(
+                              () => _sort = LibraryQuery.nextSort(_sort),
+                            ),
+                            onToggleOrder: () => setState(
+                              () => _order = LibraryQuery.toggleOrder(_order),
+                            ),
+                            onCycleLayout: () {
+                              final next =
+                                  ref.read(appearanceProvider).trackLayout ==
+                                      TrackLayout.cards
+                                  ? TrackLayout.list
+                                  : TrackLayout.cards;
+                              ref
+                                  .read(appearanceProvider.notifier)
+                                  .setTrackLayout(next);
+                            },
+                            extras: [
+                              if (_tab == LibraryTab.all &&
+                                  (_artistFilter != null ||
+                                      _albumFilter != null ||
+                                      _genreFilter != null))
+                                LibraryTextAction(
+                                  label: 'All tracks',
+                                  onTap: () => _selectTab(LibraryTab.all),
+                                ),
+                              if (_tab == LibraryTab.playlists)
+                                LibraryTextAction(
+                                  label: 'New playlist',
+                                  onTap: _createPlaylist,
+                                ),
+                              if (viewingPlaylist)
+                                LibraryTextAction(
+                                  label: 'Delete playlist',
+                                  onTap: () async {
+                                    final id = _playlistId;
+                                    if (id == null) return;
+                                    await ref
+                                        .read(studioDatabaseProvider)
+                                        .deletePlaylist(id);
+                                    if (!mounted ||
+                                        _tab != LibraryTab.playlists ||
+                                        _playlistId != id) {
+                                      return;
+                                    }
+                                    _selectTab(LibraryTab.playlists);
+                                  },
+                                  muted: true,
+                                ),
+                            ],
+                          ),
                         const SizedBox(height: 8),
                         Expanded(
-                          child:
-                              _tab == LibraryTab.playlists && !viewingPlaylist
-                              ? LibraryBrowseView(
-                                  tab: _tab,
-                                  artists: const [],
-                                  albums: const [],
-                                  genres: const [],
-                                  playlists: playlists,
-                                  onSelectArtist: _selectArtist,
-                                  onSelectAlbum: _selectAlbum,
-                                  onSelectGenre: _selectGenre,
-                                  onSelectPlaylist: (playlist) {
-                                    setState(() => _playlistId = playlist.id);
-                                  },
-                                )
-                              : allTracks.isEmpty && !viewingPlaylist
-                              ? _EmptyLibrary(palette: palette)
-                              : showTable
-                              ? tableTracks.isEmpty
-                                    ? _EmptyLibrary(
-                                        palette: palette,
-                                        text: viewingPlaylist
-                                            ? 'This playlist is empty. Right-click a track to add it.'
-                                            : 'No matching tracks.',
-                                      )
-                                    : LibraryTrackTable(
-                                        tracks: tableTracks,
-                                        onPlay: (index) {
-                                          ref
-                                              .read(
-                                                playbackControllerProvider
-                                                    .notifier,
-                                              )
-                                              .playTracks(
-                                                tableTracks
-                                                    .map((t) => t.id)
-                                                    .toList(),
-                                                startIndex: index,
-                                              );
-                                        },
-                                        onTrackMenu: _showTrackMenu,
-                                      )
-                              : LibraryBrowseView(
-                                  tab: _tab,
-                                  artists: LibraryQuery.groupArtists(
-                                    searched,
-                                    order: _order,
-                                  ),
-                                  albums: LibraryQuery.albumSections(
-                                    searched,
-                                    order: _order,
-                                  ),
-                                  genres: LibraryQuery.groupGenres(
-                                    searched,
-                                    order: _order,
-                                  ),
-                                  playlists: playlists,
-                                  onSelectArtist: _selectArtist,
-                                  onSelectAlbum: _selectAlbum,
-                                  onSelectGenre: _selectGenre,
-                                  onSelectPlaylist: (playlist) {
-                                    setState(() => _playlistId = playlist.id);
-                                  },
-                                ),
+                          // Each history entry owns its scroll storage. The
+                          // identity key recreates the scrollable on navigation,
+                          // restoring its offset during layout, before painting.
+                          child: PageStorage(
+                            key: ObjectKey(_scrollStorage),
+                            bucket: _scrollStorage,
+                            child: KeyedSubtree(
+                              key: const PageStorageKey('library-content'),
+                              child:
+                                  _tab == LibraryTab.folders && !viewingFolder
+                                  ? LibraryFoldersPanel(
+                                      query: _search.text,
+                                      onOpen: (selected) {
+                                        _open(() {
+                                          _folderId = selected.id;
+                                        });
+                                      },
+                                    )
+                                  : _tab == LibraryTab.playlists &&
+                                        !viewingPlaylist
+                                  ? LibraryBrowseView(
+                                      tab: _tab,
+                                      artists: const [],
+                                      albums: const [],
+                                      genres: const [],
+                                      playlists: playlists,
+                                      onSelectArtist: _selectArtist,
+                                      onSelectAlbum: _selectAlbum,
+                                      onSelectGenre: _selectGenre,
+                                      onSelectPlaylist: (playlist) {
+                                        _open(() => _playlistId = playlist.id);
+                                      },
+                                    )
+                                  : allTracks.isEmpty &&
+                                        !viewingPlaylist &&
+                                        !viewingFolder
+                                  ? _EmptyLibrary(palette: palette)
+                                  : showTable
+                                  ? tableTracks.isEmpty
+                                        ? _EmptyLibrary(
+                                            palette: palette,
+                                            text: viewingPlaylist
+                                                ? 'This playlist is empty. Right-click a track to add it.'
+                                                : viewingFolder &&
+                                                      _search.text
+                                                          .trim()
+                                                          .isEmpty
+                                                ? 'No tracks in this folder yet.'
+                                                : 'No matching tracks.',
+                                          )
+                                        : LibraryTrackTable(
+                                            tracks: tableTracks,
+                                            bottomInset: _history.isEmpty
+                                                ? 0
+                                                : 64,
+                                            onPlay: (index) {
+                                              ref
+                                                  .read(
+                                                    playbackControllerProvider
+                                                        .notifier,
+                                                  )
+                                                  .playTracks(
+                                                    tableTracks
+                                                        .map((t) => t.id)
+                                                        .toList(),
+                                                    startIndex: index,
+                                                  );
+                                            },
+                                            onTrackMenu: _showTrackMenu,
+                                          )
+                                  : LibraryBrowseView(
+                                      tab: _tab,
+                                      artists: LibraryQuery.groupArtists(
+                                        searched,
+                                        order: _order,
+                                      ),
+                                      albums: LibraryQuery.albumSections(
+                                        searched,
+                                        order: _order,
+                                      ),
+                                      genres: LibraryQuery.groupGenres(
+                                        searched,
+                                        order: _order,
+                                      ),
+                                      playlists: playlists,
+                                      onSelectArtist: _selectArtist,
+                                      onSelectAlbum: _selectAlbum,
+                                      onSelectGenre: _selectGenre,
+                                      onSelectPlaylist: (playlist) {
+                                        _open(() => _playlistId = playlist.id);
+                                      },
+                                    ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
+                  if (_history.isNotEmpty)
+                    Positioned(
+                      left: 20,
+                      bottom: 20,
+                      child: _LibraryBackButton(
+                        label: 'Back to ${_history.last.tab.label}',
+                        onPressed: _goBack,
+                      ),
+                    ),
                   Positioned(
                     right: 20,
                     bottom: 20,
@@ -428,16 +553,41 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   }
 }
 
+class _LibraryBackButton extends StatelessWidget {
+  const _LibraryBackButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StudioPalette.of(context);
+    return Material(
+      color: palette.bg,
+      elevation: 2,
+      shape: CircleBorder(side: BorderSide(color: palette.hairline)),
+      clipBehavior: Clip.antiAlias,
+      child: IconButton(
+        key: const ValueKey('library-back'),
+        tooltip: label,
+        onPressed: onPressed,
+        icon: const Icon(Icons.arrow_back, size: 20),
+        color: palette.ink,
+      ),
+    );
+  }
+}
+
 class _Header extends StatelessWidget {
   const _Header({
     required this.controller,
     required this.onSearch,
-    required this.onAddFolder,
+    this.hint = 'Search your library',
   });
 
   final TextEditingController controller;
   final VoidCallback onSearch;
-  final VoidCallback? onAddFolder;
+  final String hint;
 
   @override
   Widget build(BuildContext context) {
@@ -445,7 +595,6 @@ class _Header extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final showTitle = constraints.maxWidth >= 280;
-        final showAddLabel = constraints.maxWidth >= 200;
         return Row(
           children: [
             if (showTitle) ...[
@@ -465,7 +614,7 @@ class _Header extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyMedium,
                 decoration: InputDecoration(
                   isDense: true,
-                  hintText: 'Search your library',
+                  hintText: hint,
                   hintStyle: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(color: palette.inkMuted),
@@ -476,32 +625,6 @@ class _Header extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            if (showAddLabel)
-              LibraryTextAction(
-                label: 'Add folder',
-                onTap: onAddFolder ?? () {},
-                enabled: onAddFolder != null,
-              )
-            else
-              Tooltip(
-                message: 'Add folder',
-                child: GestureDetector(
-                  onTap: onAddFolder,
-                  child: MouseRegion(
-                    cursor: onAddFolder == null
-                        ? SystemMouseCursors.basic
-                        : SystemMouseCursors.click,
-                    child: Icon(
-                      Icons.create_new_folder_outlined,
-                      size: 18,
-                      color: onAddFolder == null
-                          ? palette.inkMuted
-                          : palette.ink,
-                    ),
-                  ),
-                ),
-              ),
           ],
         );
       },
