@@ -16,10 +16,10 @@ class SpectrumAnalyzer {
     this.highHz = 16000,
     this.attack = 0.45,
     this.release = 0.18,
-  }) : _fft = FFT(fftSize),
-       _window = Window.hanning(fftSize),
-       _bands = List<double>.filled(bandCount, 0),
-       _mono = Float64List(fftSize * 2);
+  })  : _fft = FFT(fftSize),
+        _window = Window.hanning(fftSize),
+        _bands = List<double>.filled(bandCount, 0),
+        _mono = Float64List(fftSize * 2);
 
   final int fftSize;
   final int bandCount;

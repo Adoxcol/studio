@@ -119,9 +119,9 @@ class _LyricsScrollerState extends ConsumerState<LyricsScroller> {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: active ? palette.accent : palette.inkMuted,
-                  fontWeight: active ? FontWeight.w500 : FontWeight.w400,
-                ),
+                      color: active ? palette.accent : palette.inkMuted,
+                      fontWeight: active ? FontWeight.w500 : FontWeight.w400,
+                    ),
               ),
             );
             if (!widget.document.synced) return text;

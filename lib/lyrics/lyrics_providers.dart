@@ -42,9 +42,7 @@ final currentLyricsProvider = FutureProvider<LyricsDocument?>((ref) async {
   final durationSeconds = taggedSeconds >= 1
       ? taggedSeconds
       : (engineSeconds >= 1 ? engineSeconds : null);
-  return ref
-      .read(lyricsRepositoryProvider)
-      .load(
+  return ref.read(lyricsRepositoryProvider).load(
         LyricsQuery(
           title: title,
           artist: artist,

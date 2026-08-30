@@ -123,8 +123,7 @@ class SettingsPage extends ConsumerWidget {
                   padding: const EdgeInsets.only(right: 10),
                   child: _Swatch(
                     seed: seed,
-                    selected:
-                        appearance.mode == AccentMode.custom &&
+                    selected: appearance.mode == AccentMode.custom &&
                         seed.matches(appearance.customHue),
                     onTap: () => ref
                         .read(appearanceProvider.notifier)
@@ -163,18 +162,18 @@ class SettingsPage extends ConsumerWidget {
                     Text(
                       playback.artist ?? 'Aria Solvang',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: palette.inkMuted,
-                        fontStyle: FontStyle.italic,
-                      ),
+                            color: palette.inkMuted,
+                            fontStyle: FontStyle.italic,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       previewLabel,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: palette.inkMuted,
-                        letterSpacing: 1.4,
-                        fontSize: 11,
-                      ),
+                            color: palette.inkMuted,
+                            letterSpacing: 1.4,
+                            fontSize: 11,
+                          ),
                     ),
                   ],
                 ),
@@ -596,9 +595,9 @@ class _EqSlider extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: palette.inkMuted,
-            fontSize: 11,
-          ),
+                color: palette.inkMuted,
+                fontSize: 11,
+              ),
         ),
       ],
     );
@@ -655,10 +654,10 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       text,
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-        color: palette.inkMuted,
-        letterSpacing: 1.4,
-        fontSize: 11,
-      ),
+            color: palette.inkMuted,
+            letterSpacing: 1.4,
+            fontSize: 11,
+          ),
     );
   }
 }
@@ -672,9 +671,9 @@ class _HueSlider extends StatelessWidget {
   final ValueChanged<double> onChanged;
 
   static List<Color> _spectrum(Brightness brightness) => [
-    for (var h = 0; h <= 360; h += 30)
-      StudioPalette.forBrightness(brightness, hue: h.toDouble()).accent,
-  ];
+        for (var h = 0; h <= 360; h += 30)
+          StudioPalette.forBrightness(brightness, hue: h.toDouble()).accent,
+      ];
 
   @override
   Widget build(BuildContext context) {

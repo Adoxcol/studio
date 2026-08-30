@@ -212,8 +212,7 @@ abstract final class EqualizerImport {
       final right = points[i + 1];
       if (hz < left.hz || hz > right.hz) continue;
       if (left.hz == right.hz) return left.gain;
-      final t =
-          (math.log(hz) - math.log(left.hz)) /
+      final t = (math.log(hz) - math.log(left.hz)) /
           (math.log(right.hz) - math.log(left.hz));
       return left.gain + t * (right.gain - left.gain);
     }

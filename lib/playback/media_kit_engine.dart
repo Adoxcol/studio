@@ -20,7 +20,7 @@ bool isBenignMpvLog({required String prefix, required String text}) {
 
 class MediaKitAudioEngine implements AudioEngine {
   MediaKitAudioEngine({Player? player})
-    : _primary = player ?? _createAudiblePlayer() {
+      : _primary = player ?? _createAudiblePlayer() {
     _front = _primary;
     _ui = _primary;
     _bind(_primary);
@@ -31,8 +31,8 @@ class MediaKitAudioEngine implements AudioEngine {
   static const _readinessTimeout = Duration(seconds: 5);
 
   static Player _createAudiblePlayer() => Player(
-    configuration: const PlayerConfiguration(vo: 'null', title: 'Studio'),
-  );
+        configuration: const PlayerConfiguration(vo: 'null', title: 'Studio'),
+      );
 
   final Player _primary;
   final Map<Player, Future<void>> _configuration =
@@ -171,34 +171,31 @@ class MediaKitAudioEngine implements AudioEngine {
     _preparingUri = uri;
     _preparingPlayer = idle;
     late final Future<bool> tracked;
-    tracked =
-        _startAudible(
-              idle,
-              uri: uri,
-              volume: 0,
-              play: false,
-              preparationGeneration: requestGeneration,
-            )
-            .then((operation) {
-              if (operation == null ||
-                  requestGeneration != _prepareGeneration ||
-                  !_started ||
-                  _crossfade <= Duration.zero ||
-                  !_isPlayerOperationCurrent(idle, operation)) {
-                return false;
-              }
-              _prepared = uri;
-              _preparedPlayer = idle;
-              _preparedOperation = operation;
-              return true;
-            })
-            .whenComplete(() {
-              if (identical(_prepareFuture, tracked)) {
-                _prepareFuture = null;
-                _preparingUri = null;
-                _preparingPlayer = null;
-              }
-            });
+    tracked = _startAudible(
+      idle,
+      uri: uri,
+      volume: 0,
+      play: false,
+      preparationGeneration: requestGeneration,
+    ).then((operation) {
+      if (operation == null ||
+          requestGeneration != _prepareGeneration ||
+          !_started ||
+          _crossfade <= Duration.zero ||
+          !_isPlayerOperationCurrent(idle, operation)) {
+        return false;
+      }
+      _prepared = uri;
+      _preparedPlayer = idle;
+      _preparedOperation = operation;
+      return true;
+    }).whenComplete(() {
+      if (identical(_prepareFuture, tracked)) {
+        _prepareFuture = null;
+        _preparingUri = null;
+        _preparingPlayer = null;
+      }
+    });
     _prepareFuture = tracked;
     await tracked;
   }
@@ -698,7 +695,7 @@ class MediaKitAudioEngine implements AudioEngine {
     int operation, {
     required String description,
     required StreamSubscription<dynamic> Function(void Function(bool) complete)
-    subscribe,
+        subscribe,
   }) {
     if (!_isPlayerOperationCurrent(player, operation)) {
       return Future<bool>.value(false);
@@ -820,9 +817,9 @@ class MediaKitAudioEngine implements AudioEngine {
   }
 
   Future<void> _ensureConfigured(Player player) => _configuration.putIfAbsent(
-    player,
-    () => _configureNative(player.platform),
-  );
+        player,
+        () => _configureNative(player.platform),
+      );
 
   static Future<void> _configureNative(Object? platform) async {
     if (platform is! NativePlayer) return;
@@ -841,7 +838,8 @@ class MediaKitAudioEngine implements AudioEngine {
     NativePlayer player,
     String name,
     String value,
-  ) => player.command(['set', name, value]);
+  ) =>
+      player.command(['set', name, value]);
 
   Future<int?> _installEqualizerGraph(
     Player player, {
@@ -880,9 +878,8 @@ class MediaKitAudioEngine implements AudioEngine {
     final task = () async {
       await previous;
       if (_disposed || revision != _eqRevision) return;
-      final targets = player == null
-          ? List<Player>.of(_loadedPlayers)
-          : <Player>[player];
+      final targets =
+          player == null ? List<Player>.of(_loadedPlayers) : <Player>[player];
       _ensureEqualizerPeakCurrent();
       final gains = Equalizer.normalizeGains(_eqGains);
       final preamp = _eqPreamp;
@@ -944,9 +941,8 @@ class MediaKitAudioEngine implements AudioEngine {
     // Move to the more conservative of the old and new output gains before
     // changing coefficients. This prevents a boosted curve from clipping in
     // the tiny window while the asynchronous commands are being applied.
-    _appliedEqPreamp[player] = previousPreamp < preamp
-        ? previousPreamp
-        : preamp;
+    _appliedEqPreamp[player] =
+        previousPreamp < preamp ? previousPreamp : preamp;
     _appliedEqPeak[player] = transitionPeak;
     await _setPlayerVolume(player, _mixFractions[player] ?? 0);
     if (!_isPlayerOperationCurrent(player, operation)) return;
@@ -993,9 +989,8 @@ class MediaKitAudioEngine implements AudioEngine {
     final peak = _appliedEqPeak[player] ?? _eqPeak;
     final requested = _userVolume * Equalizer.preampLinear(preamp);
     final ceiling = math.pow(10, -peak / 20).toDouble();
-    final percent = (math.min(requested, ceiling) * mix * 100)
-        .clamp(0.0, 100.0)
-        .toDouble();
+    final percent =
+        (math.min(requested, ceiling) * mix * 100).clamp(0.0, 100.0).toDouble();
     return player.setVolume(percent);
   }
 

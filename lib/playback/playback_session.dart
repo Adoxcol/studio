@@ -39,21 +39,20 @@ class PlaybackSession {
     return PlaybackSession(
       queueIds: kept,
       index: nextIndex,
-      position: current != null && kept.contains(current)
-          ? position
-          : Duration.zero,
+      position:
+          current != null && kept.contains(current) ? position : Duration.zero,
       repeat: repeat,
       shuffle: shuffle,
     );
   }
 
   Map<String, Object?> toJson() => {
-    'queueIds': queueIds,
-    'index': index,
-    'positionMs': position.inMilliseconds,
-    'repeat': repeat.name,
-    'shuffle': shuffle,
-  };
+        'queueIds': queueIds,
+        'index': index,
+        'positionMs': position.inMilliseconds,
+        'repeat': repeat.name,
+        'shuffle': shuffle,
+      };
 
   static PlaybackSession fromJson(Map<String, dynamic> json) {
     final rawIds = json['queueIds'];

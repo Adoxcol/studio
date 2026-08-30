@@ -35,8 +35,8 @@ class _PlayerBarScrubber extends ConsumerWidget {
       progress: snapshot.duration.inMilliseconds <= 0
           ? 0
           : (snapshot.position.inMilliseconds /
-                    snapshot.duration.inMilliseconds)
-                .clamp(0.0, 1.0),
+                  snapshot.duration.inMilliseconds)
+              .clamp(0.0, 1.0),
       duration: snapshot.duration,
       onSeek: (fraction) {
         ref.read(playbackControllerProvider.notifier).seekFraction(fraction);
@@ -101,7 +101,9 @@ class _PlayerBarBody extends ConsumerWidget {
                             playback.artist!,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
                                 ?.copyWith(color: palette.inkMuted),
                           ),
                       ],

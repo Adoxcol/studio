@@ -180,13 +180,13 @@ abstract final class LibraryQuery {
               LibrarySort.artist => compareText(artistName(a), artistName(b)),
               LibrarySort.album => compareText(albumName(a), albumName(b)),
               LibrarySort.track => _compareNullableInt(
-                a.trackNumber,
-                b.trackNumber,
-              ),
+                  a.trackNumber,
+                  b.trackNumber,
+                ),
               LibrarySort.time => _compareNullableInt(
-                a.durationMs,
-                b.durationMs,
-              ),
+                  a.durationMs,
+                  b.durationMs,
+                ),
             };
       final directed = order == LibraryOrder.ascending ? cmp : -cmp;
       if (directed != 0) return directed;
@@ -347,28 +347,28 @@ class _AlbumAgg {
 
 extension LibraryTabX on LibraryTab {
   String get label => switch (this) {
-    LibraryTab.all => 'All',
-    LibraryTab.artists => 'Artists',
-    LibraryTab.albums => 'Albums',
-    LibraryTab.genres => 'Genres',
-    LibraryTab.playlists => 'Playlists',
-    LibraryTab.recentlyAdded => 'Recently Added',
-  };
+        LibraryTab.all => 'All',
+        LibraryTab.artists => 'Artists',
+        LibraryTab.albums => 'Albums',
+        LibraryTab.genres => 'Genres',
+        LibraryTab.playlists => 'Playlists',
+        LibraryTab.recentlyAdded => 'Recently Added',
+      };
 }
 
 extension LibrarySortX on LibrarySort {
   String get label => switch (this) {
-    LibrarySort.title => 'Title',
-    LibrarySort.artist => 'Artist',
-    LibrarySort.album => 'Album',
-    LibrarySort.track => 'Track',
-    LibrarySort.time => 'Time',
-  };
+        LibrarySort.title => 'Title',
+        LibrarySort.artist => 'Artist',
+        LibrarySort.album => 'Album',
+        LibrarySort.track => 'Track',
+        LibrarySort.time => 'Time',
+      };
 }
 
 extension LibraryOrderX on LibraryOrder {
   String get label => switch (this) {
-    LibraryOrder.ascending => 'A–Z',
-    LibraryOrder.descending => 'Z–A',
-  };
+        LibraryOrder.ascending => 'A–Z',
+        LibraryOrder.descending => 'Z–A',
+      };
 }

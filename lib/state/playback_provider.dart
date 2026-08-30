@@ -526,5 +526,5 @@ class PlaybackController extends Notifier<PlaybackUiState> {
 
 final playbackControllerProvider =
     NotifierProvider<PlaybackController, PlaybackUiState>(
-      PlaybackController.new,
-    );
+  PlaybackController.new,
+);

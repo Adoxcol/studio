@@ -24,9 +24,8 @@ class PlaybackSettingsNotifier extends Notifier<PlaybackSettings> {
 
   void setEqualizerPreset(EqualizerPreset preset) {
     final gains = Equalizer.gainsFor(preset, state.equalizerGains);
-    final preamp = preset == EqualizerPreset.custom
-        ? state.equalizerPreamp
-        : 0.0;
+    final preamp =
+        preset == EqualizerPreset.custom ? state.equalizerPreamp : 0.0;
     state = state.copyWith(
       equalizerPreset: preset,
       equalizerGains: gains,
@@ -75,5 +74,5 @@ class PlaybackSettingsNotifier extends Notifier<PlaybackSettings> {
 
 final playbackSettingsProvider =
     NotifierProvider<PlaybackSettingsNotifier, PlaybackSettings>(
-      PlaybackSettingsNotifier.new,
-    );
+  PlaybackSettingsNotifier.new,
+);

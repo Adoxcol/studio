@@ -16,8 +16,8 @@ class PcmFifo {
     required this.writerPath,
     required Future<Uint8List> Function(int maxBytes) read,
     required Future<void> Function() close,
-  }) : _read = read,
-       _close = close;
+  })  : _read = read,
+        _close = close;
 
   final String writerPath;
   final Future<Uint8List> Function(int maxBytes) _read;
@@ -88,49 +88,44 @@ class _WindowsPipe {
     final name =
         '\\\\.\\pipe\\studio-fft-$pid-${DateTime.now().microsecondsSinceEpoch}';
     final kernel32 = DynamicLibrary.open('kernel32.dll');
-    final createNamedPipe = kernel32
-        .lookupFunction<
-          IntPtr Function(
-            Pointer<Utf16>,
-            Uint32,
-            Uint32,
-            Uint32,
-            Uint32,
-            Uint32,
-            Uint32,
-            Pointer<Void>,
-          ),
-          int Function(
-            Pointer<Utf16>,
-            int,
-            int,
-            int,
-            int,
-            int,
-            int,
-            Pointer<Void>,
-          )
-        >('CreateNamedPipeW');
-    final connectNamedPipe = kernel32
-        .lookupFunction<
-          Int32 Function(IntPtr, Pointer<Void>),
-          int Function(int, Pointer<Void>)
-        >('ConnectNamedPipe');
-    final readFile = kernel32
-        .lookupFunction<
-          Int32 Function(
-            IntPtr,
-            Pointer<Void>,
-            Uint32,
-            Pointer<Uint32>,
-            Pointer<Void>,
-          ),
-          int Function(int, Pointer<Void>, int, Pointer<Uint32>, Pointer<Void>)
-        >('ReadFile');
-    final closeHandle = kernel32
-        .lookupFunction<Int32 Function(IntPtr), int Function(int)>(
-          'CloseHandle',
-        );
+    final createNamedPipe = kernel32.lookupFunction<
+        IntPtr Function(
+          Pointer<Utf16>,
+          Uint32,
+          Uint32,
+          Uint32,
+          Uint32,
+          Uint32,
+          Uint32,
+          Pointer<Void>,
+        ),
+        int Function(
+          Pointer<Utf16>,
+          int,
+          int,
+          int,
+          int,
+          int,
+          int,
+          Pointer<Void>,
+        )>('CreateNamedPipeW');
+    final connectNamedPipe = kernel32.lookupFunction<
+        Int32 Function(IntPtr, Pointer<Void>),
+        int Function(int, Pointer<Void>)>('ConnectNamedPipe');
+    final readFile = kernel32.lookupFunction<
+        Int32 Function(
+          IntPtr,
+          Pointer<Void>,
+          Uint32,
+          Pointer<Uint32>,
+          Pointer<Void>,
+        ),
+        int Function(int, Pointer<Void>, int, Pointer<Uint32>,
+            Pointer<Void>)>('ReadFile');
+    final closeHandle =
+        kernel32.lookupFunction<Int32 Function(IntPtr), int Function(int)>(
+      'CloseHandle',
+    );
     final getLastError = kernel32
         .lookupFunction<Uint32 Function(), int Function()>('GetLastError');
 

@@ -34,8 +34,7 @@ void main() {
     var offset = 0;
     while (offset < pcm.length) {
       final end = math.min(offset + 2048, pcm.length);
-      bands =
-          analyzer.addInterleavedFloat32(
+      bands = analyzer.addInterleavedFloat32(
             Uint8List.sublistView(pcm, offset, end),
           ) ??
           bands;

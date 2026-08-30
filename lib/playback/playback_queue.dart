@@ -17,8 +17,8 @@ class PlaybackQueue {
     this.index = 0,
     this.repeat = QueueRepeatMode.off,
     this.shuffle = false,
-  }) : ids = List<int>.of(ids ?? const []),
-       _source = List<int>.of(ids ?? const []);
+  })  : ids = List<int>.of(ids ?? const []),
+        _source = List<int>.of(ids ?? const []);
 
   /// Current play order (shuffled when [shuffle] is on).
   List<int> ids;

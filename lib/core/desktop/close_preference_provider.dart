@@ -31,5 +31,5 @@ class ClosePreferenceNotifier extends Notifier<ClosePreference> {
 
 final closePreferenceProvider =
     NotifierProvider<ClosePreferenceNotifier, ClosePreference>(
-      ClosePreferenceNotifier.new,
-    );
+  ClosePreferenceNotifier.new,
+);

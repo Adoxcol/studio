@@ -28,9 +28,9 @@ class ScanNotice extends ConsumerWidget {
               Text(
                 'Scanning',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: palette.ink,
-                  fontWeight: FontWeight.w500,
-                ),
+                      color: palette.ink,
+                      fontWeight: FontWeight.w500,
+                    ),
               ),
               if (scan.folderLabel.isNotEmpty) ...[
                 const SizedBox(height: 4),

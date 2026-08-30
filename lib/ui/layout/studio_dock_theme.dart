@@ -12,10 +12,10 @@ class StudioDockChrome extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
     final label = Theme.of(context).textTheme.bodySmall?.copyWith(
-      color: palette.inkMuted,
-      fontSize: 12,
-      letterSpacing: 0.2,
-    );
+          color: palette.inkMuted,
+          fontSize: 12,
+          letterSpacing: 0.2,
+        );
     return MultiSplitViewTheme(
       data: MultiSplitViewThemeData(
         dividerThickness: 6,

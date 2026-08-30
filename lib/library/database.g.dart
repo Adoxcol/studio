@@ -350,21 +350,21 @@ class $TracksTable extends Tracks with TableInfo<$TracksTable, Track> {
   );
   @override
   List<GeneratedColumn> get $columns => [
-    id,
-    source,
-    locator,
-    title,
-    artist,
-    album,
-    durationMs,
-    trackNumber,
-    genre,
-    indexedAt,
-    artworkPath,
-    year,
-    fileModifiedMs,
-    folderId,
-  ];
+        id,
+        source,
+        locator,
+        title,
+        artist,
+        album,
+        durationMs,
+        trackNumber,
+        genre,
+        indexedAt,
+        artworkPath,
+        year,
+        fileModifiedMs,
+        folderId,
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -620,21 +620,18 @@ class Track extends DataClass implements Insertable<Track> {
       source: Value(source),
       locator: Value(locator),
       title: Value(title),
-      artist: artist == null && nullToAbsent
-          ? const Value.absent()
-          : Value(artist),
-      album: album == null && nullToAbsent
-          ? const Value.absent()
-          : Value(album),
+      artist:
+          artist == null && nullToAbsent ? const Value.absent() : Value(artist),
+      album:
+          album == null && nullToAbsent ? const Value.absent() : Value(album),
       durationMs: durationMs == null && nullToAbsent
           ? const Value.absent()
           : Value(durationMs),
       trackNumber: trackNumber == null && nullToAbsent
           ? const Value.absent()
           : Value(trackNumber),
-      genre: genre == null && nullToAbsent
-          ? const Value.absent()
-          : Value(genre),
+      genre:
+          genre == null && nullToAbsent ? const Value.absent() : Value(genre),
       indexedAt: Value(indexedAt),
       artworkPath: artworkPath == null && nullToAbsent
           ? const Value.absent()
@@ -707,24 +704,24 @@ class Track extends DataClass implements Insertable<Track> {
     Value<int?> year = const Value.absent(),
     Value<int?> fileModifiedMs = const Value.absent(),
     Value<int?> folderId = const Value.absent(),
-  }) => Track(
-    id: id ?? this.id,
-    source: source ?? this.source,
-    locator: locator ?? this.locator,
-    title: title ?? this.title,
-    artist: artist.present ? artist.value : this.artist,
-    album: album.present ? album.value : this.album,
-    durationMs: durationMs.present ? durationMs.value : this.durationMs,
-    trackNumber: trackNumber.present ? trackNumber.value : this.trackNumber,
-    genre: genre.present ? genre.value : this.genre,
-    indexedAt: indexedAt ?? this.indexedAt,
-    artworkPath: artworkPath.present ? artworkPath.value : this.artworkPath,
-    year: year.present ? year.value : this.year,
-    fileModifiedMs: fileModifiedMs.present
-        ? fileModifiedMs.value
-        : this.fileModifiedMs,
-    folderId: folderId.present ? folderId.value : this.folderId,
-  );
+  }) =>
+      Track(
+        id: id ?? this.id,
+        source: source ?? this.source,
+        locator: locator ?? this.locator,
+        title: title ?? this.title,
+        artist: artist.present ? artist.value : this.artist,
+        album: album.present ? album.value : this.album,
+        durationMs: durationMs.present ? durationMs.value : this.durationMs,
+        trackNumber: trackNumber.present ? trackNumber.value : this.trackNumber,
+        genre: genre.present ? genre.value : this.genre,
+        indexedAt: indexedAt ?? this.indexedAt,
+        artworkPath: artworkPath.present ? artworkPath.value : this.artworkPath,
+        year: year.present ? year.value : this.year,
+        fileModifiedMs:
+            fileModifiedMs.present ? fileModifiedMs.value : this.fileModifiedMs,
+        folderId: folderId.present ? folderId.value : this.folderId,
+      );
   Track copyWithCompanion(TracksCompanion data) {
     return Track(
       id: data.id.present ? data.id.value : this.id,
@@ -733,17 +730,14 @@ class Track extends DataClass implements Insertable<Track> {
       title: data.title.present ? data.title.value : this.title,
       artist: data.artist.present ? data.artist.value : this.artist,
       album: data.album.present ? data.album.value : this.album,
-      durationMs: data.durationMs.present
-          ? data.durationMs.value
-          : this.durationMs,
-      trackNumber: data.trackNumber.present
-          ? data.trackNumber.value
-          : this.trackNumber,
+      durationMs:
+          data.durationMs.present ? data.durationMs.value : this.durationMs,
+      trackNumber:
+          data.trackNumber.present ? data.trackNumber.value : this.trackNumber,
       genre: data.genre.present ? data.genre.value : this.genre,
       indexedAt: data.indexedAt.present ? data.indexedAt.value : this.indexedAt,
-      artworkPath: data.artworkPath.present
-          ? data.artworkPath.value
-          : this.artworkPath,
+      artworkPath:
+          data.artworkPath.present ? data.artworkPath.value : this.artworkPath,
       year: data.year.present ? data.year.value : this.year,
       fileModifiedMs: data.fileModifiedMs.present
           ? data.fileModifiedMs.value
@@ -775,21 +769,21 @@ class Track extends DataClass implements Insertable<Track> {
 
   @override
   int get hashCode => Object.hash(
-    id,
-    source,
-    locator,
-    title,
-    artist,
-    album,
-    durationMs,
-    trackNumber,
-    genre,
-    indexedAt,
-    artworkPath,
-    year,
-    fileModifiedMs,
-    folderId,
-  );
+        id,
+        source,
+        locator,
+        title,
+        artist,
+        album,
+        durationMs,
+        trackNumber,
+        genre,
+        indexedAt,
+        artworkPath,
+        year,
+        fileModifiedMs,
+        folderId,
+      );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -856,8 +850,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
     this.year = const Value.absent(),
     this.fileModifiedMs = const Value.absent(),
     this.folderId = const Value.absent(),
-  }) : locator = Value(locator),
-       title = Value(title);
+  })  : locator = Value(locator),
+        title = Value(title);
   static Insertable<Track> custom({
     Expression<int>? id,
     Expression<String>? source,
@@ -1145,10 +1139,10 @@ class Playlist extends DataClass implements Insertable<Playlist> {
   }
 
   Playlist copyWith({int? id, String? name, DateTime? createdAt}) => Playlist(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    createdAt: createdAt ?? this.createdAt,
-  );
+        id: id ?? this.id,
+        name: name ?? this.name,
+        createdAt: createdAt ?? this.createdAt,
+      );
   Playlist copyWithCompanion(PlaylistsCompanion data) {
     return Playlist(
       id: data.id.present ? data.id.value : this.id,
@@ -1433,18 +1427,18 @@ class PlaylistEntry extends DataClass implements Insertable<PlaylistEntry> {
     int? playlistId,
     int? trackId,
     int? position,
-  }) => PlaylistEntry(
-    id: id ?? this.id,
-    playlistId: playlistId ?? this.playlistId,
-    trackId: trackId ?? this.trackId,
-    position: position ?? this.position,
-  );
+  }) =>
+      PlaylistEntry(
+        id: id ?? this.id,
+        playlistId: playlistId ?? this.playlistId,
+        trackId: trackId ?? this.trackId,
+        position: position ?? this.position,
+      );
   PlaylistEntry copyWithCompanion(PlaylistEntriesCompanion data) {
     return PlaylistEntry(
       id: data.id.present ? data.id.value : this.id,
-      playlistId: data.playlistId.present
-          ? data.playlistId.value
-          : this.playlistId,
+      playlistId:
+          data.playlistId.present ? data.playlistId.value : this.playlistId,
       trackId: data.trackId.present ? data.trackId.value : this.trackId,
       position: data.position.present ? data.position.value : this.position,
     );
@@ -1489,9 +1483,9 @@ class PlaylistEntriesCompanion extends UpdateCompanion<PlaylistEntry> {
     required int playlistId,
     required int trackId,
     required int position,
-  }) : playlistId = Value(playlistId),
-       trackId = Value(trackId),
-       position = Value(position);
+  })  : playlistId = Value(playlistId),
+        trackId = Value(trackId),
+        position = Value(position);
   static Insertable<PlaylistEntry> custom({
     Expression<int>? id,
     Expression<int>? playlistId,
@@ -1564,38 +1558,37 @@ abstract class _$StudioDatabase extends GeneratedDatabase {
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
-    libraryFolders,
-    tracks,
-    playlists,
-    playlistEntries,
-  ];
+        libraryFolders,
+        tracks,
+        playlists,
+        playlistEntries,
+      ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'playlists',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('playlist_entries', kind: UpdateKind.delete)],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'tracks',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('playlist_entries', kind: UpdateKind.delete)],
-    ),
-  ]);
+        WritePropagation(
+          on: TableUpdateQuery.onTableName(
+            'playlists',
+            limitUpdateKind: UpdateKind.delete,
+          ),
+          result: [TableUpdate('playlist_entries', kind: UpdateKind.delete)],
+        ),
+        WritePropagation(
+          on: TableUpdateQuery.onTableName(
+            'tracks',
+            limitUpdateKind: UpdateKind.delete,
+          ),
+          result: [TableUpdate('playlist_entries', kind: UpdateKind.delete)],
+        ),
+      ]);
 }
 
-typedef $$LibraryFoldersTableCreateCompanionBuilder =
-    LibraryFoldersCompanion Function({Value<int> id, required String path});
-typedef $$LibraryFoldersTableUpdateCompanionBuilder =
-    LibraryFoldersCompanion Function({Value<int> id, Value<String> path});
+typedef $$LibraryFoldersTableCreateCompanionBuilder = LibraryFoldersCompanion
+    Function({Value<int> id, required String path});
+typedef $$LibraryFoldersTableUpdateCompanionBuilder = LibraryFoldersCompanion
+    Function({Value<int> id, Value<String> path});
 
-final class $$LibraryFoldersTableReferences
-    extends
-        BaseReferences<_$StudioDatabase, $LibraryFoldersTable, LibraryFolder> {
+final class $$LibraryFoldersTableReferences extends BaseReferences<
+    _$StudioDatabase, $LibraryFoldersTable, LibraryFolder> {
   $$LibraryFoldersTableReferences(
     super.$_db,
     super.$_table,
@@ -1604,10 +1597,11 @@ final class $$LibraryFoldersTableReferences
 
   static MultiTypedResultKey<$TracksTable, List<Track>> _tracksRefsTable(
     _$StudioDatabase db,
-  ) => MultiTypedResultKey.fromTable(
-    db.tracks,
-    aliasName: 'library_folders__id__tracks__folder_id',
-  );
+  ) =>
+      MultiTypedResultKey.fromTable(
+        db.tracks,
+        aliasName: 'library_folders__id__tracks__folder_id',
+      );
 
   $$TracksTableProcessedTableManager get tracksRefs {
     final manager = $$TracksTableTableManager(
@@ -1632,14 +1626,14 @@ class $$LibraryFoldersTableFilterComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.id,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<String> get path => $composableBuilder(
-    column: $table.path,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.path,
+        builder: (column) => ColumnFilters(column),
+      );
 
   Expression<bool> tracksRefs(
     Expression<bool> Function($$TracksTableFilterComposer f) f,
@@ -1649,19 +1643,18 @@ class $$LibraryFoldersTableFilterComposer
       getCurrentColumn: (t) => t.id,
       referencedTable: $db.tracks,
       getReferencedColumn: (t) => t.folderId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$TracksTableFilterComposer(
-            $db: $db,
-            $table: $db.tracks,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
+      builder: (
+        joinBuilder, {
+        $addJoinBuilderToRootComposer,
+        $removeJoinBuilderFromRootComposer,
+      }) =>
+          $$TracksTableFilterComposer(
+        $db: $db,
+        $table: $db.tracks,
+        $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+        joinBuilder: joinBuilder,
+        $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+      ),
     );
     return f(composer);
   }
@@ -1677,14 +1670,14 @@ class $$LibraryFoldersTableOrderingComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.id,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<String> get path => $composableBuilder(
-    column: $table.path,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.path,
+        builder: (column) => ColumnOrderings(column),
+      );
 }
 
 class $$LibraryFoldersTableAnnotationComposer
@@ -1710,150 +1703,141 @@ class $$LibraryFoldersTableAnnotationComposer
       getCurrentColumn: (t) => t.id,
       referencedTable: $db.tracks,
       getReferencedColumn: (t) => t.folderId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$TracksTableAnnotationComposer(
-            $db: $db,
-            $table: $db.tracks,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
+      builder: (
+        joinBuilder, {
+        $addJoinBuilderToRootComposer,
+        $removeJoinBuilderFromRootComposer,
+      }) =>
+          $$TracksTableAnnotationComposer(
+        $db: $db,
+        $table: $db.tracks,
+        $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+        joinBuilder: joinBuilder,
+        $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+      ),
     );
     return f(composer);
   }
 }
 
-class $$LibraryFoldersTableTableManager
-    extends
-        RootTableManager<
-          _$StudioDatabase,
-          $LibraryFoldersTable,
-          LibraryFolder,
-          $$LibraryFoldersTableFilterComposer,
-          $$LibraryFoldersTableOrderingComposer,
-          $$LibraryFoldersTableAnnotationComposer,
-          $$LibraryFoldersTableCreateCompanionBuilder,
-          $$LibraryFoldersTableUpdateCompanionBuilder,
-          (LibraryFolder, $$LibraryFoldersTableReferences),
-          LibraryFolder,
-          PrefetchHooks Function({bool tracksRefs})
-        > {
+class $$LibraryFoldersTableTableManager extends RootTableManager<
+    _$StudioDatabase,
+    $LibraryFoldersTable,
+    LibraryFolder,
+    $$LibraryFoldersTableFilterComposer,
+    $$LibraryFoldersTableOrderingComposer,
+    $$LibraryFoldersTableAnnotationComposer,
+    $$LibraryFoldersTableCreateCompanionBuilder,
+    $$LibraryFoldersTableUpdateCompanionBuilder,
+    (LibraryFolder, $$LibraryFoldersTableReferences),
+    LibraryFolder,
+    PrefetchHooks Function({bool tracksRefs})> {
   $$LibraryFoldersTableTableManager(
     _$StudioDatabase db,
     $LibraryFoldersTable table,
   ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$LibraryFoldersTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$LibraryFoldersTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$LibraryFoldersTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<String> path = const Value.absent(),
-              }) => LibraryFoldersCompanion(id: id, path: path),
-          createCompanionCallback:
-              ({Value<int> id = const Value.absent(), required String path}) =>
-                  LibraryFoldersCompanion.insert(id: id, path: path),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$LibraryFoldersTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback: ({tracksRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (tracksRefs) db.tracks],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (tracksRefs)
-                    await $_getPrefetchedData<
-                      LibraryFolder,
-                      $LibraryFoldersTable,
-                      Track
-                    >(
-                      currentTable: table,
-                      referencedTable: $$LibraryFoldersTableReferences
-                          ._tracksRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$LibraryFoldersTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).tracksRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.folderId == item.id),
-                      typedResults: items,
-                    ),
-                ];
-              },
-            );
-          },
-        ),
-      );
+          TableManagerState(
+            db: db,
+            table: table,
+            createFilteringComposer: () =>
+                $$LibraryFoldersTableFilterComposer($db: db, $table: table),
+            createOrderingComposer: () =>
+                $$LibraryFoldersTableOrderingComposer($db: db, $table: table),
+            createComputedFieldComposer: () =>
+                $$LibraryFoldersTableAnnotationComposer($db: db, $table: table),
+            updateCompanionCallback: ({
+              Value<int> id = const Value.absent(),
+              Value<String> path = const Value.absent(),
+            }) =>
+                LibraryFoldersCompanion(id: id, path: path),
+            createCompanionCallback: (
+                    {Value<int> id = const Value.absent(),
+                    required String path}) =>
+                LibraryFoldersCompanion.insert(id: id, path: path),
+            withReferenceMapper: (p0) => p0
+                .map(
+                  (e) => (
+                    e.readTable(table),
+                    $$LibraryFoldersTableReferences(db, table, e),
+                  ),
+                )
+                .toList(),
+            prefetchHooksCallback: ({tracksRefs = false}) {
+              return PrefetchHooks(
+                db: db,
+                explicitlyWatchedTables: [if (tracksRefs) db.tracks],
+                addJoins: null,
+                getPrefetchedDataCallback: (items) async {
+                  return [
+                    if (tracksRefs)
+                      await $_getPrefetchedData<LibraryFolder,
+                          $LibraryFoldersTable, Track>(
+                        currentTable: table,
+                        referencedTable: $$LibraryFoldersTableReferences
+                            ._tracksRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$LibraryFoldersTableReferences(
+                          db,
+                          table,
+                          p0,
+                        ).tracksRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.folderId == item.id),
+                        typedResults: items,
+                      ),
+                  ];
+                },
+              );
+            },
+          ),
+        );
 }
 
-typedef $$LibraryFoldersTableProcessedTableManager =
-    ProcessedTableManager<
-      _$StudioDatabase,
-      $LibraryFoldersTable,
-      LibraryFolder,
-      $$LibraryFoldersTableFilterComposer,
-      $$LibraryFoldersTableOrderingComposer,
-      $$LibraryFoldersTableAnnotationComposer,
-      $$LibraryFoldersTableCreateCompanionBuilder,
-      $$LibraryFoldersTableUpdateCompanionBuilder,
-      (LibraryFolder, $$LibraryFoldersTableReferences),
-      LibraryFolder,
-      PrefetchHooks Function({bool tracksRefs})
-    >;
-typedef $$TracksTableCreateCompanionBuilder =
-    TracksCompanion Function({
-      Value<int> id,
-      Value<String> source,
-      required String locator,
-      required String title,
-      Value<String?> artist,
-      Value<String?> album,
-      Value<int?> durationMs,
-      Value<int?> trackNumber,
-      Value<String?> genre,
-      Value<DateTime> indexedAt,
-      Value<String?> artworkPath,
-      Value<int?> year,
-      Value<int?> fileModifiedMs,
-      Value<int?> folderId,
-    });
-typedef $$TracksTableUpdateCompanionBuilder =
-    TracksCompanion Function({
-      Value<int> id,
-      Value<String> source,
-      Value<String> locator,
-      Value<String> title,
-      Value<String?> artist,
-      Value<String?> album,
-      Value<int?> durationMs,
-      Value<int?> trackNumber,
-      Value<String?> genre,
-      Value<DateTime> indexedAt,
-      Value<String?> artworkPath,
-      Value<int?> year,
-      Value<int?> fileModifiedMs,
-      Value<int?> folderId,
-    });
+typedef $$LibraryFoldersTableProcessedTableManager = ProcessedTableManager<
+    _$StudioDatabase,
+    $LibraryFoldersTable,
+    LibraryFolder,
+    $$LibraryFoldersTableFilterComposer,
+    $$LibraryFoldersTableOrderingComposer,
+    $$LibraryFoldersTableAnnotationComposer,
+    $$LibraryFoldersTableCreateCompanionBuilder,
+    $$LibraryFoldersTableUpdateCompanionBuilder,
+    (LibraryFolder, $$LibraryFoldersTableReferences),
+    LibraryFolder,
+    PrefetchHooks Function({bool tracksRefs})>;
+typedef $$TracksTableCreateCompanionBuilder = TracksCompanion Function({
+  Value<int> id,
+  Value<String> source,
+  required String locator,
+  required String title,
+  Value<String?> artist,
+  Value<String?> album,
+  Value<int?> durationMs,
+  Value<int?> trackNumber,
+  Value<String?> genre,
+  Value<DateTime> indexedAt,
+  Value<String?> artworkPath,
+  Value<int?> year,
+  Value<int?> fileModifiedMs,
+  Value<int?> folderId,
+});
+typedef $$TracksTableUpdateCompanionBuilder = TracksCompanion Function({
+  Value<int> id,
+  Value<String> source,
+  Value<String> locator,
+  Value<String> title,
+  Value<String?> artist,
+  Value<String?> album,
+  Value<int?> durationMs,
+  Value<int?> trackNumber,
+  Value<String?> genre,
+  Value<DateTime> indexedAt,
+  Value<String?> artworkPath,
+  Value<int?> year,
+  Value<int?> fileModifiedMs,
+  Value<int?> folderId,
+});
 
 final class $$TracksTableReferences
     extends BaseReferences<_$StudioDatabase, $TracksTable, Track> {
@@ -1877,11 +1861,11 @@ final class $$TracksTableReferences
   }
 
   static MultiTypedResultKey<$PlaylistEntriesTable, List<PlaylistEntry>>
-  _playlistEntriesRefsTable(_$StudioDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.playlistEntries,
-        aliasName: 'tracks__id__playlist_entries__track_id',
-      );
+      _playlistEntriesRefsTable(_$StudioDatabase db) =>
+          MultiTypedResultKey.fromTable(
+            db.playlistEntries,
+            aliasName: 'tracks__id__playlist_entries__track_id',
+          );
 
   $$PlaylistEntriesTableProcessedTableManager get playlistEntriesRefs {
     final manager = $$PlaylistEntriesTableTableManager(
@@ -1908,69 +1892,69 @@ class $$TracksTableFilterComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.id,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<String> get source => $composableBuilder(
-    column: $table.source,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.source,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<String> get locator => $composableBuilder(
-    column: $table.locator,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.locator,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.title,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<String> get artist => $composableBuilder(
-    column: $table.artist,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.artist,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<String> get album => $composableBuilder(
-    column: $table.album,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.album,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<int> get durationMs => $composableBuilder(
-    column: $table.durationMs,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.durationMs,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<int> get trackNumber => $composableBuilder(
-    column: $table.trackNumber,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.trackNumber,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<String> get genre => $composableBuilder(
-    column: $table.genre,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.genre,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<DateTime> get indexedAt => $composableBuilder(
-    column: $table.indexedAt,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.indexedAt,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<String> get artworkPath => $composableBuilder(
-    column: $table.artworkPath,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.artworkPath,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<int> get year => $composableBuilder(
-    column: $table.year,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.year,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<int> get fileModifiedMs => $composableBuilder(
-    column: $table.fileModifiedMs,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.fileModifiedMs,
+        builder: (column) => ColumnFilters(column),
+      );
 
   $$LibraryFoldersTableFilterComposer get folderId {
     final $$LibraryFoldersTableFilterComposer composer = $composerBuilder(
@@ -1978,19 +1962,18 @@ class $$TracksTableFilterComposer
       getCurrentColumn: (t) => t.folderId,
       referencedTable: $db.libraryFolders,
       getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$LibraryFoldersTableFilterComposer(
-            $db: $db,
-            $table: $db.libraryFolders,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
+      builder: (
+        joinBuilder, {
+        $addJoinBuilderToRootComposer,
+        $removeJoinBuilderFromRootComposer,
+      }) =>
+          $$LibraryFoldersTableFilterComposer(
+        $db: $db,
+        $table: $db.libraryFolders,
+        $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+        joinBuilder: joinBuilder,
+        $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+      ),
     );
     return composer;
   }
@@ -2003,19 +1986,18 @@ class $$TracksTableFilterComposer
       getCurrentColumn: (t) => t.id,
       referencedTable: $db.playlistEntries,
       getReferencedColumn: (t) => t.trackId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PlaylistEntriesTableFilterComposer(
-            $db: $db,
-            $table: $db.playlistEntries,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
+      builder: (
+        joinBuilder, {
+        $addJoinBuilderToRootComposer,
+        $removeJoinBuilderFromRootComposer,
+      }) =>
+          $$PlaylistEntriesTableFilterComposer(
+        $db: $db,
+        $table: $db.playlistEntries,
+        $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+        joinBuilder: joinBuilder,
+        $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+      ),
     );
     return f(composer);
   }
@@ -2031,69 +2013,69 @@ class $$TracksTableOrderingComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.id,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<String> get source => $composableBuilder(
-    column: $table.source,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.source,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<String> get locator => $composableBuilder(
-    column: $table.locator,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.locator,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.title,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<String> get artist => $composableBuilder(
-    column: $table.artist,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.artist,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<String> get album => $composableBuilder(
-    column: $table.album,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.album,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<int> get durationMs => $composableBuilder(
-    column: $table.durationMs,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.durationMs,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<int> get trackNumber => $composableBuilder(
-    column: $table.trackNumber,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.trackNumber,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<String> get genre => $composableBuilder(
-    column: $table.genre,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.genre,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<DateTime> get indexedAt => $composableBuilder(
-    column: $table.indexedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.indexedAt,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<String> get artworkPath => $composableBuilder(
-    column: $table.artworkPath,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.artworkPath,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<int> get year => $composableBuilder(
-    column: $table.year,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.year,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<int> get fileModifiedMs => $composableBuilder(
-    column: $table.fileModifiedMs,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.fileModifiedMs,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   $$LibraryFoldersTableOrderingComposer get folderId {
     final $$LibraryFoldersTableOrderingComposer composer = $composerBuilder(
@@ -2101,19 +2083,18 @@ class $$TracksTableOrderingComposer
       getCurrentColumn: (t) => t.folderId,
       referencedTable: $db.libraryFolders,
       getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$LibraryFoldersTableOrderingComposer(
-            $db: $db,
-            $table: $db.libraryFolders,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
+      builder: (
+        joinBuilder, {
+        $addJoinBuilderToRootComposer,
+        $removeJoinBuilderFromRootComposer,
+      }) =>
+          $$LibraryFoldersTableOrderingComposer(
+        $db: $db,
+        $table: $db.libraryFolders,
+        $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+        joinBuilder: joinBuilder,
+        $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+      ),
     );
     return composer;
   }
@@ -2147,14 +2128,14 @@ class $$TracksTableAnnotationComposer
       $composableBuilder(column: $table.album, builder: (column) => column);
 
   GeneratedColumn<int> get durationMs => $composableBuilder(
-    column: $table.durationMs,
-    builder: (column) => column,
-  );
+        column: $table.durationMs,
+        builder: (column) => column,
+      );
 
   GeneratedColumn<int> get trackNumber => $composableBuilder(
-    column: $table.trackNumber,
-    builder: (column) => column,
-  );
+        column: $table.trackNumber,
+        builder: (column) => column,
+      );
 
   GeneratedColumn<String> get genre =>
       $composableBuilder(column: $table.genre, builder: (column) => column);
@@ -2163,17 +2144,17 @@ class $$TracksTableAnnotationComposer
       $composableBuilder(column: $table.indexedAt, builder: (column) => column);
 
   GeneratedColumn<String> get artworkPath => $composableBuilder(
-    column: $table.artworkPath,
-    builder: (column) => column,
-  );
+        column: $table.artworkPath,
+        builder: (column) => column,
+      );
 
   GeneratedColumn<int> get year =>
       $composableBuilder(column: $table.year, builder: (column) => column);
 
   GeneratedColumn<int> get fileModifiedMs => $composableBuilder(
-    column: $table.fileModifiedMs,
-    builder: (column) => column,
-  );
+        column: $table.fileModifiedMs,
+        builder: (column) => column,
+      );
 
   $$LibraryFoldersTableAnnotationComposer get folderId {
     final $$LibraryFoldersTableAnnotationComposer composer = $composerBuilder(
@@ -2181,19 +2162,18 @@ class $$TracksTableAnnotationComposer
       getCurrentColumn: (t) => t.folderId,
       referencedTable: $db.libraryFolders,
       getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$LibraryFoldersTableAnnotationComposer(
-            $db: $db,
-            $table: $db.libraryFolders,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
+      builder: (
+        joinBuilder, {
+        $addJoinBuilderToRootComposer,
+        $removeJoinBuilderFromRootComposer,
+      }) =>
+          $$LibraryFoldersTableAnnotationComposer(
+        $db: $db,
+        $table: $db.libraryFolders,
+        $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+        joinBuilder: joinBuilder,
+        $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+      ),
     );
     return composer;
   }
@@ -2206,227 +2186,211 @@ class $$TracksTableAnnotationComposer
       getCurrentColumn: (t) => t.id,
       referencedTable: $db.playlistEntries,
       getReferencedColumn: (t) => t.trackId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PlaylistEntriesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.playlistEntries,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
+      builder: (
+        joinBuilder, {
+        $addJoinBuilderToRootComposer,
+        $removeJoinBuilderFromRootComposer,
+      }) =>
+          $$PlaylistEntriesTableAnnotationComposer(
+        $db: $db,
+        $table: $db.playlistEntries,
+        $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+        joinBuilder: joinBuilder,
+        $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+      ),
     );
     return f(composer);
   }
 }
 
-class $$TracksTableTableManager
-    extends
-        RootTableManager<
-          _$StudioDatabase,
-          $TracksTable,
-          Track,
-          $$TracksTableFilterComposer,
-          $$TracksTableOrderingComposer,
-          $$TracksTableAnnotationComposer,
-          $$TracksTableCreateCompanionBuilder,
-          $$TracksTableUpdateCompanionBuilder,
-          (Track, $$TracksTableReferences),
-          Track,
-          PrefetchHooks Function({bool folderId, bool playlistEntriesRefs})
-        > {
+class $$TracksTableTableManager extends RootTableManager<
+    _$StudioDatabase,
+    $TracksTable,
+    Track,
+    $$TracksTableFilterComposer,
+    $$TracksTableOrderingComposer,
+    $$TracksTableAnnotationComposer,
+    $$TracksTableCreateCompanionBuilder,
+    $$TracksTableUpdateCompanionBuilder,
+    (Track, $$TracksTableReferences),
+    Track,
+    PrefetchHooks Function({bool folderId, bool playlistEntriesRefs})> {
   $$TracksTableTableManager(_$StudioDatabase db, $TracksTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$TracksTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$TracksTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$TracksTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<String> source = const Value.absent(),
-                Value<String> locator = const Value.absent(),
-                Value<String> title = const Value.absent(),
-                Value<String?> artist = const Value.absent(),
-                Value<String?> album = const Value.absent(),
-                Value<int?> durationMs = const Value.absent(),
-                Value<int?> trackNumber = const Value.absent(),
-                Value<String?> genre = const Value.absent(),
-                Value<DateTime> indexedAt = const Value.absent(),
-                Value<String?> artworkPath = const Value.absent(),
-                Value<int?> year = const Value.absent(),
-                Value<int?> fileModifiedMs = const Value.absent(),
-                Value<int?> folderId = const Value.absent(),
-              }) => TracksCompanion(
-                id: id,
-                source: source,
-                locator: locator,
-                title: title,
-                artist: artist,
-                album: album,
-                durationMs: durationMs,
-                trackNumber: trackNumber,
-                genre: genre,
-                indexedAt: indexedAt,
-                artworkPath: artworkPath,
-                year: year,
-                fileModifiedMs: fileModifiedMs,
-                folderId: folderId,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<String> source = const Value.absent(),
-                required String locator,
-                required String title,
-                Value<String?> artist = const Value.absent(),
-                Value<String?> album = const Value.absent(),
-                Value<int?> durationMs = const Value.absent(),
-                Value<int?> trackNumber = const Value.absent(),
-                Value<String?> genre = const Value.absent(),
-                Value<DateTime> indexedAt = const Value.absent(),
-                Value<String?> artworkPath = const Value.absent(),
-                Value<int?> year = const Value.absent(),
-                Value<int?> fileModifiedMs = const Value.absent(),
-                Value<int?> folderId = const Value.absent(),
-              }) => TracksCompanion.insert(
-                id: id,
-                source: source,
-                locator: locator,
-                title: title,
-                artist: artist,
-                album: album,
-                durationMs: durationMs,
-                trackNumber: trackNumber,
-                genre: genre,
-                indexedAt: indexedAt,
-                artworkPath: artworkPath,
-                year: year,
-                fileModifiedMs: fileModifiedMs,
-                folderId: folderId,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) =>
-                    (e.readTable(table), $$TracksTableReferences(db, table, e)),
-              )
-              .toList(),
-          prefetchHooksCallback:
-              ({folderId = false, playlistEntriesRefs = false}) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [
-                    if (playlistEntriesRefs) db.playlistEntries,
-                  ],
-                  addJoins:
-                      <
-                        T extends TableManagerState<
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic
-                        >
-                      >(state) {
-                        if (folderId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.folderId,
-                                    referencedTable: $$TracksTableReferences
-                                        ._folderIdTable(db),
-                                    referencedColumn: $$TracksTableReferences
-                                        ._folderIdTable(db)
-                                        .id,
-                                  )
-                                  as T;
-                        }
+      : super(
+          TableManagerState(
+            db: db,
+            table: table,
+            createFilteringComposer: () =>
+                $$TracksTableFilterComposer($db: db, $table: table),
+            createOrderingComposer: () =>
+                $$TracksTableOrderingComposer($db: db, $table: table),
+            createComputedFieldComposer: () =>
+                $$TracksTableAnnotationComposer($db: db, $table: table),
+            updateCompanionCallback: ({
+              Value<int> id = const Value.absent(),
+              Value<String> source = const Value.absent(),
+              Value<String> locator = const Value.absent(),
+              Value<String> title = const Value.absent(),
+              Value<String?> artist = const Value.absent(),
+              Value<String?> album = const Value.absent(),
+              Value<int?> durationMs = const Value.absent(),
+              Value<int?> trackNumber = const Value.absent(),
+              Value<String?> genre = const Value.absent(),
+              Value<DateTime> indexedAt = const Value.absent(),
+              Value<String?> artworkPath = const Value.absent(),
+              Value<int?> year = const Value.absent(),
+              Value<int?> fileModifiedMs = const Value.absent(),
+              Value<int?> folderId = const Value.absent(),
+            }) =>
+                TracksCompanion(
+              id: id,
+              source: source,
+              locator: locator,
+              title: title,
+              artist: artist,
+              album: album,
+              durationMs: durationMs,
+              trackNumber: trackNumber,
+              genre: genre,
+              indexedAt: indexedAt,
+              artworkPath: artworkPath,
+              year: year,
+              fileModifiedMs: fileModifiedMs,
+              folderId: folderId,
+            ),
+            createCompanionCallback: ({
+              Value<int> id = const Value.absent(),
+              Value<String> source = const Value.absent(),
+              required String locator,
+              required String title,
+              Value<String?> artist = const Value.absent(),
+              Value<String?> album = const Value.absent(),
+              Value<int?> durationMs = const Value.absent(),
+              Value<int?> trackNumber = const Value.absent(),
+              Value<String?> genre = const Value.absent(),
+              Value<DateTime> indexedAt = const Value.absent(),
+              Value<String?> artworkPath = const Value.absent(),
+              Value<int?> year = const Value.absent(),
+              Value<int?> fileModifiedMs = const Value.absent(),
+              Value<int?> folderId = const Value.absent(),
+            }) =>
+                TracksCompanion.insert(
+              id: id,
+              source: source,
+              locator: locator,
+              title: title,
+              artist: artist,
+              album: album,
+              durationMs: durationMs,
+              trackNumber: trackNumber,
+              genre: genre,
+              indexedAt: indexedAt,
+              artworkPath: artworkPath,
+              year: year,
+              fileModifiedMs: fileModifiedMs,
+              folderId: folderId,
+            ),
+            withReferenceMapper: (p0) => p0
+                .map(
+                  (e) => (
+                    e.readTable(table),
+                    $$TracksTableReferences(db, table, e)
+                  ),
+                )
+                .toList(),
+            prefetchHooksCallback: (
+                {folderId = false, playlistEntriesRefs = false}) {
+              return PrefetchHooks(
+                db: db,
+                explicitlyWatchedTables: [
+                  if (playlistEntriesRefs) db.playlistEntries,
+                ],
+                addJoins: <
+                    T extends TableManagerState<
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic>>(state) {
+                  if (folderId) {
+                    state = state.withJoin(
+                      currentTable: table,
+                      currentColumn: table.folderId,
+                      referencedTable:
+                          $$TracksTableReferences._folderIdTable(db),
+                      referencedColumn:
+                          $$TracksTableReferences._folderIdTable(db).id,
+                    ) as T;
+                  }
 
-                        return state;
-                      },
-                  getPrefetchedDataCallback: (items) async {
-                    return [
-                      if (playlistEntriesRefs)
-                        await $_getPrefetchedData<
-                          Track,
-                          $TracksTable,
-                          PlaylistEntry
-                        >(
-                          currentTable: table,
-                          referencedTable: $$TracksTableReferences
-                              ._playlistEntriesRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$TracksTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).playlistEntriesRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.trackId == item.id,
-                              ),
-                          typedResults: items,
+                  return state;
+                },
+                getPrefetchedDataCallback: (items) async {
+                  return [
+                    if (playlistEntriesRefs)
+                      await $_getPrefetchedData<Track, $TracksTable,
+                          PlaylistEntry>(
+                        currentTable: table,
+                        referencedTable: $$TracksTableReferences
+                            ._playlistEntriesRefsTable(db),
+                        managerFromTypedResult: (p0) => $$TracksTableReferences(
+                          db,
+                          table,
+                          p0,
+                        ).playlistEntriesRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems.where(
+                          (e) => e.trackId == item.id,
                         ),
-                    ];
-                  },
-                );
-              },
-        ),
-      );
+                        typedResults: items,
+                      ),
+                  ];
+                },
+              );
+            },
+          ),
+        );
 }
 
-typedef $$TracksTableProcessedTableManager =
-    ProcessedTableManager<
-      _$StudioDatabase,
-      $TracksTable,
-      Track,
-      $$TracksTableFilterComposer,
-      $$TracksTableOrderingComposer,
-      $$TracksTableAnnotationComposer,
-      $$TracksTableCreateCompanionBuilder,
-      $$TracksTableUpdateCompanionBuilder,
-      (Track, $$TracksTableReferences),
-      Track,
-      PrefetchHooks Function({bool folderId, bool playlistEntriesRefs})
-    >;
-typedef $$PlaylistsTableCreateCompanionBuilder =
-    PlaylistsCompanion Function({
-      Value<int> id,
-      required String name,
-      Value<DateTime> createdAt,
-    });
-typedef $$PlaylistsTableUpdateCompanionBuilder =
-    PlaylistsCompanion Function({
-      Value<int> id,
-      Value<String> name,
-      Value<DateTime> createdAt,
-    });
+typedef $$TracksTableProcessedTableManager = ProcessedTableManager<
+    _$StudioDatabase,
+    $TracksTable,
+    Track,
+    $$TracksTableFilterComposer,
+    $$TracksTableOrderingComposer,
+    $$TracksTableAnnotationComposer,
+    $$TracksTableCreateCompanionBuilder,
+    $$TracksTableUpdateCompanionBuilder,
+    (Track, $$TracksTableReferences),
+    Track,
+    PrefetchHooks Function({bool folderId, bool playlistEntriesRefs})>;
+typedef $$PlaylistsTableCreateCompanionBuilder = PlaylistsCompanion Function({
+  Value<int> id,
+  required String name,
+  Value<DateTime> createdAt,
+});
+typedef $$PlaylistsTableUpdateCompanionBuilder = PlaylistsCompanion Function({
+  Value<int> id,
+  Value<String> name,
+  Value<DateTime> createdAt,
+});
 
 final class $$PlaylistsTableReferences
     extends BaseReferences<_$StudioDatabase, $PlaylistsTable, Playlist> {
   $$PlaylistsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static MultiTypedResultKey<$PlaylistEntriesTable, List<PlaylistEntry>>
-  _playlistEntriesRefsTable(_$StudioDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.playlistEntries,
-        aliasName: 'playlists__id__playlist_entries__playlist_id',
-      );
+      _playlistEntriesRefsTable(_$StudioDatabase db) =>
+          MultiTypedResultKey.fromTable(
+            db.playlistEntries,
+            aliasName: 'playlists__id__playlist_entries__playlist_id',
+          );
 
   $$PlaylistEntriesTableProcessedTableManager get playlistEntriesRefs {
     final manager = $$PlaylistEntriesTableTableManager(
@@ -2453,19 +2417,19 @@ class $$PlaylistsTableFilterComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.id,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.name,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.createdAt,
+        builder: (column) => ColumnFilters(column),
+      );
 
   Expression<bool> playlistEntriesRefs(
     Expression<bool> Function($$PlaylistEntriesTableFilterComposer f) f,
@@ -2475,19 +2439,18 @@ class $$PlaylistsTableFilterComposer
       getCurrentColumn: (t) => t.id,
       referencedTable: $db.playlistEntries,
       getReferencedColumn: (t) => t.playlistId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PlaylistEntriesTableFilterComposer(
-            $db: $db,
-            $table: $db.playlistEntries,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
+      builder: (
+        joinBuilder, {
+        $addJoinBuilderToRootComposer,
+        $removeJoinBuilderFromRootComposer,
+      }) =>
+          $$PlaylistEntriesTableFilterComposer(
+        $db: $db,
+        $table: $db.playlistEntries,
+        $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+        joinBuilder: joinBuilder,
+        $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+      ),
     );
     return f(composer);
   }
@@ -2503,19 +2466,19 @@ class $$PlaylistsTableOrderingComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.id,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.name,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.createdAt,
+        builder: (column) => ColumnOrderings(column),
+      );
 }
 
 class $$PlaylistsTableAnnotationComposer
@@ -2544,143 +2507,133 @@ class $$PlaylistsTableAnnotationComposer
       getCurrentColumn: (t) => t.id,
       referencedTable: $db.playlistEntries,
       getReferencedColumn: (t) => t.playlistId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PlaylistEntriesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.playlistEntries,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
+      builder: (
+        joinBuilder, {
+        $addJoinBuilderToRootComposer,
+        $removeJoinBuilderFromRootComposer,
+      }) =>
+          $$PlaylistEntriesTableAnnotationComposer(
+        $db: $db,
+        $table: $db.playlistEntries,
+        $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+        joinBuilder: joinBuilder,
+        $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+      ),
     );
     return f(composer);
   }
 }
 
-class $$PlaylistsTableTableManager
-    extends
-        RootTableManager<
-          _$StudioDatabase,
-          $PlaylistsTable,
-          Playlist,
-          $$PlaylistsTableFilterComposer,
-          $$PlaylistsTableOrderingComposer,
-          $$PlaylistsTableAnnotationComposer,
-          $$PlaylistsTableCreateCompanionBuilder,
-          $$PlaylistsTableUpdateCompanionBuilder,
-          (Playlist, $$PlaylistsTableReferences),
-          Playlist,
-          PrefetchHooks Function({bool playlistEntriesRefs})
-        > {
+class $$PlaylistsTableTableManager extends RootTableManager<
+    _$StudioDatabase,
+    $PlaylistsTable,
+    Playlist,
+    $$PlaylistsTableFilterComposer,
+    $$PlaylistsTableOrderingComposer,
+    $$PlaylistsTableAnnotationComposer,
+    $$PlaylistsTableCreateCompanionBuilder,
+    $$PlaylistsTableUpdateCompanionBuilder,
+    (Playlist, $$PlaylistsTableReferences),
+    Playlist,
+    PrefetchHooks Function({bool playlistEntriesRefs})> {
   $$PlaylistsTableTableManager(_$StudioDatabase db, $PlaylistsTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$PlaylistsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$PlaylistsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$PlaylistsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<String> name = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-              }) =>
-                  PlaylistsCompanion(id: id, name: name, createdAt: createdAt),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required String name,
-                Value<DateTime> createdAt = const Value.absent(),
-              }) => PlaylistsCompanion.insert(
-                id: id,
-                name: name,
-                createdAt: createdAt,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$PlaylistsTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback: ({playlistEntriesRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (playlistEntriesRefs) db.playlistEntries,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (playlistEntriesRefs)
-                    await $_getPrefetchedData<
-                      Playlist,
-                      $PlaylistsTable,
-                      PlaylistEntry
-                    >(
-                      currentTable: table,
-                      referencedTable: $$PlaylistsTableReferences
-                          ._playlistEntriesRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$PlaylistsTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).playlistEntriesRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.playlistId == item.id),
-                      typedResults: items,
-                    ),
-                ];
-              },
-            );
-          },
-        ),
-      );
+      : super(
+          TableManagerState(
+            db: db,
+            table: table,
+            createFilteringComposer: () =>
+                $$PlaylistsTableFilterComposer($db: db, $table: table),
+            createOrderingComposer: () =>
+                $$PlaylistsTableOrderingComposer($db: db, $table: table),
+            createComputedFieldComposer: () =>
+                $$PlaylistsTableAnnotationComposer($db: db, $table: table),
+            updateCompanionCallback: ({
+              Value<int> id = const Value.absent(),
+              Value<String> name = const Value.absent(),
+              Value<DateTime> createdAt = const Value.absent(),
+            }) =>
+                PlaylistsCompanion(id: id, name: name, createdAt: createdAt),
+            createCompanionCallback: ({
+              Value<int> id = const Value.absent(),
+              required String name,
+              Value<DateTime> createdAt = const Value.absent(),
+            }) =>
+                PlaylistsCompanion.insert(
+              id: id,
+              name: name,
+              createdAt: createdAt,
+            ),
+            withReferenceMapper: (p0) => p0
+                .map(
+                  (e) => (
+                    e.readTable(table),
+                    $$PlaylistsTableReferences(db, table, e),
+                  ),
+                )
+                .toList(),
+            prefetchHooksCallback: ({playlistEntriesRefs = false}) {
+              return PrefetchHooks(
+                db: db,
+                explicitlyWatchedTables: [
+                  if (playlistEntriesRefs) db.playlistEntries,
+                ],
+                addJoins: null,
+                getPrefetchedDataCallback: (items) async {
+                  return [
+                    if (playlistEntriesRefs)
+                      await $_getPrefetchedData<Playlist, $PlaylistsTable,
+                          PlaylistEntry>(
+                        currentTable: table,
+                        referencedTable: $$PlaylistsTableReferences
+                            ._playlistEntriesRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$PlaylistsTableReferences(
+                          db,
+                          table,
+                          p0,
+                        ).playlistEntriesRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.playlistId == item.id),
+                        typedResults: items,
+                      ),
+                  ];
+                },
+              );
+            },
+          ),
+        );
 }
 
-typedef $$PlaylistsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$StudioDatabase,
-      $PlaylistsTable,
-      Playlist,
-      $$PlaylistsTableFilterComposer,
-      $$PlaylistsTableOrderingComposer,
-      $$PlaylistsTableAnnotationComposer,
-      $$PlaylistsTableCreateCompanionBuilder,
-      $$PlaylistsTableUpdateCompanionBuilder,
-      (Playlist, $$PlaylistsTableReferences),
-      Playlist,
-      PrefetchHooks Function({bool playlistEntriesRefs})
-    >;
-typedef $$PlaylistEntriesTableCreateCompanionBuilder =
-    PlaylistEntriesCompanion Function({
-      Value<int> id,
-      required int playlistId,
-      required int trackId,
-      required int position,
-    });
-typedef $$PlaylistEntriesTableUpdateCompanionBuilder =
-    PlaylistEntriesCompanion Function({
-      Value<int> id,
-      Value<int> playlistId,
-      Value<int> trackId,
-      Value<int> position,
-    });
+typedef $$PlaylistsTableProcessedTableManager = ProcessedTableManager<
+    _$StudioDatabase,
+    $PlaylistsTable,
+    Playlist,
+    $$PlaylistsTableFilterComposer,
+    $$PlaylistsTableOrderingComposer,
+    $$PlaylistsTableAnnotationComposer,
+    $$PlaylistsTableCreateCompanionBuilder,
+    $$PlaylistsTableUpdateCompanionBuilder,
+    (Playlist, $$PlaylistsTableReferences),
+    Playlist,
+    PrefetchHooks Function({bool playlistEntriesRefs})>;
+typedef $$PlaylistEntriesTableCreateCompanionBuilder = PlaylistEntriesCompanion
+    Function({
+  Value<int> id,
+  required int playlistId,
+  required int trackId,
+  required int position,
+});
+typedef $$PlaylistEntriesTableUpdateCompanionBuilder = PlaylistEntriesCompanion
+    Function({
+  Value<int> id,
+  Value<int> playlistId,
+  Value<int> trackId,
+  Value<int> position,
+});
 
-final class $$PlaylistEntriesTableReferences
-    extends
-        BaseReferences<_$StudioDatabase, $PlaylistEntriesTable, PlaylistEntry> {
+final class $$PlaylistEntriesTableReferences extends BaseReferences<
+    _$StudioDatabase, $PlaylistEntriesTable, PlaylistEntry> {
   $$PlaylistEntriesTableReferences(
     super.$_db,
     super.$_table,
@@ -2732,14 +2685,14 @@ class $$PlaylistEntriesTableFilterComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.id,
+        builder: (column) => ColumnFilters(column),
+      );
 
   ColumnFilters<int> get position => $composableBuilder(
-    column: $table.position,
-    builder: (column) => ColumnFilters(column),
-  );
+        column: $table.position,
+        builder: (column) => ColumnFilters(column),
+      );
 
   $$PlaylistsTableFilterComposer get playlistId {
     final $$PlaylistsTableFilterComposer composer = $composerBuilder(
@@ -2747,19 +2700,18 @@ class $$PlaylistEntriesTableFilterComposer
       getCurrentColumn: (t) => t.playlistId,
       referencedTable: $db.playlists,
       getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PlaylistsTableFilterComposer(
-            $db: $db,
-            $table: $db.playlists,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
+      builder: (
+        joinBuilder, {
+        $addJoinBuilderToRootComposer,
+        $removeJoinBuilderFromRootComposer,
+      }) =>
+          $$PlaylistsTableFilterComposer(
+        $db: $db,
+        $table: $db.playlists,
+        $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+        joinBuilder: joinBuilder,
+        $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+      ),
     );
     return composer;
   }
@@ -2770,19 +2722,18 @@ class $$PlaylistEntriesTableFilterComposer
       getCurrentColumn: (t) => t.trackId,
       referencedTable: $db.tracks,
       getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$TracksTableFilterComposer(
-            $db: $db,
-            $table: $db.tracks,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
+      builder: (
+        joinBuilder, {
+        $addJoinBuilderToRootComposer,
+        $removeJoinBuilderFromRootComposer,
+      }) =>
+          $$TracksTableFilterComposer(
+        $db: $db,
+        $table: $db.tracks,
+        $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+        joinBuilder: joinBuilder,
+        $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+      ),
     );
     return composer;
   }
@@ -2798,14 +2749,14 @@ class $$PlaylistEntriesTableOrderingComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.id,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<int> get position => $composableBuilder(
-    column: $table.position,
-    builder: (column) => ColumnOrderings(column),
-  );
+        column: $table.position,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   $$PlaylistsTableOrderingComposer get playlistId {
     final $$PlaylistsTableOrderingComposer composer = $composerBuilder(
@@ -2813,19 +2764,18 @@ class $$PlaylistEntriesTableOrderingComposer
       getCurrentColumn: (t) => t.playlistId,
       referencedTable: $db.playlists,
       getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PlaylistsTableOrderingComposer(
-            $db: $db,
-            $table: $db.playlists,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
+      builder: (
+        joinBuilder, {
+        $addJoinBuilderToRootComposer,
+        $removeJoinBuilderFromRootComposer,
+      }) =>
+          $$PlaylistsTableOrderingComposer(
+        $db: $db,
+        $table: $db.playlists,
+        $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+        joinBuilder: joinBuilder,
+        $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+      ),
     );
     return composer;
   }
@@ -2836,19 +2786,18 @@ class $$PlaylistEntriesTableOrderingComposer
       getCurrentColumn: (t) => t.trackId,
       referencedTable: $db.tracks,
       getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$TracksTableOrderingComposer(
-            $db: $db,
-            $table: $db.tracks,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
+      builder: (
+        joinBuilder, {
+        $addJoinBuilderToRootComposer,
+        $removeJoinBuilderFromRootComposer,
+      }) =>
+          $$TracksTableOrderingComposer(
+        $db: $db,
+        $table: $db.tracks,
+        $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+        joinBuilder: joinBuilder,
+        $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+      ),
     );
     return composer;
   }
@@ -2875,19 +2824,18 @@ class $$PlaylistEntriesTableAnnotationComposer
       getCurrentColumn: (t) => t.playlistId,
       referencedTable: $db.playlists,
       getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PlaylistsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.playlists,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
+      builder: (
+        joinBuilder, {
+        $addJoinBuilderToRootComposer,
+        $removeJoinBuilderFromRootComposer,
+      }) =>
+          $$PlaylistsTableAnnotationComposer(
+        $db: $db,
+        $table: $db.playlists,
+        $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+        joinBuilder: joinBuilder,
+        $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+      ),
     );
     return composer;
   }
@@ -2898,160 +2846,143 @@ class $$PlaylistEntriesTableAnnotationComposer
       getCurrentColumn: (t) => t.trackId,
       referencedTable: $db.tracks,
       getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$TracksTableAnnotationComposer(
-            $db: $db,
-            $table: $db.tracks,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
+      builder: (
+        joinBuilder, {
+        $addJoinBuilderToRootComposer,
+        $removeJoinBuilderFromRootComposer,
+      }) =>
+          $$TracksTableAnnotationComposer(
+        $db: $db,
+        $table: $db.tracks,
+        $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+        joinBuilder: joinBuilder,
+        $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+      ),
     );
     return composer;
   }
 }
 
-class $$PlaylistEntriesTableTableManager
-    extends
-        RootTableManager<
-          _$StudioDatabase,
-          $PlaylistEntriesTable,
-          PlaylistEntry,
-          $$PlaylistEntriesTableFilterComposer,
-          $$PlaylistEntriesTableOrderingComposer,
-          $$PlaylistEntriesTableAnnotationComposer,
-          $$PlaylistEntriesTableCreateCompanionBuilder,
-          $$PlaylistEntriesTableUpdateCompanionBuilder,
-          (PlaylistEntry, $$PlaylistEntriesTableReferences),
-          PlaylistEntry,
-          PrefetchHooks Function({bool playlistId, bool trackId})
-        > {
+class $$PlaylistEntriesTableTableManager extends RootTableManager<
+    _$StudioDatabase,
+    $PlaylistEntriesTable,
+    PlaylistEntry,
+    $$PlaylistEntriesTableFilterComposer,
+    $$PlaylistEntriesTableOrderingComposer,
+    $$PlaylistEntriesTableAnnotationComposer,
+    $$PlaylistEntriesTableCreateCompanionBuilder,
+    $$PlaylistEntriesTableUpdateCompanionBuilder,
+    (PlaylistEntry, $$PlaylistEntriesTableReferences),
+    PlaylistEntry,
+    PrefetchHooks Function({bool playlistId, bool trackId})> {
   $$PlaylistEntriesTableTableManager(
     _$StudioDatabase db,
     $PlaylistEntriesTable table,
   ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$PlaylistEntriesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$PlaylistEntriesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$PlaylistEntriesTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<int> playlistId = const Value.absent(),
-                Value<int> trackId = const Value.absent(),
-                Value<int> position = const Value.absent(),
-              }) => PlaylistEntriesCompanion(
-                id: id,
-                playlistId: playlistId,
-                trackId: trackId,
-                position: position,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required int playlistId,
-                required int trackId,
-                required int position,
-              }) => PlaylistEntriesCompanion.insert(
-                id: id,
-                playlistId: playlistId,
-                trackId: trackId,
-                position: position,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$PlaylistEntriesTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback: ({playlistId = false, trackId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
+          TableManagerState(
+            db: db,
+            table: table,
+            createFilteringComposer: () =>
+                $$PlaylistEntriesTableFilterComposer($db: db, $table: table),
+            createOrderingComposer: () =>
+                $$PlaylistEntriesTableOrderingComposer($db: db, $table: table),
+            createComputedFieldComposer: () =>
+                $$PlaylistEntriesTableAnnotationComposer(
+                    $db: db, $table: table),
+            updateCompanionCallback: ({
+              Value<int> id = const Value.absent(),
+              Value<int> playlistId = const Value.absent(),
+              Value<int> trackId = const Value.absent(),
+              Value<int> position = const Value.absent(),
+            }) =>
+                PlaylistEntriesCompanion(
+              id: id,
+              playlistId: playlistId,
+              trackId: trackId,
+              position: position,
+            ),
+            createCompanionCallback: ({
+              Value<int> id = const Value.absent(),
+              required int playlistId,
+              required int trackId,
+              required int position,
+            }) =>
+                PlaylistEntriesCompanion.insert(
+              id: id,
+              playlistId: playlistId,
+              trackId: trackId,
+              position: position,
+            ),
+            withReferenceMapper: (p0) => p0
+                .map(
+                  (e) => (
+                    e.readTable(table),
+                    $$PlaylistEntriesTableReferences(db, table, e),
+                  ),
+                )
+                .toList(),
+            prefetchHooksCallback: ({playlistId = false, trackId = false}) {
+              return PrefetchHooks(
+                db: db,
+                explicitlyWatchedTables: [],
+                addJoins: <
                     T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (playlistId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.playlistId,
-                                referencedTable:
-                                    $$PlaylistEntriesTableReferences
-                                        ._playlistIdTable(db),
-                                referencedColumn:
-                                    $$PlaylistEntriesTableReferences
-                                        ._playlistIdTable(db)
-                                        .id,
-                              )
-                              as T;
-                    }
-                    if (trackId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.trackId,
-                                referencedTable:
-                                    $$PlaylistEntriesTableReferences
-                                        ._trackIdTable(db),
-                                referencedColumn:
-                                    $$PlaylistEntriesTableReferences
-                                        ._trackIdTable(db)
-                                        .id,
-                              )
-                              as T;
-                    }
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic,
+                        dynamic>>(state) {
+                  if (playlistId) {
+                    state = state.withJoin(
+                      currentTable: table,
+                      currentColumn: table.playlistId,
+                      referencedTable:
+                          $$PlaylistEntriesTableReferences._playlistIdTable(db),
+                      referencedColumn: $$PlaylistEntriesTableReferences
+                          ._playlistIdTable(db)
+                          .id,
+                    ) as T;
+                  }
+                  if (trackId) {
+                    state = state.withJoin(
+                      currentTable: table,
+                      currentColumn: table.trackId,
+                      referencedTable:
+                          $$PlaylistEntriesTableReferences._trackIdTable(db),
+                      referencedColumn:
+                          $$PlaylistEntriesTableReferences._trackIdTable(db).id,
+                    ) as T;
+                  }
 
-                    return state;
-                  },
-              getPrefetchedDataCallback: (items) async {
-                return [];
-              },
-            );
-          },
-        ),
-      );
+                  return state;
+                },
+                getPrefetchedDataCallback: (items) async {
+                  return [];
+                },
+              );
+            },
+          ),
+        );
 }
 
-typedef $$PlaylistEntriesTableProcessedTableManager =
-    ProcessedTableManager<
-      _$StudioDatabase,
-      $PlaylistEntriesTable,
-      PlaylistEntry,
-      $$PlaylistEntriesTableFilterComposer,
-      $$PlaylistEntriesTableOrderingComposer,
-      $$PlaylistEntriesTableAnnotationComposer,
-      $$PlaylistEntriesTableCreateCompanionBuilder,
-      $$PlaylistEntriesTableUpdateCompanionBuilder,
-      (PlaylistEntry, $$PlaylistEntriesTableReferences),
-      PlaylistEntry,
-      PrefetchHooks Function({bool playlistId, bool trackId})
-    >;
+typedef $$PlaylistEntriesTableProcessedTableManager = ProcessedTableManager<
+    _$StudioDatabase,
+    $PlaylistEntriesTable,
+    PlaylistEntry,
+    $$PlaylistEntriesTableFilterComposer,
+    $$PlaylistEntriesTableOrderingComposer,
+    $$PlaylistEntriesTableAnnotationComposer,
+    $$PlaylistEntriesTableCreateCompanionBuilder,
+    $$PlaylistEntriesTableUpdateCompanionBuilder,
+    (PlaylistEntry, $$PlaylistEntriesTableReferences),
+    PlaylistEntry,
+    PrefetchHooks Function({bool playlistId, bool trackId})>;
 
 class $StudioDatabaseManager {
   final _$StudioDatabase _db;

@@ -69,10 +69,10 @@ class LibrarySidebar extends StatelessWidget {
                 child: Text(
                   'LIBRARY',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: palette.inkMuted,
-                    letterSpacing: 1.4,
-                    fontSize: 11,
-                  ),
+                        color: palette.inkMuted,
+                        letterSpacing: 1.4,
+                        fontSize: 11,
+                      ),
                 ),
               ),
               GestureDetector(
@@ -140,10 +140,10 @@ class _SectionLabel extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: palette.inkMuted,
-          letterSpacing: 1.4,
-          fontSize: 11,
-        ),
+              color: palette.inkMuted,
+              letterSpacing: 1.4,
+              fontSize: 11,
+            ),
       ),
     );
   }
@@ -236,8 +236,8 @@ class _ArtistRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: selected ? palette.ink : palette.inkMuted,
-                    ),
+                          color: selected ? palette.ink : palette.inkMuted,
+                        ),
                   ),
                 ),
               ],

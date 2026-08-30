@@ -52,9 +52,9 @@ class StudioTitleBar extends StatelessWidget {
                 Text(
                   'Studio',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: palette.inkMuted,
-                    fontWeight: FontWeight.w500,
-                  ),
+                        color: palette.inkMuted,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
                 const Spacer(),
                 const SizedBox(width: 56),

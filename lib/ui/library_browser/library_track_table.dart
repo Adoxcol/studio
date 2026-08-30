@@ -119,9 +119,8 @@ class _TrackCard extends StatelessWidget {
     final caption = LibraryQuery.albumCaption(track);
     return GestureDetector(
       onTap: onPlay,
-      onSecondaryTapUp: onMenu == null
-          ? null
-          : (details) => onMenu!(details.globalPosition),
+      onSecondaryTapUp:
+          onMenu == null ? null : (details) => onMenu!(details.globalPosition),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: DecoratedBox(
@@ -149,8 +148,8 @@ class _TrackCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: playing ? palette.accent : palette.ink,
-                        ),
+                              color: playing ? palette.accent : palette.ink,
+                            ),
                       ),
                       if (track.artist != null && track.artist!.isNotEmpty)
                         Text(
@@ -241,10 +240,10 @@ class _ColumnHeaders extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
     final style = Theme.of(context).textTheme.labelSmall?.copyWith(
-      color: palette.inkMuted,
-      letterSpacing: 1.2,
-      fontSize: 11,
-    );
+          color: palette.inkMuted,
+          letterSpacing: 1.2,
+          fontSize: 11,
+        );
     return Row(
       children: [
         const SizedBox(width: 28),
@@ -286,9 +285,8 @@ class _TrackRow extends StatelessWidget {
     ).textTheme.bodySmall?.copyWith(color: palette.inkMuted);
     return GestureDetector(
       onTap: onPlay,
-      onSecondaryTapUp: onMenu == null
-          ? null
-          : (details) => onMenu!(details.globalPosition),
+      onSecondaryTapUp:
+          onMenu == null ? null : (details) => onMenu!(details.globalPosition),
       behavior: HitTestBehavior.opaque,
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -313,8 +311,8 @@ class _TrackRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: playing ? palette.accent : palette.ink,
-                  ),
+                        color: playing ? palette.accent : palette.ink,
+                      ),
                 ),
               ),
               const SizedBox(width: 16),

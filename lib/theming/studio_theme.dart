@@ -11,17 +11,17 @@ abstract final class StudioTheme {
       _build(StudioPalette.dark(hue: hue), Brightness.dark);
 
   static ThemeMode materialMode(AppThemeMode mode) => switch (mode) {
-    AppThemeMode.light => ThemeMode.light,
-    AppThemeMode.dark => ThemeMode.dark,
-    AppThemeMode.system => ThemeMode.system,
-  };
+        AppThemeMode.light => ThemeMode.light,
+        AppThemeMode.dark => ThemeMode.dark,
+        AppThemeMode.system => ThemeMode.system,
+      };
 
   static Brightness resolveBrightness(AppThemeMode mode) => switch (mode) {
-    AppThemeMode.light => Brightness.light,
-    AppThemeMode.dark => Brightness.dark,
-    AppThemeMode.system =>
-      WidgetsBinding.instance.platformDispatcher.platformBrightness,
-  };
+        AppThemeMode.light => Brightness.light,
+        AppThemeMode.dark => Brightness.dark,
+        AppThemeMode.system =>
+          WidgetsBinding.instance.platformDispatcher.platformBrightness,
+      };
 
   static Color windowBackground(AppThemeMode mode) {
     return StudioPalette.forBrightness(resolveBrightness(mode)).bg;

@@ -22,10 +22,10 @@ class FolderScanner {
     TagReader tagReader = const TagReader(),
     ArtworkStore? artwork,
     CoverArtLookup? covers,
-  }) : _db = db,
-       _tags = tagReader,
-       _artwork = artwork,
-       _covers = covers;
+  })  : _db = db,
+        _tags = tagReader,
+        _artwork = artwork,
+        _covers = covers;
 
   static const _writeBatch = 24;
 
@@ -197,8 +197,7 @@ class FolderScanner {
       final previous = existing[file.path];
       final albumKey = _albumKey(tags.album);
       final dirKey = p.dirname(file.path).toLowerCase();
-      final needsArt =
-          _artwork != null &&
+      final needsArt = _artwork != null &&
           previous?.artworkPath == null &&
           (albumKey == null || !albumArt.containsKey(albumKey)) &&
           !dirArt.containsKey(dirKey);
@@ -211,8 +210,7 @@ class FolderScanner {
       if (bytes != null && _artwork != null) {
         artworkPath = await _artwork.save(bytes, mime: tags.artworkMime);
       }
-      artworkPath ??=
-          previous?.artworkPath ??
+      artworkPath ??= previous?.artworkPath ??
           (albumKey == null ? null : albumArt[albumKey]) ??
           dirArt[dirKey];
       _rememberArt(artworkPath, tags.album, file.path, albumArt, dirArt);
@@ -228,9 +226,8 @@ class FolderScanner {
           trackNumber: Value(tags.trackNumber),
           genre: Value(tags.genre),
           year: Value(tags.year ?? 0),
-          artworkPath: artworkPath == null
-              ? const Value.absent()
-              : Value(artworkPath),
+          artworkPath:
+              artworkPath == null ? const Value.absent() : Value(artworkPath),
           fileModifiedMs: Value(file.modifiedMs),
           folderId: Value(folderId),
         ),
@@ -289,7 +286,7 @@ class FolderScanner {
     final dir = p.dirname(locator);
     final key = dir.toLowerCase();
     if (cache.containsKey(key)) return cache[key];
-    final file = FolderCover.find(dir);
+    final file = await FolderCover.find(dir);
     if (file == null) {
       cache[key] = null;
       return null;

@@ -63,10 +63,10 @@ enum AppThemeMode {
   system;
 
   String get label => switch (this) {
-    AppThemeMode.light => 'Light',
-    AppThemeMode.dark => 'Dark',
-    AppThemeMode.system => 'System',
-  };
+        AppThemeMode.light => 'Light',
+        AppThemeMode.dark => 'Dark',
+        AppThemeMode.system => 'System',
+      };
 
   static AppThemeMode fromName(String? name) {
     return switch (name) {
@@ -82,9 +82,9 @@ enum TrackLayout {
   list;
 
   String get label => switch (this) {
-    TrackLayout.cards => 'Cards',
-    TrackLayout.list => 'List',
-  };
+        TrackLayout.cards => 'Cards',
+        TrackLayout.list => 'List',
+      };
 
   static TrackLayout fromName(String? name) {
     return name == 'list' ? TrackLayout.list : TrackLayout.cards;
@@ -99,10 +99,10 @@ class AppearanceState {
     bool? showTrackArtwork,
     bool? fetchMissingArtwork,
     AppThemeMode? themeMode,
-  }) : _trackLayout = trackLayout,
-       _showTrackArtwork = showTrackArtwork,
-       _fetchMissingArtwork = fetchMissingArtwork,
-       _themeMode = themeMode;
+  })  : _trackLayout = trackLayout,
+        _showTrackArtwork = showTrackArtwork,
+        _fetchMissingArtwork = fetchMissingArtwork,
+        _themeMode = themeMode;
 
   final AccentMode mode;
   final double customHue;

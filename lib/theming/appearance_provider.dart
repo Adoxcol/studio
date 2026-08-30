@@ -48,8 +48,8 @@ class AppearanceNotifier extends Notifier<AppearanceState> {
 
 final appearanceProvider =
     NotifierProvider<AppearanceNotifier, AppearanceState>(
-      AppearanceNotifier.new,
-    );
+  AppearanceNotifier.new,
+);
 
 final artworkHueProvider = FutureProvider<double?>((ref) async {
   final path = ref.watch(

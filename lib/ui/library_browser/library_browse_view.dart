@@ -32,19 +32,19 @@ class LibraryBrowseView extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (tab) {
       LibraryTab.artists => _ArtistGrid(
-        groups: artists,
-        onSelect: onSelectArtist,
-      ),
+          groups: artists,
+          onSelect: onSelectArtist,
+        ),
       LibraryTab.albums => _AlbumSections(
-        sections: albums,
-        onSelect: onSelectAlbum,
-        onSelectArtist: onSelectArtist,
-      ),
+          sections: albums,
+          onSelect: onSelectAlbum,
+          onSelectArtist: onSelectArtist,
+        ),
       LibraryTab.genres => _GenreGrid(groups: genres, onSelect: onSelectGenre),
       LibraryTab.playlists => PlaylistListView(
-        playlists: playlists,
-        onSelect: onSelectPlaylist ?? (_) {},
-      ),
+          playlists: playlists,
+          onSelect: onSelectPlaylist ?? (_) {},
+        ),
       _ => const SizedBox.shrink(),
     };
   }
@@ -374,10 +374,10 @@ class _CountLabel extends StatelessWidget {
     return Text(
       '$count $label',
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-        color: palette.inkMuted,
-        letterSpacing: 1.4,
-        fontSize: 11,
-      ),
+            color: palette.inkMuted,
+            letterSpacing: 1.4,
+            fontSize: 11,
+          ),
     );
   }
 }

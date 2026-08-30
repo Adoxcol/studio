@@ -92,8 +92,7 @@ class _Hero extends StatelessWidget {
         final titleStyle = Theme.of(context).textTheme.displayLarge;
         final titleLine =
             (titleStyle?.fontSize ?? 44) * (titleStyle?.height ?? 1.05);
-        final reserved =
-            verticalPad +
+        final reserved = verticalPad +
             visualizerBlock +
             (hasTrack ? 28.0 : 0.0) +
             titleLine * (hasTrack ? 2 : 1) +
@@ -121,9 +120,9 @@ class _Hero extends StatelessWidget {
               Text(
                 'now playing',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: palette.inkMutedAlt,
-                  fontStyle: FontStyle.italic,
-                ),
+                      color: palette.inkMutedAlt,
+                      fontStyle: FontStyle.italic,
+                    ),
               ),
             if (hasTrack) const SizedBox(height: 8),
             Text(
@@ -138,9 +137,9 @@ class _Hero extends StatelessWidget {
               Text(
                 artist!,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: palette.inkMuted,
-                  fontStyle: FontStyle.italic,
-                ),
+                      color: palette.inkMuted,
+                      fontStyle: FontStyle.italic,
+                    ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -151,9 +150,8 @@ class _Hero extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
           child: Column(
-            mainAxisAlignment: hasTrack
-                ? MainAxisAlignment.start
-                : MainAxisAlignment.center,
+            mainAxisAlignment:
+                hasTrack ? MainAxisAlignment.start : MainAxisAlignment.center,
             children: [
               ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: innerHeight),
@@ -216,10 +214,10 @@ class _UpNext extends StatelessWidget {
               Text(
                 'UP NEXT',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: palette.inkMuted,
-                  letterSpacing: 1.4,
-                  fontSize: 11,
-                ),
+                      color: palette.inkMuted,
+                      letterSpacing: 1.4,
+                      fontSize: 11,
+                    ),
               ),
               const SizedBox(height: 12),
               Expanded(
@@ -227,8 +225,8 @@ class _UpNext extends StatelessWidget {
                     ? Text(
                         'Nothing up next.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: palette.inkMuted,
-                        ),
+                              color: palette.inkMuted,
+                            ),
                       )
                     : ListView.separated(
                         itemCount: upcoming.length,

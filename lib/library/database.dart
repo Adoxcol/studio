@@ -23,28 +23,28 @@ class StudioDatabase extends _$StudioDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (m) async => m.createAll(),
-    onUpgrade: (m, from, to) async {
-      if (from < 2) {
-        await _migrateToV2(m);
-      }
-      if (from < 3) {
-        await _migrateToV3(m);
-      }
-      if (from < 4) {
-        await _migrateToV4(m);
-      }
-      if (from < 5) {
-        await _migrateToV5(m);
-      }
-      if (from < 6) {
-        await _migrateToV6(m);
-      }
-    },
-    beforeOpen: (details) async {
-      await customStatement('PRAGMA foreign_keys = ON');
-    },
-  );
+        onCreate: (m) async => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await _migrateToV2(m);
+          }
+          if (from < 3) {
+            await _migrateToV3(m);
+          }
+          if (from < 4) {
+            await _migrateToV4(m);
+          }
+          if (from < 5) {
+            await _migrateToV5(m);
+          }
+          if (from < 6) {
+            await _migrateToV6(m);
+          }
+        },
+        beforeOpen: (details) async {
+          await customStatement('PRAGMA foreign_keys = ON');
+        },
+      );
 
   /// SQLite rejects `ALTER TABLE ... ADD COLUMN` when the default is
   /// `CURRENT_TIMESTAMP`, so `indexed_at` is added with a constant 0 and
@@ -98,11 +98,12 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   Stream<List<Track>> watchTracks() {
-    return (select(tracks)..orderBy([
-          (t) => OrderingTerm(expression: t.album),
-          (t) => OrderingTerm(expression: t.trackNumber),
-          (t) => OrderingTerm(expression: t.title),
-        ]))
+    return (select(tracks)
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.album),
+            (t) => OrderingTerm(expression: t.trackNumber),
+            (t) => OrderingTerm(expression: t.title),
+          ]))
         .watch();
   }
 
@@ -113,7 +114,8 @@ class StudioDatabase extends _$StudioDatabase {
   Stream<List<LibraryFolder>> watchFolders() {
     return (select(
       libraryFolders,
-    )..orderBy([(t) => OrderingTerm(expression: t.path)])).watch();
+    )..orderBy([(t) => OrderingTerm(expression: t.path)]))
+        .watch();
   }
 
   Future<List<Track>> tracksInFolder(int folderId) {
@@ -134,7 +136,8 @@ class StudioDatabase extends _$StudioDatabase {
   Future<int> upsertFolder(String folderPath) async {
     final existing = await (select(
       libraryFolders,
-    )..where((t) => t.path.equals(folderPath))).getSingleOrNull();
+    )..where((t) => t.path.equals(folderPath)))
+        .getSingleOrNull();
     if (existing != null) return existing.id;
     return into(
       libraryFolders,
@@ -212,7 +215,8 @@ class StudioDatabase extends _$StudioDatabase {
   }) async {
     final rows = await (select(
       tracks,
-    )..where((t) => t.folderId.equals(folderId))).get();
+    )..where((t) => t.folderId.equals(folderId)))
+        .get();
     final ids = [
       for (final row in rows)
         if (!keepLocators.contains(row.locator)) row.id,
@@ -229,7 +233,8 @@ class StudioDatabase extends _$StudioDatabase {
   Stream<List<Playlist>> watchPlaylists() {
     return (select(
       playlists,
-    )..orderBy([(p) => OrderingTerm.asc(p.name)])).watch();
+    )..orderBy([(p) => OrderingTerm.asc(p.name)]))
+        .watch();
   }
 
   Future<List<Playlist>> allPlaylists() => select(playlists).get();
@@ -254,7 +259,8 @@ class StudioDatabase extends _$StudioDatabase {
   }) async {
     final existing = await (select(
       playlistEntries,
-    )..where((e) => e.playlistId.equals(playlistId))).get();
+    )..where((e) => e.playlistId.equals(playlistId)))
+        .get();
     await into(playlistEntries).insert(
       PlaylistEntriesCompanion.insert(
         playlistId: playlistId,
@@ -265,15 +271,14 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   Stream<List<Track>> watchPlaylistTracks(int playlistId) {
-    final query =
-        select(playlistEntries).join([
-            innerJoin(tracks, tracks.id.equalsExp(playlistEntries.trackId)),
-          ])
-          ..where(playlistEntries.playlistId.equals(playlistId))
-          ..orderBy([OrderingTerm.asc(playlistEntries.position)]);
+    final query = select(playlistEntries).join([
+      innerJoin(tracks, tracks.id.equalsExp(playlistEntries.trackId)),
+    ])
+      ..where(playlistEntries.playlistId.equals(playlistId))
+      ..orderBy([OrderingTerm.asc(playlistEntries.position)]);
     return query.watch().map(
-      (rows) => [for (final row in rows) row.readTable(tracks)],
-    );
+          (rows) => [for (final row in rows) row.readTable(tracks)],
+        );
   }
 }
 

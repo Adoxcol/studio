@@ -16,8 +16,8 @@ abstract class DiscordArtworkResolver {
   Future<String?> urlFor(String? path);
 }
 
-typedef DiscordImagePoster =
-    Future<String> Function(List<int> bytes, String filename);
+typedef DiscordImagePoster = Future<String> Function(
+    List<int> bytes, String filename);
 
 /// Uploads covers to catbox.moe (also what current `foo_discord_rich`
 /// builds ship with) and remembers the HTTPS URL so the same file is not
@@ -28,8 +28,8 @@ class CatboxArtworkUploader implements DiscordArtworkResolver {
     DiscordImagePoster? poster,
     this.maxBytes = 8 * 1024 * 1024,
     Duration? failCooldown,
-  }) : _poster = poster,
-       _failCooldown = failCooldown;
+  })  : _poster = poster,
+        _failCooldown = failCooldown;
 
   final File cacheFile;
   final DiscordImagePoster? _poster;
@@ -253,8 +253,7 @@ String? discordExternalAsset(String url) {
     return null;
   }
   final hash = base64Url.encode(sha256.convert(utf8.encode(url)).bytes);
-  final rest =
-      '${uri.authority}${uri.path}'
+  final rest = '${uri.authority}${uri.path}'
       '${uri.hasQuery ? '?${uri.query}' : ''}';
   return 'mp:external/${hash.replaceAll('=', '')}/https/$rest';
 }

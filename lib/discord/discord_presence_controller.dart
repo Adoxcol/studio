@@ -14,10 +14,10 @@ class DiscordPresenceController {
     Duration? debounce,
     DiscordArtworkResolver? artwork,
     DateTime Function()? now,
-  }) : _client = client,
-       _debounceFor = debounce,
-       _artwork = artwork,
-       _now = now ?? DateTime.now;
+  })  : _client = client,
+        _debounceFor = debounce,
+        _artwork = artwork,
+        _now = now ?? DateTime.now;
 
   static const _defaultDebounce = Duration(milliseconds: 300);
 

@@ -70,8 +70,8 @@ class ITunesCoverArtLookup implements CoverArtLookup {
       final request = await client.getUrl(uri);
       request.headers.set('User-Agent', userAgent);
       final response = await request.close().timeout(
-        const Duration(seconds: 12),
-      );
+            const Duration(seconds: 12),
+          );
       if (response.statusCode != 200) return null;
       return await utf8.decodeStream(response);
     } on Object {
@@ -89,8 +89,8 @@ class ITunesCoverArtLookup implements CoverArtLookup {
       final request = await client.getUrl(Uri.parse(url));
       request.headers.set('User-Agent', userAgent);
       final response = await request.close().timeout(
-        const Duration(seconds: 12),
-      );
+            const Duration(seconds: 12),
+          );
       if (response.statusCode != 200) return null;
       final builder = BytesBuilder(copy: false);
       await for (final chunk in response) {

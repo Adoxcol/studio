@@ -66,8 +66,8 @@ class LrclibClient implements LyricsLookup {
       final request = await client.getUrl(uri);
       request.headers.set('User-Agent', userAgent);
       final response = await request.close().timeout(
-        const Duration(seconds: 12),
-      );
+            const Duration(seconds: 12),
+          );
       final body = await utf8.decodeStream(response);
       if (response.statusCode == 404) return LyricsLookupResult.missing;
       if (response.statusCode == 429 || response.statusCode != 200) {

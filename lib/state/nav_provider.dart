@@ -10,5 +10,5 @@ class StudioNavNotifier extends Notifier<StudioDestination> {
 
 final studioNavProvider =
     NotifierProvider<StudioNavNotifier, StudioDestination>(
-      StudioNavNotifier.new,
-    );
+  StudioNavNotifier.new,
+);

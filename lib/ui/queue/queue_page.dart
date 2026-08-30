@@ -49,8 +49,8 @@ class QueuePage extends ConsumerWidget {
               child: Text(
                 track?.title ?? 'Unknown track',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: current ? palette.accent : palette.ink,
-                ),
+                      color: current ? palette.accent : palette.ink,
+                    ),
               ),
             ),
           ),

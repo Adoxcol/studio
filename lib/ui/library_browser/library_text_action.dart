@@ -23,8 +23,8 @@ class LibraryTextAction extends StatelessWidget {
     final color = !enabled
         ? palette.inkMuted
         : muted
-        ? palette.inkMuted
-        : palette.ink;
+            ? palette.inkMuted
+            : palette.ink;
     return GestureDetector(
       onTap: enabled ? onTap : null,
       child: MouseRegion(

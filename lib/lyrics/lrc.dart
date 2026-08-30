@@ -97,8 +97,7 @@ abstract final class LrcParser {
     final minutes = int.parse(match.group(1)!);
     final seconds = int.parse(match.group(2)!);
     final ms = _fractionToMs(match.group(3));
-    final total =
-        Duration(
+    final total = Duration(
           minutes: minutes,
           seconds: seconds,
           milliseconds: ms,

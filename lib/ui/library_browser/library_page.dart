@@ -218,8 +218,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         ? (ref.watch(playlistTracksProvider(_playlistId!)).value ?? const [])
         : const <Track>[];
     final tableTracks = viewingPlaylist ? playlistTracks : visible;
-    final showTable =
-        _tab == LibraryTab.all ||
+    final showTable = _tab == LibraryTab.all ||
         _tab == LibraryTab.recentlyAdded ||
         viewingPlaylist;
 
@@ -281,9 +280,8 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                           canPlay: tableTracks.isNotEmpty,
                           showSort: _tab != LibraryTab.playlists,
                           showView: showTable,
-                          trackLayout: ref
-                              .watch(appearanceProvider)
-                              .trackLayout,
+                          trackLayout:
+                              ref.watch(appearanceProvider).trackLayout,
                           onPlayAll: () {
                             ref
                                 .read(playbackControllerProvider.notifier)
@@ -309,9 +307,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                           onCycleLayout: () {
                             final next =
                                 ref.read(appearanceProvider).trackLayout ==
-                                    TrackLayout.cards
-                                ? TrackLayout.list
-                                : TrackLayout.cards;
+                                        TrackLayout.cards
+                                    ? TrackLayout.list
+                                    : TrackLayout.cards;
                             ref
                                 .read(appearanceProvider.notifier)
                                 .setTrackLayout(next);
@@ -340,8 +338,8 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                         ),
                         const SizedBox(height: 8),
                         Expanded(
-                          child:
-                              _tab == LibraryTab.playlists && !viewingPlaylist
+                          child: _tab == LibraryTab.playlists &&
+                                  !viewingPlaylist
                               ? LibraryBrowseView(
                                   tab: _tab,
                                   artists: const [],
@@ -356,54 +354,55 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                   },
                                 )
                               : allTracks.isEmpty && !viewingPlaylist
-                              ? _EmptyLibrary(palette: palette)
-                              : showTable
-                              ? tableTracks.isEmpty
-                                    ? _EmptyLibrary(
-                                        palette: palette,
-                                        text: viewingPlaylist
-                                            ? 'This playlist is empty. Right-click a track to add it.'
-                                            : 'No matching tracks.',
-                                      )
-                                    : LibraryTrackTable(
-                                        tracks: tableTracks,
-                                        onPlay: (index) {
-                                          ref
-                                              .read(
-                                                playbackControllerProvider
-                                                    .notifier,
-                                              )
-                                              .playTracks(
-                                                tableTracks
-                                                    .map((t) => t.id)
-                                                    .toList(),
-                                                startIndex: index,
-                                              );
-                                        },
-                                        onTrackMenu: _showTrackMenu,
-                                      )
-                              : LibraryBrowseView(
-                                  tab: _tab,
-                                  artists: LibraryQuery.groupArtists(
-                                    searched,
-                                    order: _order,
-                                  ),
-                                  albums: LibraryQuery.albumSections(
-                                    searched,
-                                    order: _order,
-                                  ),
-                                  genres: LibraryQuery.groupGenres(
-                                    searched,
-                                    order: _order,
-                                  ),
-                                  playlists: playlists,
-                                  onSelectArtist: _selectArtist,
-                                  onSelectAlbum: _selectAlbum,
-                                  onSelectGenre: _selectGenre,
-                                  onSelectPlaylist: (playlist) {
-                                    setState(() => _playlistId = playlist.id);
-                                  },
-                                ),
+                                  ? _EmptyLibrary(palette: palette)
+                                  : showTable
+                                      ? tableTracks.isEmpty
+                                          ? _EmptyLibrary(
+                                              palette: palette,
+                                              text: viewingPlaylist
+                                                  ? 'This playlist is empty. Right-click a track to add it.'
+                                                  : 'No matching tracks.',
+                                            )
+                                          : LibraryTrackTable(
+                                              tracks: tableTracks,
+                                              onPlay: (index) {
+                                                ref
+                                                    .read(
+                                                      playbackControllerProvider
+                                                          .notifier,
+                                                    )
+                                                    .playTracks(
+                                                      tableTracks
+                                                          .map((t) => t.id)
+                                                          .toList(),
+                                                      startIndex: index,
+                                                    );
+                                              },
+                                              onTrackMenu: _showTrackMenu,
+                                            )
+                                      : LibraryBrowseView(
+                                          tab: _tab,
+                                          artists: LibraryQuery.groupArtists(
+                                            searched,
+                                            order: _order,
+                                          ),
+                                          albums: LibraryQuery.albumSections(
+                                            searched,
+                                            order: _order,
+                                          ),
+                                          genres: LibraryQuery.groupGenres(
+                                            searched,
+                                            order: _order,
+                                          ),
+                                          playlists: playlists,
+                                          onSelectArtist: _selectArtist,
+                                          onSelectAlbum: _selectAlbum,
+                                          onSelectGenre: _selectGenre,
+                                          onSelectPlaylist: (playlist) {
+                                            setState(() =>
+                                                _playlistId = playlist.id);
+                                          },
+                                        ),
                         ),
                       ],
                     ),
@@ -495,9 +494,8 @@ class _Header extends StatelessWidget {
                     child: Icon(
                       Icons.create_new_folder_outlined,
                       size: 18,
-                      color: onAddFolder == null
-                          ? palette.inkMuted
-                          : palette.ink,
+                      color:
+                          onAddFolder == null ? palette.inkMuted : palette.ink,
                     ),
                   ),
                 ),
@@ -534,11 +532,13 @@ class _Tabs extends StatelessWidget {
                     child: Text(
                       tab.label,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: tab == selected ? palette.ink : palette.inkMuted,
-                        fontWeight: tab == selected
-                            ? FontWeight.w500
-                            : FontWeight.w400,
-                      ),
+                            color: tab == selected
+                                ? palette.ink
+                                : palette.inkMuted,
+                            fontWeight: tab == selected
+                                ? FontWeight.w500
+                                : FontWeight.w400,
+                          ),
                     ),
                   ),
                 ),

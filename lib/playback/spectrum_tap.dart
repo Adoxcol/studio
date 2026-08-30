@@ -185,9 +185,8 @@ class MpvSpectrumTap {
         if (!_running) break;
         if (bytes.isNotEmpty && !_hold) {
           final keep = _analyzer.fftSize * _channels * 4;
-          final slice = bytes.length > keep
-              ? bytes.sublist(bytes.length - keep)
-              : bytes;
+          final slice =
+              bytes.length > keep ? bytes.sublist(bytes.length - keep) : bytes;
           final frame = _analyzer.addInterleavedFloat32(
             slice,
             channels: _channels,

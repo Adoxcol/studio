@@ -30,5 +30,5 @@ class DiscordSettingsNotifier extends Notifier<DiscordSettings> {
 
 final discordSettingsProvider =
     NotifierProvider<DiscordSettingsNotifier, DiscordSettings>(
-      DiscordSettingsNotifier.new,
-    );
+  DiscordSettingsNotifier.new,
+);

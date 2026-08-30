@@ -75,9 +75,8 @@ class SpectrumPainter extends CustomPainter {
 
     for (var i = 0; i < barCount; i++) {
       final sample = i < bands.length ? bands[i].clamp(0.0, 1.0) : 0.0;
-      final level = playing && bands.isNotEmpty
-          ? math.max(0.08, sample)
-          : idleLevel(i);
+      final level =
+          playing && bands.isNotEmpty ? math.max(0.08, sample) : idleLevel(i);
       final barHeight = math.max(2.0, size.height * level);
       final x = i * (barWidth + gap);
       final y = size.height - barHeight;

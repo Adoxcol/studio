@@ -124,9 +124,8 @@ abstract final class Equalizer {
     List<double>? previous,
     List<double> gains,
   ) {
-    final current = previous == null
-        ? List<double>.from(flat)
-        : normalizeGains(previous);
+    final current =
+        previous == null ? List<double>.from(flat) : normalizeGains(previous);
     final after = normalizeGains(gains);
     final states = <List<double>>[List<double>.from(current)];
     for (final index in _changedBandIndices(current, after)) {
@@ -277,8 +276,7 @@ final class _Biquad {
     final denominatorImaginary = -a1 * sinW - a2 * sin2W;
     final numerator =
         numeratorReal * numeratorReal + numeratorImaginary * numeratorImaginary;
-    final denominator =
-        denominatorReal * denominatorReal +
+    final denominator = denominatorReal * denominatorReal +
         denominatorImaginary * denominatorImaginary;
     return 10 * math.log(numerator / denominator) / math.ln10;
   }

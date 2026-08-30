@@ -9,16 +9,16 @@ import 'package:studio/discord/discord_rpc_client.dart';
 /// package's disconnect leaves the old instance unusable.
 class IpcDiscordRpcClient implements DiscordRpcClient {
   IpcDiscordRpcClient({required this.applicationId})
-    : _zone = Zone.current.fork(
-        specification: ZoneSpecification(
-          handleUncaughtError: (_, _, _, error, stack) {
-            debugPrint('Discord IPC: $error');
-            if (error != 'Write error.') {
-              debugPrint('$stack');
-            }
-          },
-        ),
-      );
+      : _zone = Zone.current.fork(
+          specification: ZoneSpecification(
+            handleUncaughtError: (_, _, _, error, stack) {
+              debugPrint('Discord IPC: $error');
+              if (error != 'Write error.') {
+                debugPrint('$stack');
+              }
+            },
+          ),
+        );
 
   final String applicationId;
   final Zone _zone;
@@ -29,52 +29,53 @@ class IpcDiscordRpcClient implements DiscordRpcClient {
 
   @override
   Future<void> connect() => _run(() async {
-    await _dropClient();
-    final client = Client(clientId: applicationId);
-    client.onClosed = () {
-      if (identical(_client, client)) _client = null;
-    };
-    await client.connect();
-    _client = client;
-    debugPrint('Discord IPC: connected');
-  });
+        await _dropClient();
+        final client = Client(clientId: applicationId);
+        client.onClosed = () {
+          if (identical(_client, client)) _client = null;
+        };
+        await client.connect();
+        _client = client;
+        debugPrint('Discord IPC: connected');
+      });
 
   @override
   Future<void> setActivity(DiscordPresenceView view) => _run(() async {
-    final client = _client;
-    if (client == null) {
-      throw StateError('Discord RPC is not connected');
-    }
-    try {
-      await client.setActivity(
-        _StudioActivity(
-          name: view.name,
-          type: ActivityType.listening,
-          details: view.details,
-          state: view.state,
-          timestamps: view.start == null
-              ? null
-              : ActivityTimestamps(start: view.start, end: view.end),
-          assets: ActivityAssets(
-            largeImage: view.largeImage,
-            largeText: view.album,
-            smallImage: view.smallImageKey,
-            smallText: view.smallImageText,
-          ),
-          buttons: [
-            {'label': view.buttonLabel, 'url': view.buttonUrl},
-          ],
-        ),
-      );
-    } on Object {
-      if (identical(_client, client)) _client = null;
-      try {
-        await client.disconnect();
-      } catch (_) {}
-      rethrow;
-    }
-    debugPrint('Discord IPC: sent "${view.details}" (${view.state ?? '–'})');
-  });
+        final client = _client;
+        if (client == null) {
+          throw StateError('Discord RPC is not connected');
+        }
+        try {
+          await client.setActivity(
+            _StudioActivity(
+              name: view.name,
+              type: ActivityType.listening,
+              details: view.details,
+              state: view.state,
+              timestamps: view.start == null
+                  ? null
+                  : ActivityTimestamps(start: view.start, end: view.end),
+              assets: ActivityAssets(
+                largeImage: view.largeImage,
+                largeText: view.album,
+                smallImage: view.smallImageKey,
+                smallText: view.smallImageText,
+              ),
+              buttons: [
+                {'label': view.buttonLabel, 'url': view.buttonUrl},
+              ],
+            ),
+          );
+        } on Object {
+          if (identical(_client, client)) _client = null;
+          try {
+            await client.disconnect();
+          } catch (_) {}
+          rethrow;
+        }
+        debugPrint(
+            'Discord IPC: sent "${view.details}" (${view.state ?? '–'})');
+      });
 
   @override
   Future<void> clear() => disconnect();
