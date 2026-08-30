@@ -126,8 +126,8 @@ class StudioPalette extends ThemeExtension<StudioPalette> {
   }
 
   @override
-  StudioPalette lerp(ThemeExtension<StudioPalette>? other, double t) {
-    if (other is! StudioPalette) return this;
+  StudioPalette lerp(covariant StudioPalette? other, double t) {
+    if (other == null) return this;
     return StudioPalette(
       bg: Color.lerp(bg, other.bg, t)!,
       ink: Color.lerp(ink, other.ink, t)!,
