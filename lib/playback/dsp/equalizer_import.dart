@@ -162,7 +162,9 @@ abstract final class EqualizerImport {
       if (decoded is Map) {
         final raw = decoded['gains'] ?? decoded['bands'];
         if (raw is! List) return null;
-        final preamp = (decoded['preamp'] as num?)?.toDouble() ?? 0;
+        final preamp = Equalizer.clampGain(
+          (decoded['preamp'] as num?)?.toDouble() ?? 0,
+        );
         return _fromGains(raw, preamp);
       }
     } on Object {
