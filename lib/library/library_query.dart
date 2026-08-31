@@ -1,6 +1,6 @@
 import 'package:studio/library/database.dart';
 
-enum LibraryTab { all, artists, albums, genres, playlists, recentlyAdded }
+enum LibraryTab { all, artists, albums, genres, playlists, folders }
 
 enum LibrarySort { title, artist, album, track, time }
 
@@ -352,7 +352,7 @@ extension LibraryTabX on LibraryTab {
     LibraryTab.albums => 'Albums',
     LibraryTab.genres => 'Genres',
     LibraryTab.playlists => 'Playlists',
-    LibraryTab.recentlyAdded => 'Recently Added',
+    LibraryTab.folders => 'Folders',
   };
 }
 

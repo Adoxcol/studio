@@ -1,1 +1,9 @@
-enum StudioDestination { library, nowPlaying, queue, settings }
+enum StudioDestination {
+  library,
+  nowPlaying,
+  queue,
+  artist,
+  album,
+  track,
+  settings,
+}

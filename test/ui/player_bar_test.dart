@@ -80,6 +80,23 @@ void main() {
     expect(find.text('Second'), findsWidgets);
   });
 
+  testWidgets('spans the window and keeps transport at the true center', (
+    tester,
+  ) async {
+    await pumpPlaying(tester);
+
+    final bar = tester.getRect(find.byType(PlayerBar));
+    final transportCenter = tester.getCenter(find.byTooltip('Pause'));
+
+    expect(bar.left, 0);
+    expect(bar.right, tester.view.physicalSize.width);
+    expect(transportCenter.dx, closeTo(bar.center.dx, 0.1));
+    expect(
+      tester.getRect(find.byTooltip('Settings')).bottom,
+      lessThanOrEqualTo(bar.top),
+    );
+  });
+
   testWidgets('clicking and dragging the scrubber seeks', (tester) async {
     await pumpPlaying(tester);
 
