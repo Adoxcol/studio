@@ -44,6 +44,11 @@ class AppearanceNotifier extends Notifier<AppearanceState> {
     state = state.copyWith(themeMode: themeMode);
     ref.read(appearanceStoreProvider).save(state);
   }
+
+  void setFetchArtistPictures(bool fetch) {
+    state = state.copyWith(fetchArtistPictures: fetch);
+    ref.read(appearanceStoreProvider).save(state);
+  }
 }
 
 final appearanceProvider =

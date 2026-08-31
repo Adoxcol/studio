@@ -93,7 +93,10 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   Future<Set<String>> _columnNames(String table) async {
-    final rows = await customSelect('PRAGMA table_info($table)').get();
+    final rows = await customSelect(
+      'SELECT name FROM pragma_table_info(?)',
+      variables: [Variable<String>(table)],
+    ).get();
     return {for (final row in rows) row.read<String>('name')};
   }
 

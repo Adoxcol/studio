@@ -17,6 +17,7 @@ Widget testStudioApp({
   List extraOverrides = const [],
   LyricsLookup? lyricsLookup,
   bool stubPlaylists = true,
+  Widget? child,
 }) {
   return ProviderScope(
     overrides: [
@@ -33,6 +34,6 @@ Widget testStudioApp({
       ),
       ...extraOverrides,
     ],
-    child: const StudioApp(),
+    child: child ?? const StudioApp(),
   );
 }

@@ -19,6 +19,7 @@ class FakeAudioEngine implements AudioEngine {
   var loadCount = 0;
   Completer<void>? playBlock;
   Completer<void>? pauseBlock;
+  Object? playError;
 
   final _position = StreamController<Duration>.broadcast();
   final _duration = StreamController<Duration>.broadcast();
@@ -30,6 +31,7 @@ class FakeAudioEngine implements AudioEngine {
   Future<void> play(Uri uri) async {
     final gate = playBlock;
     if (gate != null) await gate.future;
+    if (playError != null) throw playError!;
     lastUri = uri;
     playCount++;
     paused = false;
