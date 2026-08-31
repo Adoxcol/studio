@@ -56,83 +56,72 @@ class _PlayerBarBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final palette = StudioPalette.of(context);
-    final playback = ref.watch(
-      playbackControllerProvider.select(
-        (s) => (
-          title: s.title,
-          artist: s.artist,
-          artworkPath: s.artworkPath,
-          playing: s.playing,
-          volume: s.volume,
-          shuffle: s.shuffle,
-          repeat: s.repeat,
-        ),
-      ),
-    );
-
-    return SizedBox(
+    return const SizedBox(
       height: PlayerBar.contentHeight,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: 16),
         child: Stack(
           alignment: Alignment.center,
           children: [
             Row(
               children: [
-                SizedBox(
-                  width: 260,
-                  child: Row(
-                    children: [
-                      CoverArt(path: playback.artworkPath, size: 40),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              playback.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: palette.ink),
-                            ),
-                            if (playback.artist != null)
-                              Text(
-                                playback.artist!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: palette.inkMuted),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: 130,
-                  child: _VolumeCluster(
-                    volume: playback.volume,
-                    onChanged: (value) {
-                      ref
-                          .read(playbackControllerProvider.notifier)
-                          .setVolume(value);
-                    },
-                  ),
-                ),
+                _TrackInfo(),
+                Spacer(),
+                SizedBox(width: 130, child: _VolumeCluster()),
               ],
             ),
-            _Transport(
-              playing: playback.playing,
-              shuffle: playback.shuffle,
-              repeat: playback.repeat,
-            ),
+            _Transport(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TrackInfo extends ConsumerWidget {
+  const _TrackInfo();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = StudioPalette.of(context);
+    final track = ref.watch(
+      playbackControllerProvider.select(
+        (s) => (title: s.title, artist: s.artist, artworkPath: s.artworkPath),
+      ),
+    );
+
+    return SizedBox(
+      width: 260,
+      child: Row(
+        children: [
+          CoverArt(path: track.artworkPath, size: 40),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  track.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: palette.ink),
+                ),
+                if (track.artist != null)
+                  Text(
+                    track.artist!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -370,20 +359,17 @@ class _TimeChip extends StatelessWidget {
 }
 
 class _Transport extends ConsumerWidget {
-  const _Transport({
-    required this.playing,
-    required this.shuffle,
-    required this.repeat,
-  });
-
-  final bool playing;
-  final bool shuffle;
-  final QueueRepeatMode repeat;
+  const _Transport();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = StudioPalette.of(context);
     final controller = ref.read(playbackControllerProvider.notifier);
+    final state = ref.watch(
+      playbackControllerProvider.select(
+        (s) => (playing: s.playing, shuffle: s.shuffle, repeat: s.repeat),
+      ),
+    );
 
     Widget button({
       required IconData icon,
@@ -417,7 +403,7 @@ class _Transport extends ConsumerWidget {
           icon: Icons.shuffle,
           tooltip: 'Shuffle',
           onTap: controller.toggleShuffle,
-          color: shuffle ? palette.accent : palette.ink,
+          color: state.shuffle ? palette.accent : palette.ink,
         ),
         button(
           icon: Icons.skip_previous,
@@ -425,8 +411,8 @@ class _Transport extends ConsumerWidget {
           onTap: controller.skipPrevious,
         ),
         button(
-          icon: playing ? Icons.pause : Icons.play_arrow,
-          tooltip: playing ? 'Pause' : 'Play',
+          icon: state.playing ? Icons.pause : Icons.play_arrow,
+          tooltip: state.playing ? 'Pause' : 'Play',
           onTap: controller.togglePlayPause,
         ),
         button(
@@ -435,25 +421,31 @@ class _Transport extends ConsumerWidget {
           onTap: controller.skipNext,
         ),
         button(
-          icon: repeat == QueueRepeatMode.one ? Icons.repeat_one : Icons.repeat,
+          icon: state.repeat == QueueRepeatMode.one
+              ? Icons.repeat_one
+              : Icons.repeat,
           tooltip: 'Repeat',
           onTap: controller.cycleRepeat,
-          color: repeat == QueueRepeatMode.off ? palette.ink : palette.accent,
+          color: state.repeat == QueueRepeatMode.off
+              ? palette.ink
+              : palette.accent,
         ),
       ],
     );
   }
 }
 
-class _VolumeCluster extends StatelessWidget {
-  const _VolumeCluster({required this.volume, required this.onChanged});
-
-  final double volume;
-  final ValueChanged<double> onChanged;
+class _VolumeCluster extends ConsumerWidget {
+  const _VolumeCluster();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final palette = StudioPalette.of(context);
+    final volume = ref.watch(
+      playbackControllerProvider.select((s) => s.volume),
+    );
+    final onChanged = ref.read(playbackControllerProvider.notifier).setVolume;
+
     return Row(
       children: [
         Icon(Icons.volume_up, size: 16, color: palette.inkMuted),
