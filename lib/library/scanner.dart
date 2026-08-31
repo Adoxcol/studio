@@ -39,6 +39,14 @@ class FolderScanner {
     ScanProgressCallback? onProgress,
   }) async {
     final folders = await _db.allFolders();
+    final allTracks = await _db.allTracks();
+    final tracksByFolder = <int, List<Track>>{};
+    for (final track in allTracks) {
+      if (track.folderId != null) {
+        tracksByFolder.putIfAbsent(track.folderId!, () => []).add(track);
+      }
+    }
+
     var seen = 0;
     var written = 0;
     var skipped = 0;
@@ -53,6 +61,8 @@ class FolderScanner {
       }
       final result = await scan(
         folder.path,
+        knownFolderId: folder.id,
+        knownTracks: tracksByFolder[folder.id] ?? const [],
         isCancelled: isCancelled,
         onProgress: onProgress,
       );
@@ -73,10 +83,12 @@ class FolderScanner {
 
   Future<ScanResult> scan(
     String folderPath, {
+    int? knownFolderId,
+    List<Track>? knownTracks,
     ScanCancel? isCancelled,
     ScanProgressCallback? onProgress,
   }) async {
-    final folderId = await _db.upsertFolder(folderPath);
+    final folderId = knownFolderId ?? await _db.upsertFolder(folderPath);
     final label = p.basename(folderPath);
     final dir = Directory(folderPath);
     if (!dir.existsSync()) {
@@ -91,10 +103,8 @@ class FolderScanner {
       return const ScanResult(cancelled: true);
     }
 
-    final existing = {
-      for (final track in await _db.tracksInFolder(folderId))
-        track.locator: track,
-    };
+    final existingList = knownTracks ?? await _db.tracksInFolder(folderId);
+    final existing = {for (final track in existingList) track.locator: track};
     final albumArt = <String, String>{};
     final dirArt = <String, String>{};
     for (final track in existing.values) {
