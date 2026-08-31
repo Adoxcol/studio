@@ -99,7 +99,7 @@ abstract final class EqualizerImport {
     required double gain,
     required double q,
   }) {
-    final a = Equalizer.amplitude(gain);
+    final a = math.pow(10, gain / 40).toDouble();
     final w0 = 2 * math.pi * fc / fs;
     final cosw = math.cos(w0);
     final sinw = math.sin(w0);

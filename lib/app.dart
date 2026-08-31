@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:studio/state/nav_provider.dart';
+import 'package:studio/core/desktop/close_preference_provider.dart';
 import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/studio_theme.dart';
 import 'package:studio/ui/layout/studio_shell.dart';
