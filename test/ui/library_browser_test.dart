@@ -64,18 +64,20 @@ void main() {
     expect(find.text('Albums'), findsOneWidget);
     expect(find.text('Genres'), findsOneWidget);
     expect(find.text('Playlists'), findsOneWidget);
-    expect(find.text('Recently Added'), findsOneWidget);
+    expect(find.text('Folders'), findsOneWidget);
+    expect(find.text('Recently Added'), findsNothing);
     expect(find.text('Play All'), findsOneWidget);
     expect(find.text('Shuffle'), findsOneWidget);
     expect(find.text('Sort: Title'), findsOneWidget);
     expect(find.text('Order: A–Z'), findsOneWidget);
     expect(find.text('View: Cards'), findsOneWidget);
-    expect(find.text('ARTISTS'), findsOneWidget);
-    expect(find.text('Add folder'), findsOneWidget);
+    expect(find.text('ARTISTS'), findsNothing);
+    expect(find.text('LIBRARY'), findsNothing);
+    expect(find.text('Add folder'), findsNothing);
     expect(find.byTooltip('Rescan library'), findsOneWidget);
   });
 
-  testWidgets('track rows show columns, time, and sidebar artists', (
+  testWidgets('track rows show artwork, artists, and switchable columns', (
     tester,
   ) async {
     await pumpLibrary(
@@ -157,6 +159,8 @@ void main() {
 
     expect(find.text('21 Savage, Offset'), findsOneWidget);
     expect(find.text('Drake feat. 21 Savage'), findsOneWidget);
+    await tester.tap(find.text('Artists'));
+    await tester.pumpAndSettle();
     expect(find.text('Offset'), findsWidgets);
     expect(find.text('Drake'), findsWidgets);
     await tester.tap(find.text('21 Savage').first);
@@ -215,6 +219,10 @@ void main() {
     await tester.pump();
 
     expect(find.text('Sort: Track'), findsOneWidget);
+    // The wider sidebar-free browser fits multiple cards per row. Check the
+    // vertical ordering in list mode rather than assuming a one-column grid.
+    await tester.tap(find.text('View: Cards'));
+    await tester.pump();
     expect(
       tester.getTopLeft(find.text('alpha')).dy,
       lessThan(tester.getTopLeft(find.text('zebra')).dy),
@@ -254,15 +262,55 @@ void main() {
     expect(engine.lastUri!.scheme, 'file');
   });
 
-  testWidgets('sidebar lists folders with a remove action', (tester) async {
+  testWidgets('Folders tab lists folders with add and remove actions', (
+    tester,
+  ) async {
     await pumpLibrary(
       tester,
       folders: [const LibraryFolder(id: 1, path: '/music/Records')],
     );
 
-    expect(find.text('FOLDERS'), findsOneWidget);
+    await tester.ensureVisible(find.text('Folders'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Folders'));
+    await tester.pumpAndSettle();
+    expect(find.text('Music folders'), findsOneWidget);
+    expect(find.text('Add folder'), findsOneWidget);
+    expect(find.text('Play All'), findsNothing);
     expect(find.text('Records'), findsOneWidget);
     expect(find.byTooltip('Remove folder'), findsOneWidget);
+  });
+
+  testWidgets('a folder opens only its tracks and All clears that selection', (
+    tester,
+  ) async {
+    await pumpLibrary(
+      tester,
+      folders: [
+        const LibraryFolder(id: 1, path: '/music/Records'),
+        const LibraryFolder(id: 2, path: '/music/Other'),
+      ],
+      tracks: [
+        testTrack(title: 'Inside'),
+        testTrack(id: 2, title: 'Outside').copyWith(folderId: const Value(2)),
+      ],
+    );
+    await tester.ensureVisible(find.text('Folders'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Folders'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Records'));
+    await tester.pumpAndSettle();
+    expect(find.text('Inside'), findsOneWidget);
+    expect(find.text('Outside'), findsNothing);
+    await tester.tap(find.text('All folders'));
+    await tester.pumpAndSettle();
+    expect(find.text('Records'), findsOneWidget);
+    await tester.ensureVisible(find.text('All'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All'));
+    await tester.pumpAndSettle();
+    expect(find.text('Outside'), findsOneWidget);
   });
 
   testWidgets('scan notice shows progress and stop', (tester) async {
