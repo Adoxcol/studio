@@ -221,4 +221,23 @@ void main() {
     expect(engine.paused, isFalse);
     expect(ui().title, isNot('A'));
   });
+
+  test('play failure clears opening state and propagates error', () async {
+    final ids = await insertTitles(['Fail']);
+    engine.playError = Exception('Engine play failed');
+
+    // The controller doesn't catch exceptions thrown by _openCurrent/playTracks,
+    // so we should expect it to be thrown.
+    await expectLater(
+      () => controller().playTracks(ids),
+      throwsA(isA<Exception>()),
+    );
+
+    // But the controller's internal _opening state should be reset by the finally block,
+    // so we should be able to attempt to play again.
+    engine.playError = null;
+    await controller().playTracks(ids);
+    expect(ui().playing, isTrue);
+    expect(engine.playCount, 1);
+  });
 }

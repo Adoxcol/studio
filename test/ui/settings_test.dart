@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/theming/accent_seed.dart';
+import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/discord/discord_settings_provider.dart';
 import 'package:studio/discord/discord_settings_store.dart';
@@ -152,6 +154,65 @@ void main() {
     expect(find.text('Local only'), findsOneWidget);
   });
 
+  testWidgets('settings lists configured music folders and offers Add folder', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      testStudioApp(
+        db: db,
+        engine: engine,
+        folders: [const LibraryFolder(id: 1, path: '/music/Records')],
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pump();
+    await tester.scrollUntilVisible(
+      find.text('Music folders'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Records'), findsOneWidget);
+    expect(find.text('/music/Records'), findsOneWidget);
+    expect(find.text('Add folder'), findsOneWidget);
+  });
+
+  testWidgets(
+    'artist downloads can be disabled without disabling cover downloads',
+    (tester) async {
+      tester.view.physicalSize = const Size(1400, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(testStudioApp(db: db, engine: engine));
+      await tester.pump();
+      await tester.tap(find.byTooltip('Settings'));
+      await tester.pump();
+      await tester.scrollUntilVisible(
+        find.text('Cached / custom only'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cached / custom only'));
+      await tester.pump();
+      final container = ProviderScope.containerOf(
+        tester.element(find.text('Cached / custom only')),
+      );
+      expect(container.read(appearanceProvider).fetchArtistPictures, isFalse);
+      expect(container.read(appearanceProvider).fetchMissingArtwork, isTrue);
+      await tester.tap(find.text('Fetch automatically'));
+      await tester.pump();
+      expect(container.read(appearanceProvider).fetchArtistPictures, isTrue);
+      expect(engine.playCount, 0);
+    },
+  );
+
   testWidgets('ReplayGain Album is stored on the engine', (tester) async {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1;
@@ -164,12 +225,17 @@ void main() {
     await tester.pump();
 
     await tester.scrollUntilVisible(
-      find.text('ReplayGain'),
+      find.text('PLAYBACK & SOUND'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
     await tester.pump();
     expect(find.text('PLAYBACK & SOUND'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Album'),
+      100,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('ReplayGain'), findsOneWidget);
 
     await tester.tap(find.text('Album'));

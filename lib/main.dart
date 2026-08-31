@@ -6,6 +6,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:studio/app.dart';
+import 'package:studio/features/artist_artwork/data/artist_picture_repository.dart';
+import 'package:studio/features/artist_artwork/data/artist_picture_log.dart';
+import 'package:studio/features/artist_artwork/data/artist_identity_store.dart';
+import 'package:studio/features/artist_artwork/data/fanart_settings_store.dart';
+import 'package:studio/features/artist_artwork/presentation/fanart_settings.dart';
+import 'package:studio/features/artist_artwork/data/artist_picture_store.dart';
+import 'package:studio/features/artist_artwork/data/musicbrainz_artist_picture_lookup.dart';
+import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
 import 'package:studio/core/desktop/close_preference_provider.dart';
 import 'package:studio/core/desktop/close_preference_store.dart';
 import 'package:studio/discord/discord_artwork.dart';
@@ -60,8 +68,47 @@ Future<void> main() async {
   runApp(
     ProviderScope(
       overrides: [
+        fanartSettingsStoreProvider.overrideWithValue(
+          FanartSettingsStore(file: File(p.join(support.path, 'fanart.json'))),
+        ),
         studioDatabaseProvider.overrideWithValue(db),
         artworkStoreProvider.overrideWithValue(artwork),
+        artistPictureRepositoryProvider.overrideWith((ref) {
+          final log = ArtistPictureLog(debugPrint);
+          var fanart = ref.read(fanartSettingsProvider);
+          final lookup = MusicBrainzArtistPictureLookup(
+            log: log,
+            enableAudioDb: true,
+            fanart: fanart,
+            identities: ArtistIdentityStore(
+              directory: Directory(p.join(support.path, 'artist-identities')),
+            ),
+          );
+          log(
+            fanart.enabled
+                ? 'fanart.tv configured; credentials omitted from logs.'
+                : 'fanart.tv is not configured. Add keys in Settings to enable it.',
+          );
+          final repository = ArtistPictureRepository(
+            store: FileArtistPictureStore(
+              Directory(p.join(support.path, 'artist-pictures')),
+              sourceRevision: () => fanart.revision,
+            ),
+            lookup: lookup,
+            log: log,
+          );
+          ref.listen(fanartSettingsProvider, (_, next) {
+            fanart = next;
+            lookup.configureFanart(next);
+            repository.refreshSources().catchError((Object _) {
+              log(
+                'Could not refresh image cache after settings change; restart Studio to retry.',
+              );
+            });
+          });
+          ref.onDispose(repository.dispose);
+          return repository;
+        }),
         folderScannerProvider.overrideWith((ref) {
           final fetch = ref.watch(
             appearanceProvider.select((s) => s.fetchMissingArtwork),
