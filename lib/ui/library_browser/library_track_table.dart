@@ -125,59 +125,71 @@ class _TrackCard extends StatelessWidget {
       context,
     ).textTheme.bodySmall?.copyWith(color: palette.inkMuted, height: 1.25);
     final caption = LibraryQuery.albumCaption(track);
-    return GestureDetector(
-      onTap: onPlay,
-      onSecondaryTapUp: onMenu == null
-          ? null
-          : (details) => onMenu!(details.globalPosition),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border.all(color: palette.hairline),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(7),
-            child: Row(
-              children: [
-                if (showArtwork) ...[
-                  CoverArt(
-                    path: track.artworkPath,
-                    size: LibraryTrackTable.coverSize,
+    final duration = formatDurationMs(track.durationMs);
+    final semanticLabel =
+        '${track.title}, '
+        '${track.artist ?? "Unknown artist"}'
+        '${duration.isEmpty ? "" : ", $duration"}';
+
+    return Semantics(
+      button: true,
+      selected: playing,
+      label: semanticLabel,
+      child: GestureDetector(
+        onTap: onPlay,
+        onSecondaryTapUp: onMenu == null
+            ? null
+            : (details) => onMenu!(details.globalPosition),
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(color: palette.hairline),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(7),
+              child: Row(
+                children: [
+                  if (showArtwork) ...[
+                    CoverArt(
+                      path: track.artworkPath,
+                      size: LibraryTrackTable.coverSize,
+                    ),
+                    const SizedBox(width: 10),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          track.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: playing ? palette.accent : palette.ink,
+                              ),
+                        ),
+                        if (track.artist != null && track.artist!.isNotEmpty)
+                          Text(
+                            track.artist!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: muted,
+                          ),
+                        if (caption.isNotEmpty)
+                          Text(
+                            caption,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: muted,
+                          ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 10),
                 ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        track.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: playing ? palette.accent : palette.ink,
-                        ),
-                      ),
-                      if (track.artist != null && track.artist!.isNotEmpty)
-                        Text(
-                          track.artist!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: muted,
-                        ),
-                      if (caption.isNotEmpty)
-                        Text(
-                          caption,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: muted,
-                        ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -295,70 +307,81 @@ class _TrackRow extends StatelessWidget {
     final muted = Theme.of(
       context,
     ).textTheme.bodySmall?.copyWith(color: palette.inkMuted);
-    return GestureDetector(
-      onTap: onPlay,
-      onSecondaryTapUp: onMenu == null
-          ? null
-          : (details) => onMenu!(details.globalPosition),
-      behavior: HitTestBehavior.opaque,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: SizedBox(
-          height: LibraryTrackTable.rowExtent - 1,
-          child: Row(
-            children: [
-              if (showArtwork) ...[
-                CoverArt(path: track.artworkPath, size: 28),
-                const SizedBox(width: 8),
-              ],
-              SizedBox(
-                width: 28,
-                child: playing
-                    ? Icon(Icons.graphic_eq, size: 16, color: palette.accent)
-                    : Text(track.trackNumber?.toString() ?? '', style: muted),
-              ),
-              Expanded(
-                flex: 3,
-                child: Text(
-                  track.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: playing ? palette.accent : palette.ink,
+    final duration = formatDurationMs(track.durationMs);
+    final semanticLabel =
+        '${track.title}, '
+        '${track.artist ?? "Unknown artist"}'
+        '${duration.isEmpty ? "" : ", $duration"}';
+
+    return Semantics(
+      button: true,
+      selected: playing,
+      label: semanticLabel,
+      child: GestureDetector(
+        onTap: onPlay,
+        onSecondaryTapUp: onMenu == null
+            ? null
+            : (details) => onMenu!(details.globalPosition),
+        behavior: HitTestBehavior.opaque,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: SizedBox(
+            height: LibraryTrackTable.rowExtent - 1,
+            child: Row(
+              children: [
+                if (showArtwork) ...[
+                  CoverArt(path: track.artworkPath, size: 28),
+                  const SizedBox(width: 8),
+                ],
+                SizedBox(
+                  width: 28,
+                  child: playing
+                      ? Icon(Icons.graphic_eq, size: 16, color: palette.accent)
+                      : Text(track.trackNumber?.toString() ?? '', style: muted),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    track.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: playing ? palette.accent : palette.ink,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  track.artist ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: muted,
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    track.artist ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: muted,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  track.album ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: muted,
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    track.album ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: muted,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              SizedBox(
-                width: 52,
-                child: Text(
-                  formatDurationMs(track.durationMs),
-                  maxLines: 1,
-                  textAlign: TextAlign.right,
-                  style: muted,
+                const SizedBox(width: 16),
+                SizedBox(
+                  width: 52,
+                  child: Text(
+                    formatDurationMs(track.durationMs),
+                    maxLines: 1,
+                    textAlign: TextAlign.right,
+                    style: muted,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
