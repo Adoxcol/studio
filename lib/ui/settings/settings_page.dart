@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:studio/features/artist_artwork/presentation/fanart_settings.dart';
+import 'package:studio/features/library_folders/presentation/library_folders_panel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/core/desktop/close_preference.dart';
 import 'package:studio/core/desktop/close_preference_provider.dart';
@@ -17,8 +19,332 @@ import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/library_browser/library_text_action.dart';
 import 'package:studio/ui/now_playing/cover_art.dart';
 
-class SettingsPage extends ConsumerWidget {
+class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32, 24, 32, 24),
+      child: ListView(
+        children: [
+          Text('Settings', style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: 28),
+          const _AppearanceSection(),
+          const SizedBox(height: 32),
+          const _PreviewSection(),
+          const SizedBox(height: 32),
+          const _LibrarySection(),
+          const SizedBox(height: 32),
+          const _PlaybackSection(),
+          const SizedBox(height: 32),
+          const _DiscordSection(),
+          const SizedBox(height: 32),
+          const _WindowSection(),
+        ],
+      ),
+    );
+  }
+}
+
+class _AppearanceSection extends ConsumerWidget {
+  const _AppearanceSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = StudioPalette.of(context);
+    final appearance = ref.watch(appearanceProvider);
+    final hue = ref.watch(resolvedAccentHueProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionLabel(text: 'APPEARANCE'),
+        const SizedBox(height: 16),
+        Text('Theme', style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            for (final mode in AppThemeMode.values) ...[
+              if (mode != AppThemeMode.values.first) const SizedBox(width: 24),
+              LibraryTextAction(
+                label: mode.label,
+                onTap: () =>
+                    ref.read(appearanceProvider.notifier).setThemeMode(mode),
+                muted: appearance.themeMode != mode,
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Dark uses the Editorial Mono night surfaces. System follows the OS.',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+        ),
+        const SizedBox(height: 24),
+        Text('Accent color', style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            LibraryTextAction(
+              label: 'Auto — from album art',
+              onTap: () => ref
+                  .read(appearanceProvider.notifier)
+                  .setMode(AccentMode.auto),
+              muted: appearance.mode != AccentMode.auto,
+            ),
+            const SizedBox(width: 24),
+            LibraryTextAction(
+              label: 'Custom',
+              onTap: () => ref
+                  .read(appearanceProvider.notifier)
+                  .setMode(AccentMode.custom),
+              muted: appearance.mode != AccentMode.custom,
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Named swatches are shortcuts. Drag the hue bar for any accent — chroma and lightness stay the same as Auto.',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            for (final seed in AccentSeed.values)
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: _Swatch(
+                  seed: seed,
+                  selected:
+                      appearance.mode == AccentMode.custom &&
+                      seed.matches(appearance.customHue),
+                  onTap: () => ref
+                      .read(appearanceProvider.notifier)
+                      .setCustomHue(seed.hue),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _HueSlider(
+          hue: appearance.mode == AccentMode.custom
+              ? appearance.customHue
+              : hue,
+          onChanged: (next) =>
+              ref.read(appearanceProvider.notifier).setCustomHue(next),
+        ),
+      ],
+    );
+  }
+}
+
+class _PreviewSection extends ConsumerWidget {
+  const _PreviewSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = StudioPalette.of(context);
+    final appearance = ref.watch(appearanceProvider);
+    final hue = ref.watch(resolvedAccentHueProvider);
+    final playback = ref.watch(
+      playbackControllerProvider.select(
+        (s) => (
+          trackId: s.trackId,
+          title: s.title,
+          artist: s.artist,
+          artworkPath: s.artworkPath,
+        ),
+      ),
+    );
+    final previewLabel =
+        '${appearance.mode == AccentMode.auto ? 'AUTO' : 'CUSTOM'} · ${AccentSeed.labelFor(hue)}';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionLabel(text: 'PREVIEW'),
+        const SizedBox(height: 16),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            CoverArt(path: playback.artworkPath, size: 72),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    playback.trackId == null
+                        ? 'Nocturne in Blue'
+                        : playback.title,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    playback.artist ?? 'Aria Solvang',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: palette.inkMuted,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    previewLabel,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: palette.inkMuted,
+                      letterSpacing: 1.4,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _LibrarySection extends ConsumerWidget {
+  const _LibrarySection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = StudioPalette.of(context);
+    final appearance = ref.watch(appearanceProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionLabel(text: 'LIBRARY'),
+        const SizedBox(height: 16),
+        const LibraryFoldersPanel(embedded: true),
+        const SizedBox(height: 24),
+        Text('Track layout', style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            for (final layout in TrackLayout.values) ...[
+              if (layout != TrackLayout.values.first) const SizedBox(width: 24),
+              LibraryTextAction(
+                label: layout.label,
+                onTap: () => ref
+                    .read(appearanceProvider.notifier)
+                    .setTrackLayout(layout),
+                muted: appearance.trackLayout != layout,
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Cards show cover, title, artist, and album. List keeps the column table.',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+        ),
+        const SizedBox(height: 24),
+        Text('Cover art', style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            LibraryTextAction(
+              label: 'Show',
+              onTap: () => ref
+                  .read(appearanceProvider.notifier)
+                  .setShowTrackArtwork(true),
+              muted: !appearance.showTrackArtwork,
+            ),
+            const SizedBox(width: 24),
+            LibraryTextAction(
+              label: 'Hide',
+              onTap: () => ref
+                  .read(appearanceProvider.notifier)
+                  .setShowTrackArtwork(false),
+              muted: appearance.showTrackArtwork,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Hides thumbnails on track cards and the list. Album art in Now Playing is unchanged.',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+        ),
+        const SizedBox(height: 24),
+        Text('Missing covers', style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            LibraryTextAction(
+              label: 'Download',
+              onTap: () => ref
+                  .read(appearanceProvider.notifier)
+                  .setFetchMissingArtwork(true),
+              muted: !appearance.fetchMissingArtwork,
+            ),
+            const SizedBox(width: 24),
+            LibraryTextAction(
+              label: 'Local only',
+              onTap: () => ref
+                  .read(appearanceProvider.notifier)
+                  .setFetchMissingArtwork(false),
+              muted: appearance.fetchMissingArtwork,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Embedded tags, cover.jpg in the folder, and other tracks on the same album come first. Download fills the rest from iTunes.',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+        ),
+        const SizedBox(height: 32),
+        Text('Artist pictures', style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 24,
+          children: [
+            LibraryTextAction(
+              label: 'Fetch automatically',
+              muted: !appearance.fetchArtistPictures,
+              onTap: () => ref
+                  .read(appearanceProvider.notifier)
+                  .setFetchArtistPictures(true),
+            ),
+            LibraryTextAction(
+              label: 'Cached / custom only',
+              muted: appearance.fetchArtistPictures,
+              onTap: () => ref
+                  .read(appearanceProvider.notifier)
+                  .setFetchArtistPictures(false),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Finds photos for all library artists in the background using MusicBrainz, fanart.tv (when configured), TheAudioDB (public free key), and Wikimedia. TheAudioDB requests stay below its 30-per-minute limit. Sends artist names and, for ambiguous matches, album titles; never sends your audio files. Images are cached locally, and your chosen pictures always take priority.',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+        ),
+        const SizedBox(height: 32),
+        const FanartSettingsPanel(),
+      ],
+    );
+  }
+}
+
+class _PlaybackSection extends ConsumerWidget {
+  const _PlaybackSection();
 
   Future<void> _importEqualizer(WidgetRef ref) async {
     final file = await FilePicker.pickFile(
@@ -40,346 +366,152 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = StudioPalette.of(context);
-    final appearance = ref.watch(appearanceProvider);
-    final hue = ref.watch(resolvedAccentHueProvider);
-    final playback = ref.watch(
-      playbackControllerProvider.select(
-        (s) => (
-          trackId: s.trackId,
-          title: s.title,
-          artist: s.artist,
-          artworkPath: s.artworkPath,
-        ),
-      ),
-    );
-    final previewLabel =
-        '${appearance.mode == AccentMode.auto ? 'AUTO' : 'CUSTOM'} · ${AccentSeed.labelFor(hue)}';
+    final playbackSettings = ref.watch(playbackSettingsProvider);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 24, 32, 24),
-      child: ListView(
-        children: [
-          Text('Settings', style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 28),
-          _SectionLabel(text: 'APPEARANCE'),
-          const SizedBox(height: 16),
-          Text('Theme', style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              for (final mode in AppThemeMode.values) ...[
-                if (mode != AppThemeMode.values.first)
-                  const SizedBox(width: 24),
-                LibraryTextAction(
-                  label: mode.label,
-                  onTap: () =>
-                      ref.read(appearanceProvider.notifier).setThemeMode(mode),
-                  muted: appearance.themeMode != mode,
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Dark uses the Editorial Mono night surfaces. System follows the OS.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-          ),
-          const SizedBox(height: 24),
-          Text('Accent color', style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              LibraryTextAction(
-                label: 'Auto — from album art',
-                onTap: () => ref
-                    .read(appearanceProvider.notifier)
-                    .setMode(AccentMode.auto),
-                muted: appearance.mode != AccentMode.auto,
-              ),
-              const SizedBox(width: 24),
-              LibraryTextAction(
-                label: 'Custom',
-                onTap: () => ref
-                    .read(appearanceProvider.notifier)
-                    .setMode(AccentMode.custom),
-                muted: appearance.mode != AccentMode.custom,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Named swatches are shortcuts. Drag the hue bar for any accent — chroma and lightness stay the same as Auto.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              for (final seed in AccentSeed.values)
-                Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: _Swatch(
-                    seed: seed,
-                    selected:
-                        appearance.mode == AccentMode.custom &&
-                        seed.matches(appearance.customHue),
-                    onTap: () => ref
-                        .read(appearanceProvider.notifier)
-                        .setCustomHue(seed.hue),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _HueSlider(
-            hue: appearance.mode == AccentMode.custom
-                ? appearance.customHue
-                : hue,
-            onChanged: (next) =>
-                ref.read(appearanceProvider.notifier).setCustomHue(next),
-          ),
-          const SizedBox(height: 32),
-          _SectionLabel(text: 'PREVIEW'),
-          const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              CoverArt(path: playback.artworkPath, size: 72),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      playback.trackId == null
-                          ? 'Nocturne in Blue'
-                          : playback.title,
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      playback.artist ?? 'Aria Solvang',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: palette.inkMuted,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      previewLabel,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: palette.inkMuted,
-                        letterSpacing: 1.4,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          _SectionLabel(text: 'LIBRARY'),
-          const SizedBox(height: 16),
-          Text('Track layout', style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              for (final layout in TrackLayout.values) ...[
-                if (layout != TrackLayout.values.first)
-                  const SizedBox(width: 24),
-                LibraryTextAction(
-                  label: layout.label,
-                  onTap: () => ref
-                      .read(appearanceProvider.notifier)
-                      .setTrackLayout(layout),
-                  muted: appearance.trackLayout != layout,
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Cards show cover, title, artist, and album. List keeps the column table.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-          ),
-          const SizedBox(height: 24),
-          Text('Cover art', style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              LibraryTextAction(
-                label: 'Show',
-                onTap: () => ref
-                    .read(appearanceProvider.notifier)
-                    .setShowTrackArtwork(true),
-                muted: !appearance.showTrackArtwork,
-              ),
-              const SizedBox(width: 24),
-              LibraryTextAction(
-                label: 'Hide',
-                onTap: () => ref
-                    .read(appearanceProvider.notifier)
-                    .setShowTrackArtwork(false),
-                muted: appearance.showTrackArtwork,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Hides thumbnails on track cards and the list. Album art in Now Playing is unchanged.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-          ),
-          const SizedBox(height: 24),
-          Text('Missing covers', style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              LibraryTextAction(
-                label: 'Download',
-                onTap: () => ref
-                    .read(appearanceProvider.notifier)
-                    .setFetchMissingArtwork(true),
-                muted: !appearance.fetchMissingArtwork,
-              ),
-              const SizedBox(width: 24),
-              LibraryTextAction(
-                label: 'Local only',
-                onTap: () => ref
-                    .read(appearanceProvider.notifier)
-                    .setFetchMissingArtwork(false),
-                muted: appearance.fetchMissingArtwork,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Embedded tags, cover.jpg in the folder, and other tracks on the same album come first. Download fills the rest from iTunes.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-          ),
-          const SizedBox(height: 32),
-          _SectionLabel(text: 'PLAYBACK & SOUND'),
-          const SizedBox(height: 16),
-          Text('ReplayGain', style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 10),
-          _ReplayGainRow(
-            selected: ref.watch(playbackSettingsProvider).replayGain,
-            onSelect: (mode) =>
-                ref.read(playbackSettingsProvider.notifier).setReplayGain(mode),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "Matches loudness across tracks using each file's ReplayGain tags.",
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-          ),
-          const SizedBox(height: 24),
-          Text('Crossfade', style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 10),
-          _CrossfadeSlider(
-            selected: ref.watch(playbackSettingsProvider).crossfade,
-            onSelect: (duration) => ref
-                .read(playbackSettingsProvider.notifier)
-                .setCrossfade(duration),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Overlap the next track with an equal-power fade. Off keeps a hard cut.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-          ),
-          const SizedBox(height: 24),
-          Text('Equalizer', style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 10),
-          _EqualizerPresetRow(
-            selected: ref.watch(playbackSettingsProvider).equalizerPreset,
-            onSelect: (preset) => ref
-                .read(playbackSettingsProvider.notifier)
-                .setEqualizerPreset(preset),
-            onImport: () => _importEqualizer(ref),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'ISO 10-band graphic EQ. The curve and automatic headroom run in playback’s persistent realtime audio graph, so sliders update smoothly without reopening the track. Import Equalizer APO GraphicEQ or parametric Filter lines (AutoEQ / Peace), or a 10-gain JSON; those curves are mapped onto these bands.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-          ),
-          const SizedBox(height: 16),
-          _EqualizerBands(
-            gains: ref.watch(playbackSettingsProvider).activeEqualizerGains,
-            onChanged: (index, gain) => ref
-                .read(playbackSettingsProvider.notifier)
-                .setEqualizerBand(index, gain),
-          ),
-          const SizedBox(height: 32),
-          _SectionLabel(text: 'DISCORD'),
-          const SizedBox(height: 16),
-          Text(
-            'Show what is playing',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              LibraryTextAction(
-                label: 'On',
-                onTap: () =>
-                    ref.read(discordSettingsProvider.notifier).setEnabled(true),
-                muted: !ref.watch(discordSettingsProvider).enabled,
-              ),
-              const SizedBox(width: 24),
-              LibraryTextAction(
-                label: 'Off',
-                onTap: () => ref
-                    .read(discordSettingsProvider.notifier)
-                    .setEnabled(false),
-                muted: ref.watch(discordSettingsProvider).enabled,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Friends see the track, artist, and cover while Discord is running. Off by default.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-          ),
-          const SizedBox(height: 32),
-          _SectionLabel(text: 'WINDOW'),
-          const SizedBox(height: 16),
-          Text(
-            'When closing the window',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 10),
-          _ClosePreferenceRow(
-            preference: ref.watch(closePreferenceProvider),
-            onAsk: () =>
-                ref.read(closePreferenceProvider.notifier).askEveryTime(),
-            onRemember: (action) =>
-                ref.read(closePreferenceProvider.notifier).remember(action),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Ask each time, hide to the tray, or quit. "Don\'t show again" on the close dialog remembers this.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionLabel(text: 'PLAYBACK & SOUND'),
+        const SizedBox(height: 16),
+        Text('ReplayGain', style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 10),
+        _ReplayGainRow(
+          selected: playbackSettings.replayGain,
+          onSelect: (mode) =>
+              ref.read(playbackSettingsProvider.notifier).setReplayGain(mode),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Matches loudness across tracks using each file's ReplayGain tags.",
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+        ),
+        const SizedBox(height: 24),
+        Text('Crossfade', style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 10),
+        _CrossfadeSlider(
+          selected: playbackSettings.crossfade,
+          onSelect: (duration) => ref
+              .read(playbackSettingsProvider.notifier)
+              .setCrossfade(duration),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Overlap the next track with an equal-power fade. Off keeps a hard cut.',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+        ),
+        const SizedBox(height: 24),
+        Text('Equalizer', style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 10),
+        _EqualizerPresetRow(
+          selected: playbackSettings.equalizerPreset,
+          onSelect: (preset) => ref
+              .read(playbackSettingsProvider.notifier)
+              .setEqualizerPreset(preset),
+          onImport: () => _importEqualizer(ref),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'ISO 10-band graphic EQ. The curve and automatic headroom run in playback’s persistent realtime audio graph, so sliders update smoothly without reopening the track. Import Equalizer APO GraphicEQ or parametric Filter lines (AutoEQ / Peace), or a 10-gain JSON; those curves are mapped onto these bands.',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+        ),
+        const SizedBox(height: 16),
+        _EqualizerBands(
+          gains: playbackSettings.activeEqualizerGains,
+          onChanged: (index, gain) => ref
+              .read(playbackSettingsProvider.notifier)
+              .setEqualizerBand(index, gain),
+        ),
+      ],
+    );
+  }
+}
+
+class _DiscordSection extends ConsumerWidget {
+  const _DiscordSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = StudioPalette.of(context);
+    final enabled = ref.watch(discordSettingsProvider).enabled;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionLabel(text: 'DISCORD'),
+        const SizedBox(height: 16),
+        Text(
+          'Show what is playing',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            LibraryTextAction(
+              label: 'On',
+              onTap: () =>
+                  ref.read(discordSettingsProvider.notifier).setEnabled(true),
+              muted: !enabled,
+            ),
+            const SizedBox(width: 24),
+            LibraryTextAction(
+              label: 'Off',
+              onTap: () =>
+                  ref.read(discordSettingsProvider.notifier).setEnabled(false),
+              muted: enabled,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Friends see the track, artist, and cover while Discord is running. Off by default.',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+        ),
+      ],
+    );
+  }
+}
+
+class _WindowSection extends ConsumerWidget {
+  const _WindowSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = StudioPalette.of(context);
+    final preference = ref.watch(closePreferenceProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionLabel(text: 'WINDOW'),
+        const SizedBox(height: 16),
+        Text(
+          'When closing the window',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 10),
+        _ClosePreferenceRow(
+          preference: preference,
+          onAsk: () =>
+              ref.read(closePreferenceProvider.notifier).askEveryTime(),
+          onRemember: (action) =>
+              ref.read(closePreferenceProvider.notifier).remember(action),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Ask each time, hide to the tray, or quit. "Don\'t show again" on the close dialog remembers this.',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+        ),
+      ],
     );
   }
 }
