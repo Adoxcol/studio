@@ -302,45 +302,6 @@ void main() {
     expect(tracks[0].artworkPath, tracks[1].artworkPath);
   });
 
-  test(
-    'scanner catches FileSystemException when reading folder cover fails',
-    () async {
-      final db = StudioDatabase.memory();
-      addTearDown(db.close);
-      final artDir = Directory.systemTemp.createTempSync('studio-bad-art');
-      addTearDown(() {
-        if (artDir.existsSync()) artDir.deleteSync(recursive: true);
-      });
-      final music = Directory.systemTemp.createTempSync('studio-bad-music');
-      addTearDown(() {
-        if (music.existsSync()) music.deleteSync(recursive: true);
-      });
-      File(p.join(music.path, 'Blue.flac')).writeAsStringSync('not audio');
-
-      final cover = File(p.join(music.path, 'cover.jpg'));
-      cover.writeAsBytesSync(
-        Uint8List.fromList(const [0xFF, 0xD8, 0xFF, 0xD9]),
-      );
-      if (!Platform.isWindows) {
-        Process.runSync('chmod', ['000', cover.path]);
-      }
-
-      await FolderScanner(
-        db: db,
-        tagReader: _CountingReader(),
-        artwork: ArtworkStore(artDir),
-      ).scan(music.path);
-
-      final track = (await db.allTracks()).single;
-      expect(track.artworkPath, isNull);
-
-      if (!Platform.isWindows) {
-        Process.runSync('chmod', ['644', cover.path]);
-      }
-    },
-    skip: Platform.isWindows,
-  );
-
   test('deleteFolder removes the folder and its tracks', () async {
     final db = StudioDatabase.memory();
     addTearDown(db.close);

@@ -393,25 +393,23 @@ class _AudioFile {
 }
 
 Future<List<_AudioFile>> _listAudioFiles(String folderPath) {
-  return Isolate.run(() => _listAudioFilesAsync(folderPath));
+  return Isolate.run(() => _listAudioFilesSync(folderPath));
 }
 
-Future<List<_AudioFile>> _listAudioFilesAsync(String folderPath) async {
+List<_AudioFile> _listAudioFilesSync(String folderPath) {
   final dir = Directory(folderPath);
   final files = <_AudioFile>[];
-  await for (final entity in dir.list(recursive: true, followLinks: false)) {
+  for (final entity in dir.listSync(recursive: true, followLinks: false)) {
     if (entity is! File) continue;
     if (!_isAudioPath(entity.path)) continue;
-    files.add(
-      _AudioFile(path: entity.path, modifiedMs: await _modifiedMs(entity)),
-    );
+    files.add(_AudioFile(path: entity.path, modifiedMs: _modifiedMs(entity)));
   }
   return files;
 }
 
-Future<int> _modifiedMs(File file) async {
+int _modifiedMs(File file) {
   try {
-    return (await file.lastModified()).millisecondsSinceEpoch;
+    return file.lastModifiedSync().millisecondsSinceEpoch;
   } on FileSystemException {
     return 0;
   }

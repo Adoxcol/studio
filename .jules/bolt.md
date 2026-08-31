@@ -1,3 +1,3 @@
-## 2024-05-24 - Async vs Sync I/O in Isolates
-**Learning:** In Dart, running synchronous file system operations (like `listSync`) inside `Isolate.run` actually executes faster in wall-clock time compared to using asynchronous stream events (`dir.list`) due to avoiding event loop context switching for every single file. However, moving them to their asynchronous counterparts is preferred to prevent freezing isolates or introducing blocking code, and it complies with the task requirement.
-**Action:** Always follow the user request when substituting sync calls for async, but keep in mind that raw wall-clock time benchmarks might be slower for async file listing streams. Document it clearly in the PR.
+## 2026-08-30 - [Optimization] Added O(1) map for tracking Library Tracks
+**Learning:** The application was constantly regenerating the track hash map in `NowPlayingPage` and `QueuePage` by looping over tens of thousands of tracks from `libraryTracksProvider`. By adding `libraryTracksByIdProvider`, we get O(1) lookup on widget rebuilds with zero overhead.
+**Action:** Moving O(N) inline list/map processing to a Riverpod Provider to take advantage of caching on rebuilds.

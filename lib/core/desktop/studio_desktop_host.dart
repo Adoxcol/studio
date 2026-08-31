@@ -10,7 +10,6 @@ import 'package:studio/core/desktop/close_preference.dart';
 import 'package:studio/core/desktop/close_preference_provider.dart';
 import 'package:studio/core/desktop/close_window_dialog.dart';
 import 'package:studio/core/desktop/desktop_transport.dart';
-import 'package:studio/state/nav_provider.dart';
 import 'package:studio/discord/discord_presence_controller.dart';
 import 'package:studio/discord/discord_settings_provider.dart';
 import 'package:studio/state/playback_provider.dart';

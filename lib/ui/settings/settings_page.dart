@@ -66,8 +66,7 @@ class _AppearanceSection extends ConsumerWidget {
         Row(
           children: [
             for (final mode in AppThemeMode.values) ...[
-              if (mode != AppThemeMode.values.first)
-                const SizedBox(width: 24),
+              if (mode != AppThemeMode.values.first) const SizedBox(width: 24),
               LibraryTextAction(
                 label: mode.label,
                 onTap: () =>
@@ -232,8 +231,7 @@ class _LibrarySection extends ConsumerWidget {
         Row(
           children: [
             for (final layout in TrackLayout.values) ...[
-              if (layout != TrackLayout.values.first)
-                const SizedBox(width: 24),
+              if (layout != TrackLayout.values.first) const SizedBox(width: 24),
               LibraryTextAction(
                 label: layout.label,
                 onTap: () => ref
@@ -310,10 +308,7 @@ class _LibrarySection extends ConsumerWidget {
           ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
         ),
         const SizedBox(height: 32),
-        Text(
-          'Artist pictures',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+        Text('Artist pictures', style: Theme.of(context).textTheme.bodyMedium),
         const SizedBox(height: 10),
         Wrap(
           spacing: 24,
@@ -466,9 +461,8 @@ class _DiscordSection extends ConsumerWidget {
             const SizedBox(width: 24),
             LibraryTextAction(
               label: 'Off',
-              onTap: () => ref
-                  .read(discordSettingsProvider.notifier)
-                  .setEnabled(false),
+              onTap: () =>
+                  ref.read(discordSettingsProvider.notifier).setEnabled(false),
               muted: enabled,
             ),
           ],

@@ -51,8 +51,6 @@ abstract final class Equalizer {
   static double clampGain(double gain) =>
       gain.clamp(minGain, maxGain).toDouble();
 
-  static double amplitude(double gain) => math.pow(10, gain / 40).toDouble();
-
   static double preampLinear(double preamp) {
     final pre = clampGain(preamp);
     if (pre.abs() < _quiet) return 1;
@@ -248,7 +246,7 @@ final class _Biquad {
     final sinhArgument = math.ln2 / 2 * widthOctaves * w0 / sinW0;
     final sinh = (math.exp(sinhArgument) - math.exp(-sinhArgument)) / 2;
     final alpha = sinW0 * sinh;
-    final amplitude = Equalizer.amplitude(gain);
+    final amplitude = math.pow(10, gain / 40).toDouble();
     final a1 = -2 * math.cos(w0);
     return _Biquad(
       a0: 1 + alpha / amplitude,
