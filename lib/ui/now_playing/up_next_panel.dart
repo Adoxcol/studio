@@ -18,8 +18,9 @@ class UpNextPanel extends ConsumerWidget {
         (state) => (trackId: state.trackId, queueIds: state.queueIds),
       ),
     );
-    final tracks = ref.watch(libraryTracksProvider).value ?? const [];
-    final byId = {for (final track in tracks) track.id: track};
+    // ⚡ Bolt: Use pre-computed O(1) map for ID lookups instead of rebuilding
+    // a Map of potentially tens of thousands of tracks on every playback change.
+    final byId = ref.watch(libraryTracksByIdProvider);
     final currentIndex = playback.trackId == null
         ? -1
         : playback.queueIds.indexOf(playback.trackId!);
