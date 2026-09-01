@@ -379,16 +379,20 @@ class _Transport extends ConsumerWidget {
     }) {
       return Tooltip(
         message: tooltip,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onTap,
-            child: SizedBox(
-              height: PlayerBar.contentHeight,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Icon(icon, size: 20, color: color ?? palette.ink),
+        child: Semantics(
+          button: true,
+          label: tooltip,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onTap,
+              child: SizedBox(
+                height: PlayerBar.contentHeight,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Icon(icon, size: 20, color: color ?? palette.ink),
+                ),
               ),
             ),
           ),

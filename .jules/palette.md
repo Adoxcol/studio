@@ -1,3 +1,3 @@
-## 2024-05-19 - Semantic Buttons
-**Learning:** In Flutter, explicit wrapping of interactive elements (e.g. `GestureDetector`) with `Semantics(button: true, label: ...)` is critical for accurate screen reader announcements in custom list items.
-**Action:** When creating custom list rows/cards with `GestureDetector`, apply a `Semantics` wrapper for accessibility.
+## 2024-05-18 - Missing Semantics in Custom Clickable Widgets
+**Learning:** Custom clickable widgets wrapped in `GestureDetector` lack proper semantics for screen readers, meaning they are not announced as interactive elements or buttons.
+**Action:** Wrap custom clickable widgets like `GestureDetector` with `Semantics(button: true, label: ...)` to ensure proper screen reader accessibility.
