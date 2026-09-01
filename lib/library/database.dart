@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:studio/library/tables.dart';
+import 'package:studio/library/watch_coalesced_query.dart';
 
 part 'database.g.dart';
 
@@ -19,7 +20,7 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -39,6 +40,26 @@ class StudioDatabase extends _$StudioDatabase {
       }
       if (from < 6) {
         await _migrateToV6(m);
+      }
+      if (from < 7) {
+        // Revalidate legacy tag failures and artwork reused by album title or
+        // directory alone. Keep all metadata, IDs and playlist links until each
+        // file is successfully reread; offline libraries remain untouched.
+        await customStatement(
+          "UPDATE tracks SET file_modified_ms = NULL WHERE source = 'local'",
+        );
+      }
+      if (from < 8) {
+        final columns = await _columnNames('tracks');
+        if (!columns.contains('file_size_bytes')) {
+          await m.addColumn(tracks, tracks.fileSizeBytes);
+        }
+        if (!columns.contains('sample_rate_hz')) {
+          await m.addColumn(tracks, tracks.sampleRateHz);
+        }
+        await customStatement(
+          "UPDATE tracks SET file_modified_ms = NULL WHERE source = 'local'",
+        );
       }
     },
     beforeOpen: (details) async {
@@ -98,12 +119,16 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   Stream<List<Track>> watchTracks() {
-    return (select(tracks)..orderBy([
-          (t) => OrderingTerm(expression: t.album),
-          (t) => OrderingTerm(expression: t.trackNumber),
-          (t) => OrderingTerm(expression: t.title),
-        ]))
-        .watch();
+    return watchCoalescedQuery(
+      tableUpdates(TableUpdateQuery.onTable(tracks)),
+      () =>
+          (select(tracks)..orderBy([
+                (t) => OrderingTerm(expression: t.album),
+                (t) => OrderingTerm(expression: t.trackNumber),
+                (t) => OrderingTerm(expression: t.title),
+              ]))
+              .get(),
+    );
   }
 
   Future<List<Track>> allTracks() => select(tracks).get();

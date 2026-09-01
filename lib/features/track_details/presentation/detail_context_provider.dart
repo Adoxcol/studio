@@ -34,8 +34,8 @@ class DetailContext {
 
 /// One shared context for all three panels. Reads IDs, not playback position,
 /// so progress ticks cannot rebuild the metadata or regroup the library.
-final detailContextProvider = Provider<DetailContext>((ref) {
-  final library = ref.watch(libraryTracksProvider).value ?? const [];
+final detailContextProvider = Provider.autoDispose<DetailContext>((ref) {
+  final index = ref.watch(libraryIndexProvider);
 
   // ⚡ Bolt Optimization:
   // Use the pre-computed O(1) map for ID lookups instead of doing an
@@ -56,7 +56,7 @@ final detailContextProvider = Provider<DetailContext>((ref) {
   return DetailContext(
     details: current == null
         ? null
-        : TrackDetails(track: current, library: library),
+        : TrackDetails(track: current, library: index.tracks, index: index),
     inspected: selected != null,
   );
 });

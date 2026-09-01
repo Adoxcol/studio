@@ -9,8 +9,12 @@ import 'package:studio/features/track_details/presentation/detail_context_provid
 import 'package:studio/features/track_details/presentation/detail_panels.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/state/playback_provider.dart';
+import 'package:studio/state/library_navigation_provider.dart';
+import 'package:studio/state/nav_provider.dart';
+import 'package:studio/state/nav_state.dart';
 import 'package:studio/theming/studio_theme.dart';
 import 'package:studio/ui/now_playing/now_playing_page.dart';
+import 'package:studio/ui/now_playing/cover_art.dart';
 
 import '../helpers/pump_studio.dart';
 import '../helpers/tracks.dart';
@@ -69,6 +73,52 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('View details'));
     await tester.pumpAndSettle();
+  }
+
+  for (final artist in [true, false]) {
+    testWidgets(
+      '${artist ? 'artist' : 'album'} details only mount nearby rows',
+      (tester) async {
+        final tracks = [
+          for (var i = 0; i < 2000; i++)
+            testTrack(
+              id: i + 1,
+              title: 'Song $i',
+              artist: 'Aria',
+              album: artist ? 'Album $i' : 'One album',
+            ),
+        ];
+        await tester.pumpWidget(
+          testStudioApp(
+            db: db,
+            engine: engine,
+            tracks: tracks,
+            child: MaterialApp(
+              theme: StudioTheme.light(),
+              home: Scaffold(
+                body: artist
+                    ? const ArtistDetailPanel()
+                    : const AlbumDetailPanel(),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        final container = ProviderScope.containerOf(
+          tester.element(find.byType(Scaffold)),
+        );
+        container.read(detailSelectionProvider.notifier).inspect(1);
+        await tester.pumpAndSettle();
+        expect(find.byType(CoverArt).evaluate().length, lessThan(30));
+        await tester.drag(
+          find.byType(Scrollable).first,
+          const Offset(0, -1400),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(CoverArt).evaluate().length, lessThan(30));
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
 
   testWidgets('three independent dock tabs have useful empty states', (
@@ -173,6 +223,74 @@ void main() {
     expect(find.byType(ArtistDetailPanel), findsOneWidget);
     expect(find.byType(TrackDetailPanel), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('artist albums open their matching Library catalogue', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    final tracks = await db.allTracks();
+    await tester.pumpWidget(
+      testStudioApp(
+        db: db,
+        engine: engine,
+        tracks: tracks,
+        child: MaterialApp(
+          theme: StudioTheme.light(),
+          home: const Scaffold(body: ArtistDetailPanel()),
+        ),
+      ),
+    );
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ArtistDetailPanel)),
+    );
+    container
+        .read(detailSelectionProvider.notifier)
+        .inspect(tracks.firstWhere((track) => track.title == 'First song').id);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey('artist-album-Aria-Blue album')),
+    );
+    await tester.pumpAndSettle();
+
+    final request = container.read(libraryNavigationProvider);
+    expect(container.read(studioNavProvider), StudioDestination.library);
+    expect(request.artist, 'Aria');
+    expect(request.album, 'Blue album');
+  });
+
+  testWidgets('album tracks start playback from the album queue', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    final tracks = await db.allTracks();
+    await tester.pumpWidget(
+      testStudioApp(
+        db: db,
+        engine: engine,
+        tracks: tracks,
+        child: MaterialApp(
+          theme: StudioTheme.light(),
+          home: const Scaffold(body: AlbumDetailPanel()),
+        ),
+      ),
+    );
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(AlbumDetailPanel)),
+    );
+    final first = tracks.firstWhere((track) => track.title == 'First song');
+    container.read(detailSelectionProvider.notifier).inspect(first.id);
+    await tester.pumpAndSettle();
+
+    final albumPanel = find.byType(AlbumDetailPanel);
+    await tester.tap(
+      find.descendant(of: albumPanel, matching: find.text('First song')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(engine.playCount, 1);
+    expect(container.read(playbackControllerProvider).trackId, first.id);
   });
 
   testWidgets(

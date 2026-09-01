@@ -87,3 +87,8 @@ abstract interface class ArtistPictureLookup {
   void cancel();
   void close();
 }
+
+/// Optional scheduling hints; a visible portrait never changes matching rules.
+abstract interface class PrioritizedArtistPictureLookup {
+  void setPriority(String artist, bool prioritized);
+}

@@ -13,6 +13,8 @@ class Tracks extends Table {
   TextColumn get artist => text().nullable()();
   TextColumn get album => text().nullable()();
   IntColumn get durationMs => integer().nullable()();
+  IntColumn get fileSizeBytes => integer().nullable()();
+  IntColumn get sampleRateHz => integer().nullable()();
   IntColumn get trackNumber => integer().nullable()();
   TextColumn get genre => text().nullable()();
   DateTimeColumn get indexedAt => dateTime().withDefault(currentDateAndTime)();

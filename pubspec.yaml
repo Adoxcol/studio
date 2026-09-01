@@ -66,6 +66,11 @@ dependencies:
 # still-open pipe. Vendored and patched in third_party/ until that's fixed
 # upstream: https://github.com/NotZoeyDev/discord_rich_presence
 dependency_overrides:
+  # Local docking interaction patches; see each package's STUDIO_PATCHES.md.
+  docking:
+    path: third_party/docking
+  tabbed_view:
+    path: third_party/tabbed_view
   discord_rich_presence:
     path: third_party/discord_rich_presence
   # The published 1.0.11 package still downloads mpv 0.36 from 2023. That

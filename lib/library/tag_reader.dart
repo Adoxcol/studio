@@ -10,22 +10,28 @@ class ParsedTags {
     this.artist,
     this.album,
     this.duration,
+    this.sampleRateHz,
     this.trackNumber,
     this.genre,
     this.artwork,
     this.artworkMime,
     this.year,
+    this.readSucceeded = true,
   });
 
   final String title;
   final String? artist;
   final String? album;
   final Duration? duration;
+  final int? sampleRateHz;
   final int? trackNumber;
   final String? genre;
   final Uint8List? artwork;
   final String? artworkMime;
   final int? year;
+
+  /// False means a read failed, not that the file has no optional tags.
+  final bool readSucceeded;
 }
 
 class TagReader {
@@ -41,6 +47,7 @@ class TagReader {
         artist: _nonEmpty(meta.artist),
         album: _nonEmpty(meta.album),
         duration: meta.duration,
+        sampleRateHz: meta.sampleRate,
         trackNumber: meta.trackNumber,
         genre: _firstGenre(meta.genres),
         artwork: picture?.bytes,
@@ -48,7 +55,7 @@ class TagReader {
         year: _year(meta.year),
       );
     } on Object {
-      return ParsedTags(title: fallbackTitle);
+      return ParsedTags(title: fallbackTitle, readSucceeded: false);
     }
   }
 

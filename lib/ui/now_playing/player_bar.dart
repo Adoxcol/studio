@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/core/time_format.dart';
 import 'package:studio/playback/playback_queue.dart';
 import 'package:studio/state/playback_provider.dart';
+import 'package:studio/state/playback_mode_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/now_playing/cover_art.dart';
 
@@ -67,12 +68,30 @@ class _PlayerBarBody extends ConsumerWidget {
               children: [
                 _TrackInfo(),
                 Spacer(),
+                _PlaybackModeButton(),
+                SizedBox(width: 12),
                 SizedBox(width: 130, child: _VolumeCluster()),
               ],
             ),
             _Transport(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PlaybackModeButton extends ConsumerWidget {
+  const _PlaybackModeButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = StudioPalette.of(context);
+    return Tooltip(
+      message: 'Enter Playback Mode',
+      child: IconButton(
+        onPressed: ref.read(playbackModeProvider.notifier).enter,
+        icon: Icon(Icons.fullscreen, color: palette.inkMuted),
       ),
     );
   }
@@ -94,7 +113,17 @@ class _TrackInfo extends ConsumerWidget {
       width: 260,
       child: Row(
         children: [
-          CoverArt(path: track.artworkPath, size: 40),
+          Tooltip(
+            message: 'Open Playback Mode',
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: ref.read(playbackModeProvider.notifier).enter,
+                child: CoverArt(path: track.artworkPath, size: 40),
+              ),
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

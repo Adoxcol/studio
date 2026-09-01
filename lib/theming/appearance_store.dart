@@ -42,6 +42,12 @@ class FileAppearanceStore implements AppearanceStore {
         fetchMissingArtwork: json['fetchMissingArtwork'] as bool? ?? true,
         fetchArtistPictures: json['fetchArtistPictures'] as bool? ?? true,
         themeMode: AppThemeMode.fromName(json['themeMode'] as String?),
+        fullPlayerAlbumArt: json['fullPlayerAlbumArt'] as bool? ?? true,
+        fullPlayerArtistArt: json['fullPlayerArtistArt'] as bool? ?? true,
+        fullPlayerLyrics: json['fullPlayerLyrics'] as bool? ?? true,
+        fullPlayerFileInfo: json['fullPlayerFileInfo'] as bool? ?? true,
+        fullPlayerAudioSettings:
+            json['fullPlayerAudioSettings'] as bool? ?? true,
       );
     } on Object {
       return AppearanceState.defaults;
@@ -60,6 +66,11 @@ class FileAppearanceStore implements AppearanceStore {
         'fetchMissingArtwork': state.fetchMissingArtwork,
         'fetchArtistPictures': state.fetchArtistPictures,
         'themeMode': state.themeMode.name,
+        'fullPlayerAlbumArt': state.fullPlayerAlbumArt,
+        'fullPlayerArtistArt': state.fullPlayerArtistArt,
+        'fullPlayerLyrics': state.fullPlayerLyrics,
+        'fullPlayerFileInfo': state.fullPlayerFileInfo,
+        'fullPlayerAudioSettings': state.fullPlayerAudioSettings,
       }),
     );
   }

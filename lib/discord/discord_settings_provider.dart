@@ -26,6 +26,37 @@ class DiscordSettingsNotifier extends Notifier<DiscordSettings> {
     state = state.copyWith(enabled: enabled);
     ref.read(discordSettingsStoreProvider).save(state);
   }
+
+  void updateTemplates({
+    required String name,
+    required String details,
+    required String stateLine,
+    required String artworkText,
+  }) {
+    state = state.copyWith(
+      nameTemplate: name,
+      detailsTemplate: details,
+      stateTemplate: stateLine,
+      artworkTextTemplate: artworkText,
+    );
+    ref.read(discordSettingsStoreProvider).save(state);
+  }
+
+  void setShowProgress(bool value) {
+    state = state.copyWith(showProgress: value);
+    ref.read(discordSettingsStoreProvider).save(state);
+  }
+
+  void resetTemplates() {
+    state = state.copyWith(
+      nameTemplate: DiscordSettings.defaultNameTemplate,
+      detailsTemplate: DiscordSettings.defaultDetailsTemplate,
+      stateTemplate: DiscordSettings.defaultStateTemplate,
+      artworkTextTemplate: DiscordSettings.defaultArtworkTextTemplate,
+      showProgress: true,
+    );
+    ref.read(discordSettingsStoreProvider).save(state);
+  }
 }
 
 final discordSettingsProvider =

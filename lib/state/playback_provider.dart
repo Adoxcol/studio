@@ -18,8 +18,13 @@ class PlaybackUiState {
   const PlaybackUiState({
     this.trackId,
     this.title = 'Not playing',
+    this.locator,
     this.artist,
     this.album,
+    this.genre,
+    this.year,
+    this.fileSizeBytes,
+    this.sampleRateHz,
     this.artworkPath,
     this.playing = false,
     this.position = Duration.zero,
@@ -32,8 +37,13 @@ class PlaybackUiState {
 
   final int? trackId;
   final String title;
+  final String? locator;
   final String? artist;
   final String? album;
+  final String? genre;
+  final int? year;
+  final int? fileSizeBytes;
+  final int? sampleRateHz;
   final String? artworkPath;
   final bool playing;
   final Duration position;
@@ -60,8 +70,13 @@ class PlaybackUiState {
   PlaybackUiState copyWith({
     int? trackId,
     String? title,
+    String? locator,
     String? artist,
     String? album,
+    String? genre,
+    int? year,
+    int? fileSizeBytes,
+    int? sampleRateHz,
     String? artworkPath,
     bool? playing,
     Duration? position,
@@ -72,13 +87,22 @@ class PlaybackUiState {
     List<int>? queueIds,
     bool clearArtist = false,
     bool clearAlbum = false,
+    bool clearGenre = false,
+    bool clearYear = false,
+    bool clearFileSize = false,
+    bool clearSampleRate = false,
     bool clearArtwork = false,
   }) {
     return PlaybackUiState(
       trackId: trackId ?? this.trackId,
       title: title ?? this.title,
+      locator: locator ?? this.locator,
       artist: clearArtist ? null : artist ?? this.artist,
       album: clearAlbum ? null : album ?? this.album,
+      genre: clearGenre ? null : genre ?? this.genre,
+      year: clearYear ? null : year ?? this.year,
+      fileSizeBytes: clearFileSize ? null : fileSizeBytes ?? this.fileSizeBytes,
+      sampleRateHz: clearSampleRate ? null : sampleRateHz ?? this.sampleRateHz,
       artworkPath: clearArtwork ? null : artworkPath ?? this.artworkPath,
       playing: playing ?? this.playing,
       position: position ?? this.position,
@@ -112,6 +136,10 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   var _seekGen = 0;
   Timer? _seekHold;
   var _wantPlaying = false;
+  var _needsOpen = true;
+  var _disposed = false;
+  var _openRevision = 0;
+  Future<void> _playIntentTail = Future<void>.value();
   Timer? _sessionSave;
   DateTime? _sessionSavedAt;
   var _restoring = false;
@@ -171,11 +199,12 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     _subs.add(
       _engine.completed.listen((_) {
         if (_opening || _restoring) return;
-        unawaited(skipNext());
+        _runInBackground(_onCompleted(), 'advancing the queue');
       }),
     );
 
     ref.onDispose(() {
+      _disposed = true;
       _sessionSave?.cancel();
       _positionFlush?.cancel();
       _seekHold?.cancel();
@@ -184,7 +213,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
       }
     });
 
-    unawaited(_restoreSession());
+    _runInBackground(_restoreSession(), 'restoring playback');
     return const PlaybackUiState();
   }
 
@@ -239,7 +268,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
       state = state.copyWith(position: pending);
       _scheduleSessionSave();
     });
-    unawaited(_considerAutoCrossfade(value));
+    _runInBackground(_considerAutoCrossfade(value), 'starting crossfade');
   }
 
   void _armSeek(Duration target) {
@@ -289,6 +318,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   Future<void> playQueueIndex(int index) async {
     if (index < 0 || index >= queue.ids.length) return;
     queue.index = index;
+    queue.discardBeforeCurrent();
     await _openCurrent();
     _scheduleSessionSave(flush: true);
   }
@@ -296,18 +326,65 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   Future<void> togglePlayPause() async {
     if (state.trackId == null) return;
     final pause = state.playing;
+    if (!pause && _needsOpen && !_opening) {
+      await _openCurrent();
+      _scheduleSessionSave(flush: true);
+      return;
+    }
     _wantPlaying = !pause;
     state = state.copyWith(playing: _wantPlaying);
-    if (pause) {
-      await _engine.pause();
-    } else {
-      await _engine.resume();
-    }
+    await _applyPlayIntent();
     _scheduleSessionSave(flush: true);
+  }
+
+  // Serialize acknowledgements, but read the latest intent when dispatching.
+  // An old, slow pause must not complete after a newer resume and win.
+  Future<void> _applyPlayIntent() {
+    final operation = _playIntentTail.then((_) async {
+      if (_disposed) return;
+      if (_wantPlaying) {
+        await _engine.resume();
+      } else {
+        await _engine.pause();
+      }
+    });
+    _playIntentTail = operation.then(
+      (_) {},
+      onError: (Object _, StackTrace _) {},
+    );
+    return operation;
+  }
+
+  Future<void> _onCompleted() async {
+    if (queue.peekNextId() != null) {
+      await skipNext();
+      return;
+    }
+    _wantPlaying = false;
+    _needsOpen = true;
+    _positionFlush?.cancel();
+    _positionFlush = null;
+    _queuedPosition = null;
+    state = state.copyWith(
+      playing: false,
+      position: state.duration > Duration.zero
+          ? state.duration
+          : state.position,
+    );
+    _scheduleSessionSave(flush: true);
+  }
+
+  void _runInBackground(Future<void> operation, String action) {
+    unawaited(
+      operation.catchError((Object error, StackTrace stack) {
+        debugPrint('Playback failed while $action: $error');
+      }),
+    );
   }
 
   Future<void> skipNext() async {
     if (!queue.moveNext()) return;
+    queue.discardBeforeCurrent();
     await _openCurrent(crossfade: true);
     _scheduleSessionSave(flush: true);
   }
@@ -372,6 +449,9 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   }
 
   Future<void> _openCurrent({bool crossfade = false, bool play = true}) async {
+    if (_disposed) return;
+    _openRevision++;
+    _wantPlaying = play;
     _openCrossfade = crossfade;
     if (_opening) {
       _openAgain = true;
@@ -382,53 +462,84 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     try {
       do {
         _openAgain = false;
-        final useCrossfade = _openCrossfade;
-        final id = queue.currentId;
-        if (id == null) return;
-        final track = await _db.trackById(id);
-        if (track == null) return;
-        _crossfadeArmed = false;
-        _clearSeekLock();
-        _positionFlush?.cancel();
-        _positionFlush = null;
-        _queuedPosition = null;
-        state = state.copyWith(
-          trackId: id,
-          title: track.title,
-          artist: track.artist,
-          album: track.album,
-          artworkPath: track.artworkPath,
-          clearArtist: track.artist == null,
-          clearAlbum: track.album == null,
-          clearArtwork: track.artworkPath == null,
-          queueIds: List<int>.of(queue.ids),
-          repeat: queue.repeat,
-          shuffle: queue.shuffle,
-          playing: play,
-          position: Duration.zero,
-          duration: _taggedDuration(track),
-        );
-        _wantPlaying = play;
-        final uri = await _resolvers.resolve(
-          TrackLocator(source: track.source, locator: track.locator),
-        );
-        if (_openAgain) continue;
-        if (useCrossfade) {
-          await _engine.crossfadeTo(uri);
-        } else if (play) {
-          await _engine.play(uri);
-        } else {
-          await _engine.load(uri);
-        }
-        if (_openAgain) continue;
-        await _engine.setVolume(state.volume);
-        if (play) {
-          _wantPlaying = true;
-          state = state.copyWith(playing: true);
-          await _engine.resume();
-        } else {
+        try {
+          final useCrossfade = _openCrossfade;
+          final id = queue.currentId;
+          if (id == null) throw StateError('No track selected');
+          final track = await _db.trackById(id);
+          if (_disposed) return;
+          if (_openAgain) continue;
+          if (track == null) {
+            throw StateError('Selected track is no longer in the library');
+          }
+          _crossfadeArmed = false;
+          _clearSeekLock();
+          _positionFlush?.cancel();
+          _positionFlush = null;
+          _queuedPosition = null;
+          state = state.copyWith(
+            trackId: id,
+            title: track.title,
+            locator: track.locator,
+            artist: track.artist,
+            album: track.album,
+            genre: track.genre,
+            year: track.year,
+            fileSizeBytes: track.fileSizeBytes,
+            sampleRateHz: track.sampleRateHz,
+            artworkPath: track.artworkPath,
+            clearArtist: track.artist == null,
+            clearAlbum: track.album == null,
+            clearGenre: track.genre == null,
+            clearYear: track.year == null,
+            clearFileSize: track.fileSizeBytes == null,
+            clearSampleRate: track.sampleRateHz == null,
+            clearArtwork: track.artworkPath == null,
+            queueIds: List<int>.of(queue.ids),
+            repeat: queue.repeat,
+            shuffle: queue.shuffle,
+            playing: _wantPlaying,
+            position: Duration.zero,
+            duration: _taggedDuration(track),
+          );
+          final uri = await _resolvers.resolve(
+            TrackLocator(source: track.source, locator: track.locator),
+          );
+          if (_disposed) return;
+          if (_openAgain) continue;
+          if (useCrossfade && _wantPlaying) {
+            await _engine.crossfadeTo(uri);
+          } else if (_wantPlaying) {
+            await _engine.play(uri);
+          } else {
+            await _engine.load(uri);
+          }
+          if (_disposed) return;
+          if (_openAgain) continue;
+          await _engine.setVolume(state.volume);
+          if (_disposed) return;
+          if (_openAgain) continue;
+          await _applyPlayIntent();
+          if (_disposed) return;
+          if (_openAgain) continue;
+          _needsOpen = false;
+          state = state.copyWith(playing: _wantPlaying);
+        } on Object {
+          if (_disposed) return;
+          // A superseded failure must not discard the queued replacement.
+          if (_openAgain) continue;
           _wantPlaying = false;
-          await _engine.pause();
+          _needsOpen = true;
+          state = state.copyWith(playing: false);
+          try {
+            await _playIntentTail;
+            await _engine.stop();
+          } on Object catch (stopError) {
+            debugPrint('Playback cleanup failed: $stopError');
+          }
+          if (_disposed) return;
+          if (_openAgain) continue;
+          rethrow;
         }
       } while (_openAgain);
     } finally {
@@ -453,7 +564,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     final nextId = queue.peekNextId();
     if (nextId == null) return;
     if (remaining <= fade + const Duration(seconds: 2)) {
-      unawaited(_prefetch(nextId));
+      _runInBackground(_prefetch(nextId), 'preparing the next track');
     }
     if (remaining <= fade && position > Duration.zero) {
       _crossfadeArmed = true;
@@ -482,7 +593,13 @@ class PlaybackController extends Notifier<PlaybackUiState> {
       queue.shuffle = session.shuffle;
       queue.repeat = session.repeat;
       queue.load(session.queueIds, nextIndex: session.index);
-      await _openCurrent(play: false);
+      final opening = _openCurrent(play: false);
+      final revision = _openRevision;
+      final seekRevision = _seekGen;
+      await opening;
+      if (_disposed || revision != _openRevision || seekRevision != _seekGen) {
+        return;
+      }
       final position = session.position;
       if (position <= Duration.zero) return;
       _armSeek(position);
@@ -509,7 +626,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
   }
 
   void _scheduleSessionSave({bool flush = false}) {
-    if (_restoring) return;
+    if (_disposed || _restoring) return;
     if (flush) {
       saveSession();
       return;

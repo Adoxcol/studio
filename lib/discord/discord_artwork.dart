@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -19,11 +18,10 @@ abstract class DiscordArtworkResolver {
 typedef DiscordImagePoster =
     Future<String> Function(List<int> bytes, String filename);
 
-/// Uploads covers to catbox.moe (also what current `foo_discord_rich`
-/// builds ship with) and remembers the HTTPS URL so the same file is not
-/// sent twice.
-class CatboxArtworkUploader implements DiscordArtworkResolver {
-  CatboxArtworkUploader({
+/// Uploads covers to Freeimage and remembers its Discord-compatible `iili.io`
+/// URL so the same file is not sent twice.
+class FreeImageArtworkUploader implements DiscordArtworkResolver {
+  FreeImageArtworkUploader({
     required this.cacheFile,
     DiscordImagePoster? poster,
     this.maxBytes = 8 * 1024 * 1024,
@@ -80,7 +78,7 @@ class CatboxArtworkUploader implements DiscordArtworkResolver {
       }
       final poster = _poster ?? _post;
       final url = await poster(bytes, _filename(bytes));
-      if (!_isHttps(url) || url.length > kDiscordAssetLimit) {
+      if (!_isUsableCachedUrl(url) || url.length > kDiscordAssetLimit) {
         debugPrint('Discord artwork: rejected upload response "$url"');
         return null;
       }
@@ -104,7 +102,7 @@ class CatboxArtworkUploader implements DiscordArtworkResolver {
   /// keep-alive socket the host has already dropped, which surfaces as a
   /// sporadic, hard-to-reproduce upload failure.
   Future<String> _post(List<int> bytes, String filename) {
-    return postToCatbox(bytes, filename);
+    return postToFreeImage(bytes, filename);
   }
 
   bool _cooling(String key) {
@@ -124,7 +122,9 @@ class CatboxArtworkUploader implements DiscordArtworkResolver {
         if (json is Map) {
           for (final entry in json.entries) {
             final url = entry.value;
-            if (entry.key is String && url is String && _isHttps(url)) {
+            if (entry.key is String &&
+                url is String &&
+                _isUsableCachedUrl(url)) {
               loaded[entry.key as String] = url;
             }
           }
@@ -153,39 +153,46 @@ class CatboxArtworkUploader implements DiscordArtworkResolver {
     return imageFilenameFor(bytes);
   }
 
-  static bool _isHttps(String url) => url.startsWith('https://');
+  static bool _isUsableCachedUrl(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) return false;
+    // Catbox responds with valid image bytes but Discord renders those URLs as
+    // unknown assets. Do not let a persisted Catbox entry prevent migration to
+    // the working provider after an app update.
+    return uri.host != 'files.catbox.moe' && uri.host != 'catbox.moe';
+  }
 }
 
-/// POST to catbox.moe. No key: catbox takes anonymous uploads, and unlike
-/// freeimage.host's Chevereto API — whose shared, publicly-known API key
-/// (the same one `foo_discord_rich` scripts have used) started rejecting
-/// every upload shape with a 400 `Can't get target upload source info`,
-/// verified directly against their live endpoint with curl and Python and
-/// not just our own client — catbox needs no account to keep working.
-///
-/// catbox's success response is the bare URL as `text/plain`, and it has
-/// been observed returning a non-2xx status on an upload that still
-/// succeeded, so success is read from the body shape, not the status code.
-Future<String> postToCatbox(List<int> bytes, String filename) async {
-  final request = http.MultipartRequest('POST', Uri.parse(kCatboxUploadUrl))
-    ..fields['reqtype'] = 'fileupload'
-    ..files.add(
-      http.MultipartFile.fromBytes(
-        'fileToUpload',
-        bytes,
-        filename: filename,
-        contentType: MediaType.parse(imageContentType(bytes)),
-      ),
-    );
+/// POST a local image using Freeimage's documented multipart API. The returned
+/// `image.url` is the direct `iili.io` URL, not a viewer page.
+Future<String> postToFreeImage(
+  List<int> bytes,
+  String filename, {
+  Uri? endpoint,
+  String apiKey = kFreeImagePublicApiKey,
+}) async {
+  final request =
+      http.MultipartRequest('POST', endpoint ?? Uri.parse(kFreeImageUploadUrl))
+        ..fields['key'] = apiKey
+        ..fields['action'] = 'upload'
+        ..fields['format'] = 'json'
+        ..files.add(
+          http.MultipartFile.fromBytes(
+            'source',
+            bytes,
+            filename: filename,
+            contentType: MediaType.parse(imageContentType(bytes)),
+          ),
+        );
   // Bounds the whole round trip, not just headers: a connection that stalls
   // mid-body would otherwise hang this upload (and the `_inflight` entry
   // caching it) forever.
   final response = await http.Response.fromStream(
     await request.send(),
   ).timeout(const Duration(seconds: 20));
-  final url = parseCatboxUploadUrl(response.body);
-  if (url == null) {
-    throw StateError('catbox.moe ${response.statusCode}: ${response.body}');
+  final url = parseFreeImageUploadUrl(response.body);
+  if (response.statusCode < 200 || response.statusCode >= 300 || url == null) {
+    throw StateError('freeimage.host ${response.statusCode}: ${response.body}');
   }
   return url;
 }
@@ -219,42 +226,35 @@ String imageFilenameFor(List<int> bytes) {
   }
 }
 
-/// catbox's success body is just the raw URL, e.g.
-/// `https://files.catbox.moe/abc123.jpg`; failures are a plain English
-/// sentence, so a `https://` prefix is enough to tell them apart.
-String? parseCatboxUploadUrl(String body) {
-  final url = body.trim();
-  if (!url.startsWith('https://')) return null;
-  return url;
+/// Reads the direct image URL from a Freeimage API v1 JSON response.
+String? parseFreeImageUploadUrl(String body) {
+  try {
+    final decoded = jsonDecode(body);
+    if (decoded is! Map) return null;
+    final image = decoded['image'];
+    if (image is! Map) return null;
+    final value = image['url'];
+    if (value is! String) return null;
+    final uri = Uri.tryParse(value.trim());
+    if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) return null;
+    return uri.toString();
+  } on FormatException {
+    return null;
+  }
 }
 
 String discordLargeImage(String? url) {
   if (url == null || url.isEmpty) return kDiscordLargeImageKey;
-  final asset = discordExternalAsset(url);
-  if (asset == null || asset.length > kDiscordAssetLimit) {
+  final uri = Uri.tryParse(url);
+  if (uri == null ||
+      uri.scheme != 'https' ||
+      uri.host.isEmpty ||
+      uri.userInfo.isNotEmpty ||
+      url.length > kDiscordAssetLimit) {
     return kDiscordLargeImageKey;
   }
-  return asset;
-}
-
-/// Classic Discord IPC rich presence — the local named-pipe protocol every
-/// desktop RPC client uses, ours included — treats a plain `large_image`
-/// string as a Developer Portal asset *key* lookup, not a URL. Feeding it a
-/// bare `https://...` string fails that lookup silently and renders as the
-/// broken/unknown-asset placeholder; wrapping it in Discord's `mp:external/`
-/// media-proxy address is what actually gets an external image to render.
-/// The hash only has to be stable per URL (so an unchanged cover doesn't
-/// look like a new activity and rewrite the pipe every sync) — Discord's
-/// own client resolves the real image server-side when broadcasting the
-/// activity, it isn't verifying a signature we have no way to produce.
-String? discordExternalAsset(String url) {
-  final uri = Uri.tryParse(url);
-  if (uri == null || uri.scheme != 'https' || uri.authority.isEmpty) {
-    return null;
-  }
-  final hash = base64Url.encode(sha256.convert(utf8.encode(url)).bytes);
-  final rest =
-      '${uri.authority}${uri.path}'
-      '${uri.hasQuery ? '?${uri.query}' : ''}';
-  return 'mp:external/${hash.replaceAll('=', '')}/https/$rest';
+  // Discord expects the source URL here and converts it into an `mp:` media
+  // proxy asset itself. An `mp:` identifier observed through the gateway is an
+  // output owned by Discord, not a value applications can synthesize.
+  return url;
 }

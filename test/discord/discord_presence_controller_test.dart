@@ -236,9 +236,7 @@ void main() {
       playback: playing.copyWith(artworkPath: '/covers/take-care.jpg'),
     );
     expect(artwork.calls, 0);
-    final largeImage = client.views.single.largeImage;
-    expect(largeImage, startsWith('mp:external/'));
-    expect(largeImage, endsWith('/https/iili.io/take-care.jpg'));
+    expect(client.views.single.largeImage, 'https://iili.io/take-care.jpg');
   });
 }
 
