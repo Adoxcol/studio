@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/library/artwork_store.dart';
 import 'package:studio/library/database.dart';
+import 'package:studio/library/library_index.dart';
 import 'package:studio/library/scan_progress.dart';
 import 'package:studio/library/scanner.dart';
 import 'package:studio/playback/audio_engine.dart';
@@ -37,10 +38,8 @@ final folderScannerProvider = Provider<FolderScanner>((ref) {
 });
 
 final libraryTracksProvider = StreamProvider<List<Track>>((ref) {
-  return coalesceLatest(
-    ref.watch(studioDatabaseProvider).watchTracks(),
-    const Duration(milliseconds: 250),
-  );
+  // The database coalesces invalidations before materializing rows.
+  return ref.watch(studioDatabaseProvider).watchTracks();
 });
 
 /// ⚡ Bolt Optimization:
@@ -48,21 +47,23 @@ final libraryTracksProvider = StreamProvider<List<Track>>((ref) {
 /// inside their build methods for tens of thousands of tracks.
 /// We moved this calculation here to get O(1) lookups during widget rebuilds,
 /// recalculating only when the underlying `libraryTracksProvider` stream emits.
-final libraryTracksByIdProvider = Provider<Map<int, Track>>((ref) {
+final libraryIndexProvider = Provider<LibraryIndex>((ref) {
   final tracks = ref.watch(libraryTracksProvider).value ?? const [];
-  return {for (final track in tracks) track.id: track};
+  return LibraryIndex(tracks);
 });
+
+final libraryTracksByIdProvider = Provider<Map<int, Track>>(
+  (ref) => ref.watch(libraryIndexProvider).byId,
+);
 
 final playlistsProvider = StreamProvider<List<Playlist>>((ref) {
   return ref.watch(studioDatabaseProvider).watchPlaylists();
 });
 
-final playlistTracksProvider = StreamProvider.family<List<Track>, int>((
-  ref,
-  playlistId,
-) {
-  return ref.watch(studioDatabaseProvider).watchPlaylistTracks(playlistId);
-});
+final playlistTracksProvider = StreamProvider.autoDispose
+    .family<List<Track>, int>((ref, playlistId) {
+      return ref.watch(studioDatabaseProvider).watchPlaylistTracks(playlistId);
+    });
 
 /// Emits immediately, then at most once per [window], always flushing the
 /// latest value so a scan batch does not rebuild the library on every write.

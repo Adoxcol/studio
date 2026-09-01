@@ -1,8 +1,26 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:studio/core/time_format.dart';
 import 'package:studio/state/library_providers.dart' show spectrumBandsProvider;
+import 'package:studio/library/library_query.dart';
+import 'package:studio/discord/discord_template.dart';
+import 'package:studio/features/artist_artwork/presentation/artist_portrait.dart';
+import 'package:studio/playback/dsp/equalizer.dart';
+import 'package:studio/playback/dsp/replay_gain.dart';
+import 'package:studio/playback/playback_queue.dart';
+import 'package:studio/playback/playback_settings_provider.dart';
+import 'package:studio/state/library_navigation_provider.dart';
+import 'package:studio/state/nav_provider.dart';
+import 'package:studio/state/nav_state.dart';
 import 'package:studio/state/playback_provider.dart';
+import 'package:studio/state/playback_mode_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/theming/appearance_provider.dart';
+import 'package:studio/theming/accent_seed.dart';
+import 'package:studio/ui/library_browser/library_text_action.dart';
 import 'package:studio/ui/lyrics/lyrics_scroller.dart';
 import 'package:studio/ui/now_playing/cover_art.dart';
 import 'package:studio/ui/visualizer/spectrum_visualizer.dart';
@@ -14,8 +32,6 @@ class NowPlayingPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Queue and the reusable UpNextPanel own queue lookups. This hero needs
-    // only current-track metadata, not queue IDs or the library's track map.
     final snapshot = ref.watch(
       playbackControllerProvider.select(
         (s) => (
@@ -26,8 +42,7 @@ class NowPlayingPage extends ConsumerWidget {
         ),
       ),
     );
-
-    return _Hero(
+    return _ClassicNowPlayingHero(
       title: snapshot.title,
       artist: snapshot.artist,
       artworkPath: snapshot.artworkPath,
@@ -36,8 +51,8 @@ class NowPlayingPage extends ConsumerWidget {
   }
 }
 
-class _Hero extends StatelessWidget {
-  const _Hero({
+class _ClassicNowPlayingHero extends StatelessWidget {
+  const _ClassicNowPlayingHero({
     required this.title,
     required this.artist,
     required this.artworkPath,
@@ -103,16 +118,7 @@ class _Hero extends StatelessWidget {
             ),
             if (artist != null) ...[
               const SizedBox(height: 8),
-              Text(
-                artist!,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: palette.inkMuted,
-                  fontStyle: FontStyle.italic,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+              _ArtistByline(artist: artist!),
             ],
           ],
         );
@@ -142,6 +148,706 @@ class _Hero extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class PlaybackModePage extends ConsumerWidget {
+  const PlaybackModePage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final playback = ref.watch(playbackControllerProvider);
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): ref
+            .read(playbackModeProvider.notifier)
+            .exit,
+      },
+      child: Focus(
+        autofocus: true,
+        child: PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) ref.read(playbackModeProvider.notifier).exit();
+          },
+          child: _PlaybackModeHero(playback: playback),
+        ),
+      ),
+    );
+  }
+}
+
+class PlaybackModeWidget extends ConsumerWidget {
+  const PlaybackModeWidget({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _PlaybackModeHero(
+      playback: ref.watch(playbackControllerProvider),
+      embedded: true,
+    );
+  }
+}
+
+class _PlaybackModeHero extends ConsumerWidget {
+  const _PlaybackModeHero({required this.playback, this.embedded = false});
+  final PlaybackUiState playback;
+  final bool embedded;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appearance = ref.watch(appearanceProvider);
+    final hasTrack = playback.trackId != null;
+    final artist = playback.artist;
+    final creditedArtist = artist == null
+        ? null
+        : LibraryQuery.creditedArtists(artist).first;
+    return ColoredBox(
+      color: const Color(0xff171713),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const _PermanentPlaybackBackground(),
+          _PlaybackBackdrop(path: playback.artworkPath),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0x33000000),
+                  Color(0x66000000),
+                  Color(0xee090908),
+                ],
+                stops: [0, 0.48, 1],
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                embedded ? 18 : 28,
+                embedded ? 10 : 18,
+                embedded ? 18 : 28,
+                embedded ? 16 : 24,
+              ),
+              child: Column(
+                children: [
+                  _PlaybackModeTopBar(
+                    appearance: appearance,
+                    embedded: embedded,
+                  ),
+                  if (hasTrack && appearance.fullPlayerLyrics)
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: SizedBox(
+                          width: embedded ? double.infinity : 680,
+                          child: const _ImmersiveLyrics(),
+                        ),
+                      ),
+                    )
+                  else
+                    const Spacer(),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (appearance.fullPlayerAlbumArt) ...[
+                        CoverArt(
+                          path: playback.artworkPath,
+                          size: embedded ? 118 : 210,
+                        ),
+                        const SizedBox(width: 28),
+                      ],
+                      if (!embedded &&
+                          appearance.fullPlayerArtistArt &&
+                          creditedArtist != null) ...[
+                        ArtistPortrait(artist: creditedArtist, size: 120),
+                        const SizedBox(width: 22),
+                      ],
+                      Expanded(
+                        child: _ImmersiveMetadata(
+                          playback: playback,
+                          showFileInfo: appearance.fullPlayerFileInfo,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _ImmersiveProgress(playback: playback),
+                  const SizedBox(height: 10),
+                  const _ImmersiveTransport(),
+                  if (hasTrack && appearance.fullPlayerAudioSettings) ...[
+                    const SizedBox(height: 14),
+                    const _ImmersiveAudioSettings(),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ImmersiveLyrics extends StatelessWidget {
+  const _ImmersiveLyrics();
+
+  @override
+  Widget build(BuildContext context) {
+    return ShaderMask(
+      blendMode: BlendMode.dstIn,
+      shaderCallback: (bounds) => const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.transparent,
+          Colors.white,
+          Colors.white,
+          Colors.transparent,
+        ],
+        stops: [0, 0.16, 0.84, 1],
+      ).createShader(bounds),
+      child: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24),
+        child: LyricsPane(immersive: true),
+      ),
+    );
+  }
+}
+
+class _PermanentPlaybackBackground extends StatelessWidget {
+  const _PermanentPlaybackBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Stack(
+      fit: StackFit.expand,
+      children: [
+        ColoredBox(color: Color(0xff12110f)),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment(-0.72, -0.48),
+              radius: 1.15,
+              colors: [Color(0x995f3027), Color(0x00412520)],
+            ),
+          ),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment(0.8, 0.25),
+              radius: 1.05,
+              colors: [Color(0x55334f4a), Color(0x00121715)],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlaybackBackdrop extends StatelessWidget {
+  const _PlaybackBackdrop({required this.path});
+  final String? path;
+
+  @override
+  Widget build(BuildContext context) {
+    if (path == null || path!.isEmpty) return const SizedBox.shrink();
+    return Opacity(
+      opacity: 0.48,
+      child: Image.file(
+        File(path!),
+        fit: BoxFit.cover,
+        color: const Color(0xffb7a99a),
+        colorBlendMode: BlendMode.modulate,
+        errorBuilder: (_, _, _) => const SizedBox.shrink(),
+      ),
+    );
+  }
+}
+
+class _PlaybackModeTopBar extends ConsumerWidget {
+  const _PlaybackModeTopBar({required this.appearance, required this.embedded});
+  final AppearanceState appearance;
+  final bool embedded;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Row(
+      children: [
+        if (!embedded) ...[
+          IconButton(
+            tooltip: 'Exit Playback Mode',
+            onPressed: ref.read(playbackModeProvider.notifier).exit,
+            color: Colors.white,
+            icon: const Icon(Icons.arrow_back),
+          ),
+          const SizedBox(width: 8),
+        ],
+        const Text(
+          'PLAYBACK MODE',
+          style: TextStyle(
+            color: Colors.white70,
+            fontSize: 12,
+            letterSpacing: 1.8,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const Spacer(),
+        Theme(
+          data: Theme.of(
+            context,
+          ).copyWith(iconTheme: const IconThemeData(color: Colors.white)),
+          child: _FullPlayerMenu(appearance: appearance),
+        ),
+        if (!embedded)
+          IconButton(
+            tooltip: 'Exit Playback Mode',
+            onPressed: ref.read(playbackModeProvider.notifier).exit,
+            color: Colors.white,
+            icon: const Icon(Icons.fullscreen_exit),
+          ),
+      ],
+    );
+  }
+}
+
+class _ImmersiveMetadata extends StatelessWidget {
+  const _ImmersiveMetadata({
+    required this.playback,
+    required this.showFileInfo,
+  });
+  final PlaybackUiState playback;
+  final bool showFileInfo;
+
+  @override
+  Widget build(BuildContext context) {
+    final album = (playback.album ?? '').trim();
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          playback.title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 38,
+            height: 1.05,
+          ),
+        ),
+        if (playback.artist != null) ...[
+          const SizedBox(height: 8),
+          _ImmersiveArtistByline(artist: playback.artist!),
+        ],
+        if (album.isNotEmpty) ...[
+          const SizedBox(height: 5),
+          Text(
+            album,
+            style: const TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+        ],
+        if (showFileInfo) ...[
+          const SizedBox(height: 9),
+          _FileInformation(playback: playback, immersive: true),
+        ],
+      ],
+    );
+  }
+}
+
+class _ImmersiveProgress extends ConsumerWidget {
+  const _ImmersiveProgress({required this.playback});
+  final PlaybackUiState playback;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final durationMs = playback.duration.inMilliseconds;
+    final value = durationMs <= 0
+        ? 0.0
+        : (playback.position.inMilliseconds / durationMs).clamp(0.0, 1.0);
+    return Row(
+      children: [
+        SizedBox(
+          width: 42,
+          child: Text(
+            formatDuration(playback.position),
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ),
+        Expanded(
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: Colors.white,
+              inactiveTrackColor: Colors.white30,
+              thumbColor: Colors.white,
+              overlayColor: Colors.white12,
+              trackHeight: 2,
+            ),
+            child: Slider(
+              value: value,
+              onChanged: ref
+                  .read(playbackControllerProvider.notifier)
+                  .seekFraction,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 42,
+          child: Text(
+            formatDuration(playback.duration),
+            textAlign: TextAlign.end,
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ImmersiveTransport extends ConsumerWidget {
+  const _ImmersiveTransport();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(playbackControllerProvider);
+    final controller = ref.read(playbackControllerProvider.notifier);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          onPressed: controller.toggleShuffle,
+          color: state.shuffle ? Colors.white : Colors.white54,
+          icon: const Icon(Icons.shuffle),
+        ),
+        IconButton(
+          onPressed: controller.skipPrevious,
+          color: Colors.white,
+          iconSize: 30,
+          icon: const Icon(Icons.skip_previous),
+        ),
+        const SizedBox(width: 8),
+        IconButton.filled(
+          tooltip: state.playing ? 'Pause' : 'Play',
+          onPressed: controller.togglePlayPause,
+          style: IconButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
+            minimumSize: const Size(52, 52),
+          ),
+          icon: Icon(state.playing ? Icons.pause : Icons.play_arrow),
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          onPressed: controller.skipNext,
+          color: Colors.white,
+          iconSize: 30,
+          icon: const Icon(Icons.skip_next),
+        ),
+        IconButton(
+          onPressed: controller.cycleRepeat,
+          color: state.repeat == QueueRepeatMode.off
+              ? Colors.white54
+              : Colors.white,
+          icon: Icon(
+            state.repeat == QueueRepeatMode.one
+                ? Icons.repeat_one
+                : Icons.repeat,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ImmersiveAudioSettings extends StatelessWidget {
+  const _ImmersiveAudioSettings();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black38,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        child: DefaultTextStyle(
+          style: TextStyle(color: Colors.white70, fontSize: 12),
+          child: _AudioSettings(immersive: true),
+        ),
+      ),
+    );
+  }
+}
+
+class _FullPlayerMenu extends ConsumerWidget {
+  const _FullPlayerMenu({required this.appearance});
+  final AppearanceState appearance;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = StudioPalette.of(context);
+    final values = <FullPlayerSection, (String, bool)>{
+      FullPlayerSection.albumArt: (
+        'Album cover',
+        appearance.fullPlayerAlbumArt,
+      ),
+      FullPlayerSection.artistArt: (
+        'Artist picture',
+        appearance.fullPlayerArtistArt,
+      ),
+      FullPlayerSection.lyrics: ('Lyrics', appearance.fullPlayerLyrics),
+      FullPlayerSection.fileInfo: (
+        'File information',
+        appearance.fullPlayerFileInfo,
+      ),
+      FullPlayerSection.audioSettings: (
+        'Audio settings',
+        appearance.fullPlayerAudioSettings,
+      ),
+    };
+    return PopupMenuButton<FullPlayerSection>(
+      tooltip: 'Customize Full Player',
+      icon: const Icon(Icons.tune, size: 19),
+      onSelected: (section) => ref
+          .read(appearanceProvider.notifier)
+          .setFullPlayerSection(section, !values[section]!.$2),
+      itemBuilder: (_) => [
+        for (final entry in values.entries)
+          PopupMenuItem(
+            value: entry.key,
+            child: Row(
+              children: [
+                Icon(
+                  entry.value.$2
+                      ? Icons.check_box
+                      : Icons.check_box_outline_blank,
+                  size: 18,
+                  color: entry.value.$2 ? palette.accent : palette.inkMutedAlt,
+                ),
+                const SizedBox(width: 10),
+                Text(entry.value.$1),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _FileInformation extends StatelessWidget {
+  const _FileInformation({required this.playback, this.immersive = false});
+  final PlaybackUiState playback;
+  final bool immersive;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StudioPalette.of(context);
+    final values = discordTemplateValues(playback);
+    final items = [
+      values['filename']!,
+      values['quality']!,
+      if ((playback.genre ?? '').trim().isNotEmpty) playback.genre!.trim(),
+    ].where((value) => value.isNotEmpty).toList();
+    return Text(
+      items.isEmpty ? 'File information unavailable' : items.join('  ·  '),
+      textAlign: immersive ? TextAlign.start : TextAlign.center,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: immersive ? Colors.white70 : palette.inkMuted,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+    );
+  }
+}
+
+class _AudioSettings extends ConsumerWidget {
+  const _AudioSettings({this.immersive = false});
+  final bool immersive;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(playbackSettingsProvider);
+    final notifier = ref.read(playbackSettingsProvider.notifier);
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 22,
+      runSpacing: 10,
+      children: [
+        Text(
+          'ReplayGain',
+          style: immersive
+              ? const TextStyle(color: Colors.white)
+              : Theme.of(context).textTheme.bodySmall,
+        ),
+        for (final mode in ReplayGainMode.values)
+          if (immersive)
+            TextButton(
+              onPressed: () => notifier.setReplayGain(mode),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                foregroundColor: settings.replayGain == mode
+                    ? Colors.white
+                    : Colors.white54,
+              ),
+              child: Text(mode.label),
+            )
+          else
+            LibraryTextAction(
+              label: mode.label,
+              muted: settings.replayGain != mode,
+              onTap: () => notifier.setReplayGain(mode),
+            ),
+        Text(
+          'Crossfade',
+          style: immersive
+              ? const TextStyle(color: Colors.white)
+              : Theme.of(context).textTheme.bodySmall,
+        ),
+        DropdownButton<Duration>(
+          value: settings.crossfade,
+          dropdownColor: immersive ? const Color(0xff242421) : null,
+          style: immersive ? const TextStyle(color: Colors.white) : null,
+          underline: const SizedBox.shrink(),
+          items: [
+            for (var seconds = 0; seconds <= 15; seconds++)
+              DropdownMenuItem(
+                value: Duration(seconds: seconds),
+                child: Text(seconds == 0 ? 'Off' : '${seconds}s'),
+              ),
+          ],
+          onChanged: (value) {
+            if (value != null) notifier.setCrossfade(value);
+          },
+        ),
+        Text(
+          'EQ',
+          style: immersive
+              ? const TextStyle(color: Colors.white)
+              : Theme.of(context).textTheme.bodySmall,
+        ),
+        DropdownButton<EqualizerPreset>(
+          value: settings.equalizerPreset,
+          dropdownColor: immersive ? const Color(0xff242421) : null,
+          style: immersive ? const TextStyle(color: Colors.white) : null,
+          underline: const SizedBox.shrink(),
+          items: [
+            for (final preset in EqualizerPreset.values)
+              DropdownMenuItem(value: preset, child: Text(preset.label)),
+          ],
+          onChanged: (value) {
+            if (value != null) notifier.setEqualizerPreset(value);
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _ImmersiveArtistByline extends ConsumerWidget {
+  const _ImmersiveArtistByline({required this.artist});
+  final String artist;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final artists = LibraryQuery.creditedArtists(artist);
+    void open(String name) {
+      ref.read(libraryNavigationProvider.notifier).openArtist(name);
+      ref.read(playbackModeProvider.notifier).exit();
+      ref.read(studioNavProvider.notifier).select(StudioDestination.library);
+    }
+
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (var index = 0; index < artists.length; index++) ...[
+          if (index > 0)
+            const Text('  ·  ', style: TextStyle(color: Colors.white54)),
+          TextButton(
+            onPressed: () => open(artists[index]),
+            style: ButtonStyle(
+              padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+              minimumSize: const WidgetStatePropertyAll(Size.zero),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+              foregroundColor: const WidgetStatePropertyAll(Colors.white70),
+              textStyle: WidgetStateProperty.resolveWith(
+                (states) => TextStyle(
+                  fontSize: 16,
+                  decoration: states.contains(WidgetState.hovered)
+                      ? TextDecoration.underline
+                      : TextDecoration.none,
+                  decorationColor: Colors.white70,
+                ),
+              ),
+            ),
+            child: Text(artists[index]),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ArtistByline extends ConsumerWidget {
+  const _ArtistByline({required this.artist});
+
+  final String artist;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = StudioPalette.of(context);
+    final artists = LibraryQuery.creditedArtists(artist);
+    final style = Theme.of(context).textTheme.bodyMedium?.copyWith(
+      color: palette.inkMuted,
+      fontStyle: FontStyle.italic,
+    );
+
+    void open(String name) {
+      ref.read(libraryNavigationProvider.notifier).openArtist(name);
+      ref.read(studioNavProvider.notifier).select(StudioDestination.library);
+    }
+
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (var index = 0; index < artists.length; index++) ...[
+          if (index > 0) Text(' · ', style: style),
+          TextButton(
+            key: ValueKey('now-playing-artist-${artists[index]}'),
+            onPressed: () => open(artists[index]),
+            style: ButtonStyle(
+              padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+              minimumSize: const WidgetStatePropertyAll(Size.zero),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              textStyle: WidgetStateProperty.resolveWith(
+                (states) => style?.copyWith(
+                  decoration: states.contains(WidgetState.hovered)
+                      ? TextDecoration.underline
+                      : TextDecoration.none,
+                  decorationColor: palette.inkMuted,
+                  decorationThickness: 1,
+                ),
+              ),
+              overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+              foregroundColor: WidgetStatePropertyAll(palette.inkMuted),
+            ),
+            child: Text(artists[index]),
+          ),
+        ],
+      ],
     );
   }
 }

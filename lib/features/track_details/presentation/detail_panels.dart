@@ -5,44 +5,70 @@ import 'package:studio/features/artist_artwork/presentation/artist_portrait.dart
 import 'package:studio/features/track_details/domain/track_details.dart';
 import 'package:studio/features/track_details/presentation/detail_context_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/library/library_query.dart';
+import 'package:studio/state/library_navigation_provider.dart';
+import 'package:studio/state/nav_provider.dart';
+import 'package:studio/state/nav_state.dart';
+import 'package:studio/state/playback_provider.dart';
 import 'package:studio/ui/now_playing/cover_art.dart';
 import 'package:studio/ui/queue/queue_track_row.dart';
 
-class ArtistDetailPanel extends StatelessWidget {
+class ArtistDetailPanel extends ConsumerWidget {
   const ArtistDetailPanel({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return _DetailFrame(
-      builder: (details) => [
-        LayoutBuilder(
-          builder: (context, constraints) => Align(
-            alignment: Alignment.centerLeft,
-            child: ArtistPortrait(
-              artist: details.artist,
-              size: constraints.maxWidth.clamp(0.0, 120.0),
+      builder: (details) {
+        final albums = <({String artist, LibraryGroup album})>[
+          for (final section in details.artistAlbums)
+            for (final album in section.albums)
+              (artist: section.artist, album: album),
+        ];
+        return _DetailContent(
+          headers: [
+            LayoutBuilder(
+              builder: (context, constraints) => Align(
+                alignment: Alignment.centerLeft,
+                child: ArtistPortrait(
+                  artist: details.artist,
+                  size: constraints.maxWidth.clamp(0.0, 120.0),
+                ),
+              ),
             ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        _Heading(title: details.artist, subtitle: 'Artist · In your library'),
-        ArtistImageControls(
-          key: ValueKey(details.artist),
-          artist: details.artist,
-        ),
-        const SizedBox(height: 16),
-        _Field(label: 'Tracks', value: '${details.artistTracks.length}'),
-        _Field(
-          label: 'Credited on this track',
-          value: details.credits.join(' · '),
-        ),
-        _Field(label: 'Genres', value: details.genres.join(' · ')),
-        const SizedBox(height: 20),
-        const _SectionLabel('ALBUMS IN YOUR LIBRARY'),
-        for (final section in details.artistAlbums)
-          for (final album in section.albums)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+            const SizedBox(height: 12),
+            _Heading(
+              title: details.artist,
+              subtitle: 'Artist · In your library',
+            ),
+            ArtistImageControls(
+              key: ValueKey(details.artist),
+              artist: details.artist,
+            ),
+            const SizedBox(height: 16),
+            _Field(label: 'Tracks', value: '${details.artistTracks.length}'),
+            _Field(
+              label: 'Credited on this track',
+              value: details.credits.join(' · '),
+            ),
+            _Field(label: 'Genres', value: details.genres.join(' · ')),
+            const SizedBox(height: 20),
+            const _SectionLabel('ALBUMS IN YOUR LIBRARY'),
+          ],
+          itemCount: albums.length,
+          itemBuilder: (index) {
+            final entry = albums[index];
+            final album = entry.album;
+            return _ClickableDetailRow(
+              key: ValueKey('artist-album-${entry.artist}-${album.name}'),
+              onTap: () {
+                ref
+                    .read(libraryNavigationProvider.notifier)
+                    .openAlbum(artist: entry.artist, album: album.name);
+                ref
+                    .read(studioNavProvider.notifier)
+                    .select(StudioDestination.library);
+              },
               child: Row(
                 children: [
                   CoverArt(path: album.artworkPath, size: 40),
@@ -51,7 +77,7 @@ class ArtistDetailPanel extends StatelessWidget {
                     child: _Heading(
                       title: album.name,
                       subtitle: [
-                        section.artist,
+                        entry.artist,
                         if (album.year != null) '${album.year}',
                         _count(album.trackCount, 'track'),
                       ].join(' · '),
@@ -60,39 +86,55 @@ class ArtistDetailPanel extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-      ],
+            );
+          },
+        );
+      },
     );
   }
 }
 
-class AlbumDetailPanel extends StatelessWidget {
+class AlbumDetailPanel extends ConsumerWidget {
   const AlbumDetailPanel({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return _DetailFrame(
-      builder: (details) => [
-        _ArtworkHeader(
-          path: details.track.artworkPath,
-          title: details.album,
-          subtitle: details.artist,
-        ),
-        const SizedBox(height: 16),
-        _Field(label: 'Year', value: _positive(details.track.year)),
-        _Field(
-          label: 'Tracks in library',
-          value: '${details.albumTracks.length}',
-        ),
-        _Field(
-          label: 'Total length',
-          value: formatDurationMs(details.albumDurationMs),
-        ),
-        const SizedBox(height: 20),
-        const _SectionLabel('TRACKS'),
-        for (final track in details.albumTracks)
-          QueueTrackRow(track: track, current: track.id == details.track.id),
-      ],
+      builder: (details) => _DetailContent(
+        headers: [
+          _ArtworkHeader(
+            path: details.track.artworkPath,
+            title: details.album,
+            subtitle: details.artist,
+          ),
+          const SizedBox(height: 16),
+          _Field(label: 'Year', value: _positive(details.track.year)),
+          _Field(
+            label: 'Tracks in library',
+            value: '${details.albumTracks.length}',
+          ),
+          _Field(
+            label: 'Total length',
+            value: formatDurationMs(details.albumDurationMs),
+          ),
+          const SizedBox(height: 20),
+          const _SectionLabel('TRACKS'),
+        ],
+        itemCount: details.albumTracks.length,
+        itemBuilder: (index) {
+          final track = details.albumTracks[index];
+          return QueueTrackRow(
+            track: track,
+            current: track.id == details.track.id,
+            onTap: () => ref
+                .read(playbackControllerProvider.notifier)
+                .playTracks(
+                  details.albumTracks.map((track) => track.id).toList(),
+                  startIndex: index,
+                ),
+          );
+        },
+      ),
     );
   }
 }
@@ -103,35 +145,48 @@ class TrackDetailPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _DetailFrame(
-      builder: (details) => [
-        _ArtworkHeader(
-          path: details.track.artworkPath,
-          title: details.track.title,
-          subtitle: details.track.artist ?? 'Unknown artist',
-        ),
-        const SizedBox(height: 16),
-        _Field(label: 'Album', value: details.album),
-        _Field(
-          label: 'Length',
-          value: formatDurationMs(details.track.durationMs),
-        ),
-        _Field(
-          label: 'Track number',
-          value: _positive(details.track.trackNumber),
-        ),
-        _Field(label: 'Year', value: _positive(details.track.year)),
-        _Field(label: 'Genre', value: details.track.genre ?? ''),
-        _Field(label: 'Source', value: details.track.source),
-        _Field(label: 'File / location', value: details.track.locator),
-      ],
+      builder: (details) => _DetailContent(
+        headers: [
+          _ArtworkHeader(
+            path: details.track.artworkPath,
+            title: details.track.title,
+            subtitle: details.track.artist ?? 'Unknown artist',
+          ),
+          const SizedBox(height: 16),
+          _Field(label: 'Album', value: details.album),
+          _Field(
+            label: 'Length',
+            value: formatDurationMs(details.track.durationMs),
+          ),
+          _Field(
+            label: 'Track number',
+            value: _positive(details.track.trackNumber),
+          ),
+          _Field(label: 'Year', value: _positive(details.track.year)),
+          _Field(label: 'Genre', value: details.track.genre ?? ''),
+          _Field(label: 'Source', value: details.track.source),
+          _Field(label: 'File / location', value: details.track.locator),
+        ],
+      ),
     );
   }
+}
+
+class _DetailContent {
+  const _DetailContent({
+    required this.headers,
+    this.itemCount = 0,
+    this.itemBuilder,
+  });
+  final List<Widget> headers;
+  final int itemCount;
+  final Widget Function(int)? itemBuilder;
 }
 
 class _DetailFrame extends ConsumerWidget {
   const _DetailFrame({required this.builder});
 
-  final List<Widget> Function(TrackDetails details) builder;
+  final _DetailContent Function(TrackDetails details) builder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -149,30 +204,66 @@ class _DetailFrame extends ConsumerWidget {
         ),
       );
     }
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        Wrap(
-          spacing: 12,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Text(
-              detailContext.inspected ? 'Selected track' : 'Following playback',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+    final content = builder(details);
+    final headers = <Widget>[
+      Wrap(
+        spacing: 12,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(
+            detailContext.inspected ? 'Selected track' : 'Following playback',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+          ),
+          if (detailContext.inspected)
+            TextButton(
+              onPressed: () =>
+                  ref.read(detailSelectionProvider.notifier).followPlayback(),
+              child: const Text('Follow playback'),
             ),
-            if (detailContext.inspected)
-              TextButton(
-                onPressed: () =>
-                    ref.read(detailSelectionProvider.notifier).followPlayback(),
-                child: const Text('Follow playback'),
-              ),
-          ],
+        ],
+      ),
+      const SizedBox(height: 16),
+      ...content.headers,
+    ];
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: headers.length + content.itemCount,
+      itemBuilder: (context, index) => index < headers.length
+          ? headers[index]
+          : content.itemBuilder!(index - headers.length),
+    );
+  }
+}
+
+class _ClickableDetailRow extends StatelessWidget {
+  const _ClickableDetailRow({
+    super.key,
+    required this.onTap,
+    required this.child,
+  });
+
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StudioPalette.of(context);
+    return Semantics(
+      button: true,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onTap,
+          mouseCursor: SystemMouseCursors.click,
+          hoverColor: palette.hairlineSoft,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: child,
+          ),
         ),
-        const SizedBox(height: 16),
-        ...builder(details),
-      ],
+      ),
     );
   }
 }

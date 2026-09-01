@@ -245,58 +245,78 @@ class _AlbumSections extends StatelessWidget {
       return const _EmptyCopy(text: 'No albums yet.');
     }
     final palette = StudioPalette.of(context);
-    return ListView.builder(
-      padding: const EdgeInsets.only(top: 8, bottom: 16),
-      itemCount: sections.length,
-      itemBuilder: (context, index) {
-        final section = sections[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GestureDetector(
-                onTap: () => onSelectArtist(section.artist),
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          section.artist,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.headlineMedium,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = ((constraints.maxWidth + 16) / (_cardWidth + 16))
+            .floor()
+            .clamp(1, 1000);
+        // Descriptors contain only indices, not widgets or decoded artwork.
+        final rows = <({AlbumSection section, int start})>[
+          for (final section in sections) ...[
+            (section: section, start: -1),
+            for (var start = 0; start < section.albums.length; start += columns)
+              (section: section, start: start),
+          ],
+        ];
+        return ListView.builder(
+          padding: const EdgeInsets.only(top: 8, bottom: 16),
+          itemCount: rows.length,
+          itemBuilder: (context, index) {
+            final row = rows[index];
+            final section = row.section;
+            if (row.start < 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: GestureDetector(
+                  onTap: () => onSelectArtist(section.artist),
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            section.artist,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.chevron_right,
-                        size: 20,
-                        color: palette.inkMuted,
-                      ),
-                    ],
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 20,
+                          color: palette.inkMuted,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
+              );
+            }
+            final end = (row.start + columns).clamp(0, section.albums.length);
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: end == section.albums.length ? 28 : 20,
               ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 16,
-                runSpacing: 20,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (final album in section.albums)
+                  for (var i = row.start; i < end; i++) ...[
+                    if (i > row.start) const SizedBox(width: 16),
                     SizedBox(
-                      width: _cardWidth,
+                      width: constraints.maxWidth.clamp(0, _cardWidth),
                       child: _AlbumCard(
                         artist: section.artist,
-                        album: album,
-                        onTap: () => onSelect(section.artist, album.name),
+                        album: section.albums[i],
+                        onTap: () =>
+                            onSelect(section.artist, section.albums[i].name),
                       ),
                     ),
+                  ],
                 ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

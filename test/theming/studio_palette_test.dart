@@ -114,6 +114,30 @@ void main() {
     expect(FileAppearanceStore(file).load().fetchMissingArtwork, isFalse);
   });
 
+  test('file store round-trips Full Player section visibility', () {
+    final file = File(
+      '${Directory.systemTemp.createTempSync('studio-appearance').path}/appearance.json',
+    );
+    addTearDown(() {
+      if (file.parent.existsSync()) file.parent.deleteSync(recursive: true);
+    });
+    FileAppearanceStore(file).save(
+      const AppearanceState(
+        fullPlayerAlbumArt: false,
+        fullPlayerArtistArt: false,
+        fullPlayerLyrics: true,
+        fullPlayerFileInfo: false,
+        fullPlayerAudioSettings: true,
+      ),
+    );
+    final loaded = FileAppearanceStore(file).load();
+    expect(loaded.fullPlayerAlbumArt, isFalse);
+    expect(loaded.fullPlayerArtistArt, isFalse);
+    expect(loaded.fullPlayerLyrics, isTrue);
+    expect(loaded.fullPlayerFileInfo, isFalse);
+    expect(loaded.fullPlayerAudioSettings, isTrue);
+  });
+
   test('omitted track layout and artwork default', () {
     const state = AppearanceState(mode: AccentMode.custom);
     expect(state.trackLayout, TrackLayout.cards);

@@ -62,7 +62,7 @@ Future<void> main() async {
   final discordSettings = FileDiscordSettingsStore(
     File(p.join(support.path, 'discord.json')),
   );
-  final discordArtwork = CatboxArtworkUploader(
+  final discordArtwork = FreeImageArtworkUploader(
     cacheFile: File(p.join(support.path, 'discord-art.json')),
   );
   runApp(

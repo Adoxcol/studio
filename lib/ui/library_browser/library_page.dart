@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:studio/library/library_index.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/features/track_details/presentation/detail_context_provider.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/library/library_query.dart';
 import 'package:studio/state/library_providers.dart';
+import 'package:studio/state/library_navigation_provider.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/accent_seed.dart';
 import 'package:studio/theming/appearance_provider.dart';
@@ -35,6 +39,23 @@ typedef _LibraryLocation = ({
 
 class _LibraryPageState extends ConsumerState<LibraryPage> {
   final _search = TextEditingController();
+  Timer? _searchTimer;
+  String _query = '';
+  LibraryView? _view;
+  Object? _viewKey;
+
+  void _onSearch() {
+    _searchTimer?.cancel();
+    _searchTimer = Timer(const Duration(milliseconds: 150), () {
+      if (mounted) setState(() => _query = _search.text);
+    });
+  }
+
+  void _syncSearch() {
+    _searchTimer?.cancel();
+    _query = _search.text;
+  }
+
   final _history = <_LibraryLocation>[];
   var _scrollStorage = PageStorageBucket();
   var _tab = LibraryTab.all;
@@ -48,6 +69,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
 
   @override
   void dispose() {
+    _searchTimer?.cancel();
     _search.dispose();
     super.dispose();
   }
@@ -70,6 +92,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       // A catalogue search selects a group, not a subset of its tracks.
       // Keep the original query in history and open the complete group.
       _search.clear();
+      _syncSearch();
       select();
     });
   }
@@ -82,6 +105,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       _sort = previous.sort;
       _order = previous.order;
       _search.value = previous.search;
+      _syncSearch();
       _artistFilter = previous.artist;
       _albumFilter = previous.album;
       _genreFilter = previous.genre;
@@ -100,6 +124,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       if (_tab != tab || _history.isNotEmpty) {
         _scrollStorage = PageStorageBucket();
       }
+      _syncSearch();
       _history.clear();
       _tab = tab;
       _folderId = null;
@@ -246,6 +271,16 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(libraryNavigationProvider, (_, request) {
+      final artist = request.artist;
+      if (artist == null) return;
+      final album = request.album;
+      if (album == null) {
+        _selectArtist(artist);
+      } else {
+        _selectAlbum(artist, album);
+      }
+    });
     final palette = StudioPalette.of(context);
     final scanActive = ref.watch(libraryScanProvider.select((s) => s.active));
     final folders = ref.watch(libraryFoldersProvider).value ?? const [];
@@ -269,34 +304,49 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     List<LibraryFolder> folders,
     bool scanning,
   ) {
-    final searched = LibraryQuery.filter(
-      tracks: allTracks,
-      query: _search.text,
-    );
+    final index = ref.watch(libraryIndexProvider);
     final folder = _tab == LibraryTab.folders
         ? folders.where((f) => f.id == _folderId).firstOrNull
         : null;
     final viewingFolder = folder != null;
-    final visible = LibraryQuery.sorted(
-      tracks: LibraryQuery.filter(
-        tracks: viewingFolder
-            ? searched.where((t) => t.folderId == folder.id).toList()
-            : searched,
+    final key = (
+      index,
+      _query,
+      _artistFilter,
+      _albumFilter,
+      _genreFilter,
+      folder?.id,
+      _sort,
+      _order,
+    );
+    if (_viewKey != key) {
+      _viewKey = key;
+      _view = LibraryView(
+        index: index,
+        query: _query,
         artist: _artistFilter,
         album: _albumFilter,
         genre: _genreFilter,
-      ),
-      sort: _sort,
-      order: _order,
-    );
+        folderId: folder?.id,
+        sort: _sort,
+        order: _order,
+      );
+    }
+    final view = _view!;
     final playlists = ref.watch(playlistsProvider).value ?? const [];
     final viewingPlaylist = _tab == LibraryTab.playlists && _playlistId != null;
     final playlistTracks = viewingPlaylist
         ? (ref.watch(playlistTracksProvider(_playlistId!)).value ?? const [])
         : const <Track>[];
-    final tableTracks = viewingPlaylist ? playlistTracks : visible;
     final showTable =
         _tab == LibraryTab.all || viewingFolder || viewingPlaylist;
+    // Catalogue Play All resolves sorting only when clicked.
+    List<Track> tracksToPlay() =>
+        viewingPlaylist ? playlistTracks : view.sorted;
+    final tableTracks = showTable ? tracksToPlay() : const <Track>[];
+    final canPlay = viewingPlaylist
+        ? playlistTracks.isNotEmpty
+        : view.filtered.isNotEmpty;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -319,7 +369,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                       children: [
                         _Header(
                           controller: _search,
-                          onSearch: () => setState(() {}),
+                          onSearch: _onSearch,
                           hint: _tab == LibraryTab.folders && !viewingFolder
                               ? 'Search folders'
                               : 'Search your library',
@@ -352,7 +402,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                           _Actions(
                             sort: _sort,
                             order: _order,
-                            canPlay: tableTracks.isNotEmpty,
+                            canPlay: canPlay,
                             showSort: _tab != LibraryTab.playlists,
                             showView: showTable,
                             trackLayout: ref
@@ -362,7 +412,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                               ref
                                   .read(playbackControllerProvider.notifier)
                                   .playTracks(
-                                    tableTracks.map((t) => t.id).toList(),
+                                    tracksToPlay().map((t) => t.id).toList(),
                                     shuffle: false,
                                   );
                             },
@@ -370,7 +420,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                               ref
                                   .read(playbackControllerProvider.notifier)
                                   .playTracks(
-                                    tableTracks.map((t) => t.id).toList(),
+                                    tracksToPlay().map((t) => t.id).toList(),
                                     shuffle: true,
                                   );
                             },
@@ -437,7 +487,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                               child:
                                   _tab == LibraryTab.folders && !viewingFolder
                                   ? LibraryFoldersPanel(
-                                      query: _search.text,
+                                      query: _query,
                                       onOpen: (selected) {
                                         _open(() {
                                           _folderId = selected.id;
@@ -498,18 +548,15 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                           )
                                   : LibraryBrowseView(
                                       tab: _tab,
-                                      artists: LibraryQuery.groupArtists(
-                                        searched,
-                                        order: _order,
-                                      ),
-                                      albums: LibraryQuery.albumSections(
-                                        searched,
-                                        order: _order,
-                                      ),
-                                      genres: LibraryQuery.groupGenres(
-                                        searched,
-                                        order: _order,
-                                      ),
+                                      artists: _tab == LibraryTab.artists
+                                          ? view.artists
+                                          : const [],
+                                      albums: _tab == LibraryTab.albums
+                                          ? view.albums
+                                          : const [],
+                                      genres: _tab == LibraryTab.genres
+                                          ? view.genres
+                                          : const [],
                                       playlists: playlists,
                                       onSelectArtist: _selectArtist,
                                       onSelectAlbum: _selectAlbum,

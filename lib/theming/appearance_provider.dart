@@ -49,19 +49,40 @@ class AppearanceNotifier extends Notifier<AppearanceState> {
     state = state.copyWith(fetchArtistPictures: fetch);
     ref.read(appearanceStoreProvider).save(state);
   }
+
+  void setFullPlayerSection(FullPlayerSection section, bool show) {
+    state = switch (section) {
+      FullPlayerSection.albumArt => state.copyWith(fullPlayerAlbumArt: show),
+      FullPlayerSection.artistArt => state.copyWith(fullPlayerArtistArt: show),
+      FullPlayerSection.lyrics => state.copyWith(fullPlayerLyrics: show),
+      FullPlayerSection.fileInfo => state.copyWith(fullPlayerFileInfo: show),
+      FullPlayerSection.audioSettings => state.copyWith(
+        fullPlayerAudioSettings: show,
+      ),
+    };
+    ref.read(appearanceStoreProvider).save(state);
+  }
 }
+
+enum FullPlayerSection { albumArt, artistArt, lyrics, fileInfo, audioSettings }
 
 final appearanceProvider =
     NotifierProvider<AppearanceNotifier, AppearanceState>(
       AppearanceNotifier.new,
     );
 
-final artworkHueProvider = FutureProvider<double?>((ref) async {
+final artworkHueCacheProvider = Provider<ArtworkHueCache>((ref) {
+  final cache = ArtworkHueCache();
+  ref.onDispose(cache.dispose);
+  return cache;
+});
+
+final artworkHueProvider = FutureProvider.autoDispose<double?>((ref) async {
   final path = ref.watch(
     playbackControllerProvider.select((s) => s.artworkPath),
   );
   if (path == null) return null;
-  return hueFromArtwork(path);
+  return ref.watch(artworkHueCacheProvider).read(path);
 });
 
 /// Hue actually applied to the theme: custom swatch, or art, or terracotta.

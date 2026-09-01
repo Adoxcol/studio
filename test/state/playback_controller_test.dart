@@ -79,6 +79,151 @@ void main() {
     expect(engine.lastUri.toString(), contains('Second.flac'));
   });
 
+  test('skipping and jumping forward discard consumed queue history', () async {
+    final ids = await insertTitles(['First', 'Second', 'Third', 'Fourth']);
+    await controller().playTracks(ids);
+
+    await controller().skipNext();
+    expect(ui().queueIds, ids.sublist(1));
+    expect(ui().title, 'Second');
+
+    await controller().playQueueIndex(2);
+    expect(ui().queueIds, [ids.last]);
+    expect(ui().title, 'Fourth');
+    expect(ui().upcomingIds, isEmpty);
+  });
+
+  test('pause during a slow open remains paused after it finishes', () async {
+    final ids = await insertTitles(['First']);
+    final gate = Completer<void>();
+    engine.playBlock = gate;
+    final opening = controller().playTracks(ids);
+    await pumpEventQueue();
+    expect(ui().title, 'First');
+    await controller().togglePlayPause();
+    expect(ui().playing, isFalse);
+    gate.complete();
+    await opening;
+    expect(ui().playing, isFalse);
+    expect(engine.paused, isTrue);
+  });
+
+  test(
+    'resume after a slow pause wins at the engine as well as the UI',
+    () async {
+      final ids = await insertTitles(['First']);
+      await controller().playTracks(ids);
+      final gate = Completer<void>();
+      engine.pauseBlock = gate;
+      final pausing = controller().togglePlayPause();
+      await pumpEventQueue();
+      final resuming = controller().togglePlayPause();
+      expect(ui().playing, isTrue);
+      gate.complete();
+      await Future.wait([pausing, resuming]);
+      expect(engine.paused, isFalse);
+      expect(ui().playing, isTrue);
+    },
+  );
+
+  test(
+    'play during paused session loading is not overwritten by restore',
+    () async {
+      final ids = await insertTitles(['First']);
+      sessionStore.value = PlaybackSession(queueIds: ids, index: 0);
+      final gate = Completer<void>();
+      engine.loadBlock = gate;
+      controller();
+      await pumpEventQueue();
+      expect(ui().title, 'First');
+      await controller().togglePlayPause();
+      gate.complete();
+      await pumpEventQueue();
+      expect(ui().playing, isTrue);
+      expect(engine.paused, isFalse);
+    },
+  );
+
+  test(
+    'selecting a new track during restore does not inherit the old playhead',
+    () async {
+      final ids = await insertTitles(['First', 'Second']);
+      sessionStore.value = PlaybackSession(
+        queueIds: ids,
+        index: 0,
+        position: const Duration(seconds: 42),
+      );
+      final gate = Completer<void>();
+      engine.loadBlock = gate;
+      controller();
+      await pumpEventQueue();
+      await controller().playTracks(ids, startIndex: 1);
+      gate.complete();
+      await pumpEventQueue();
+      expect(ui().title, 'Second');
+      expect(ui().playing, isTrue);
+      expect(engine.paused, isFalse);
+      expect(engine.lastSeek, Duration.zero);
+    },
+  );
+
+  test(
+    'final track completion stops UI and Play reopens from the start',
+    () async {
+      final ids = await insertTitles(['First']);
+      await controller().playTracks(ids);
+      engine.emitCompleted();
+      await pumpEventQueue();
+      expect(ui().playing, isFalse);
+      expect(ui().position, ui().duration);
+      expect(ui().trackId, ids.single);
+      await controller().togglePlayPause();
+      expect(engine.playCount, 2);
+      expect(ui().playing, isTrue);
+      expect(ui().position, Duration.zero);
+    },
+  );
+
+  test(
+    'completion consumes history and repeat modes use the remaining queue',
+    () async {
+      final ids = await insertTitles(['First', 'Second']);
+      await controller().playTracks(ids);
+      engine.emitCompleted();
+      await pumpEventQueue();
+      expect(ui().trackId, ids.last);
+      expect(ui().playing, isTrue);
+      controller().cycleRepeat(); // all
+      engine.emitCompleted();
+      await pumpEventQueue();
+      expect(ui().trackId, ids.last);
+      controller().cycleRepeat(); // one
+      engine.emitCompleted();
+      await pumpEventQueue();
+      expect(ui().trackId, ids.last);
+      expect(engine.playCount, 4);
+      expect(ui().playing, isTrue);
+    },
+  );
+
+  test(
+    'automatic advance failure stops playback without an unhandled error',
+    () async {
+      final ids = await insertTitles(['First', 'Second']);
+      await controller().playTracks(ids);
+      engine.playError = StateError('Unreadable file');
+      engine.emitCompleted();
+      await pumpEventQueue();
+      expect(ui().trackId, ids.last);
+      expect(ui().playing, isFalse);
+      expect(engine.paused, isTrue);
+      engine.playError = null;
+      await controller().togglePlayPause();
+      expect(ui().playing, isTrue);
+      expect(engine.lastUri.toString(), contains('Second.flac'));
+    },
+  );
+
   test('seekFraction ignores stale engine ticks after a jump', () async {
     final ids = await insertTitles(['First']);
     await controller().playTracks(ids);
@@ -226,12 +371,13 @@ void main() {
     final ids = await insertTitles(['Fail']);
     engine.playError = Exception('Engine play failed');
 
-    // The controller doesn't catch exceptions thrown by _openCurrent/playTracks,
-    // so we should expect it to be thrown.
+    // Public callers retain the original error after playback is settled.
     await expectLater(
       () => controller().playTracks(ids),
       throwsA(isA<Exception>()),
     );
+    expect(ui().playing, isFalse);
+    expect(engine.paused, isTrue);
 
     // But the controller's internal _opening state should be reset by the finally block,
     // so we should be able to attempt to play again.

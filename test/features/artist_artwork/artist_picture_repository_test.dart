@@ -11,7 +11,15 @@ import 'package:studio/features/artist_artwork/presentation/artist_picture_provi
 
 import '../../helpers/tracks.dart';
 
-class _Lookup implements ArtistPictureLookup {
+class _Lookup implements ArtistPictureLookup, PrioritizedArtistPictureLookup {
+  final priority = <String>{};
+  @override
+  void setPriority(String artist, bool prioritized) {
+    prioritized
+        ? priority.add(artistKey(artist))
+        : priority.remove(artistKey(artist));
+  }
+
   final calls = <ArtistImageRequest>[];
   final pending = <Completer<DownloadedArtistPicture?>>[];
   int cancellations = 0;
@@ -75,6 +83,7 @@ void main() {
     repository = ArtistPictureRepository(
       store: store,
       lookup: lookup,
+      maxConcurrentLookups: 1,
       prepare: (bytes) async => bytes,
       clock: () => now,
       log: ArtistPictureLog(logs.add),
@@ -126,7 +135,7 @@ void main() {
           contains('["Hal"] Failed while online lookup: Bad state: offline'),
         ),
       );
-      expect(logs, contains(contains('Backing off until')));
+      expect(logs, contains(contains('Artist deferred until')));
       await repository.setCustom('Aria', Uint8List.fromList([9]));
       expect(logs.last, contains('Custom image saved'));
       repository.configure(artists, enabled: false);
@@ -243,28 +252,31 @@ void main() {
     },
   );
 
-  test('misses persist with expiry; errors back off the whole queue', () async {
-    repository.configure(artists, enabled: true);
-    await _flush();
-    lookup.pending.first.complete(null);
-    await _flush();
-    final missing = await repository.get('Aria');
-    expect(missing.lookupState, PictureLookupState.missing);
-    expect(missing.retryAfter, now.add(const Duration(days: 7)));
-    expect(store.pictures['aria']!.retryAfter, missing.retryAfter);
-    lookup.pending.last.completeError(StateError('offline'));
-    await _flush();
-    expect(
-      (await repository.get('Hal')).lookupState,
-      PictureLookupState.failed,
-    );
-    repository.configure([
-      ...artists,
-      const ArtistImageRequest('New artist'),
-    ], enabled: true);
-    await _flush();
-    expect(lookup.calls, hasLength(2));
-  });
+  test(
+    'misses persist with expiry; failures do not pause other artists',
+    () async {
+      repository.configure(artists, enabled: true);
+      await _flush();
+      lookup.pending.first.complete(null);
+      await _flush();
+      final missing = await repository.get('Aria');
+      expect(missing.lookupState, PictureLookupState.missing);
+      expect(missing.retryAfter, now.add(const Duration(days: 7)));
+      expect(store.pictures['aria']!.retryAfter, missing.retryAfter);
+      lookup.pending.last.completeError(StateError('offline'));
+      await _flush();
+      expect(
+        (await repository.get('Hal')).lookupState,
+        PictureLookupState.failed,
+      );
+      repository.configure([
+        ...artists,
+        const ArtistImageRequest('New artist'),
+      ], enabled: true);
+      await _flush();
+      expect(lookup.calls.map((a) => a.key), ['aria', 'hal', 'new artist']);
+    },
+  );
 
   test('manual retry bypasses a miss but not an existing image', () async {
     repository.configure([artists.first], enabled: true);
@@ -318,6 +330,7 @@ void main() {
       repository = ArtistPictureRepository(
         store: store,
         lookup: lookup,
+        maxConcurrentLookups: 1,
         prepare: (b) async => b,
         clock: () => clock,
       );
@@ -329,13 +342,16 @@ void main() {
       );
       await _flush();
       expect((await repository.get('Aria')).retryAfter, deadline);
+      expect(lookup.calls.map((a) => a.key), ['aria', 'hal']);
+      lookup.pending.last.complete(_image(2));
+      await _flush();
       clock = deadline;
       repository.configure(artists, enabled: true);
       await _flush();
-      expect(lookup.calls.map((a) => a.key), ['aria', 'aria']);
+      expect(lookup.calls.map((a) => a.key), ['aria', 'hal', 'aria']);
       lookup.pending.last.complete(_image(1));
       await _flush();
-      expect(lookup.calls.map((a) => a.key), ['aria', 'aria', 'hal']);
+      expect(lookup.calls.map((a) => a.key), ['aria', 'hal', 'aria']);
     },
   );
 
@@ -356,4 +372,117 @@ void main() {
       expect(store.pictures.containsKey('hal'), isFalse);
     },
   );
+
+  test(
+    'bounded workers reserve capacity for visible artists and deduplicate rescans',
+    () async {
+      repository.dispose();
+      repository = ArtistPictureRepository(
+        store: store,
+        lookup: lookup,
+        prepare: (b) async => b,
+      );
+      final library = List.generate(8, (i) => ArtistImageRequest('Artist $i'));
+      repository.configure(library, enabled: true);
+      await _flush();
+      expect(lookup.calls.map((a) => a.key), [
+        'artist 0',
+        'artist 1',
+        'artist 2',
+      ]);
+      final visible = repository.watch('Artist 7').listen((_) {});
+      final duplicate = repository.watch('ARTIST 7').listen((_) {});
+      await _flush();
+      expect(lookup.calls.map((a) => a.key), [
+        'artist 0',
+        'artist 1',
+        'artist 2',
+        'artist 7',
+      ]);
+      repository.configure(library, enabled: true);
+      await _flush();
+      expect(lookup.calls, hasLength(4));
+      await visible.cancel();
+      expect(lookup.priority, contains('artist 7'));
+      await duplicate.cancel();
+      expect(lookup.priority, isEmpty);
+      lookup.pending[3].complete(_image(7));
+      lookup.pending[0].complete(_image(0));
+      await _flush();
+      expect(lookup.calls.map((a) => a.key), [
+        'artist 0',
+        'artist 1',
+        'artist 2',
+        'artist 7',
+        'artist 3',
+      ]);
+    },
+  );
+
+  test(
+    'visible queue priority survives rescan and ends with the last subscriber',
+    () async {
+      final library = [...artists, const ArtistImageRequest('Visible')];
+      repository.configure(library, enabled: true);
+      await _flush();
+      final sub = repository.watch('Visible').listen((_) {});
+      repository.configure(library, enabled: true);
+      lookup.pending.first.complete(_image(1));
+      await _flush();
+      expect(lookup.calls.map((a) => a.key), ['aria', 'visible']);
+      await sub.cancel();
+      expect(lookup.priority, isEmpty);
+      lookup.pending.last.complete(null);
+      await _flush();
+      expect(lookup.calls.map((a) => a.key), ['aria', 'visible', 'hal']);
+    },
+  );
+
+  test(
+    'cancelling parallel work preserves custom images and restarts without duplicates',
+    () async {
+      repository.dispose();
+      repository = ArtistPictureRepository(
+        store: store,
+        lookup: lookup,
+        prepare: (b) async => b,
+      );
+      repository.configure(artists, enabled: true);
+      await _flush();
+      expect(lookup.calls, hasLength(2));
+      await repository.setCustom('Aria', Uint8List.fromList([9]));
+      repository.configure(artists, enabled: false);
+      await _flush();
+      expect((await repository.get('Aria')).isCustom, isTrue);
+      expect((await repository.get('Hal')).remotePath, isNull);
+      repository.configure(artists, enabled: true);
+      await _flush();
+      expect(lookup.calls.map((a) => a.key), ['aria', 'hal', 'hal']);
+    },
+  );
+
+  testWidgets('deferred artists wake automatically at their own deadline', (
+    tester,
+  ) async {
+    repository.dispose();
+    repository = ArtistPictureRepository(
+      store: store,
+      lookup: lookup,
+      prepare: (b) async => b,
+      clock: () => tester.binding.clock.now(),
+    );
+    repository.configure([artists.first], enabled: true);
+    await tester.pump();
+    final deadline = tester.binding.clock.now().add(const Duration(minutes: 2));
+    lookup.pending.first.completeError(
+      ArtistServiceException('musicbrainz.org', 503, retryAfter: deadline),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(minutes: 1));
+    expect(lookup.calls, hasLength(1));
+    await tester.pump(const Duration(minutes: 1));
+    expect(lookup.calls, hasLength(2));
+    repository.dispose();
+    await tester.pump();
+  });
 }

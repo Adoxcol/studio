@@ -122,6 +122,15 @@ class PlaybackQueue {
     return false;
   }
 
+  /// Drops queue history while keeping the current track and everything after
+  /// it in the same play order.
+  void discardBeforeCurrent() {
+    if (ids.isEmpty || index <= 0) return;
+    ids = List<int>.of(ids.sublist(index));
+    _source = List<int>.of(ids);
+    index = 0;
+  }
+
   void cycleRepeat() {
     repeat = switch (repeat) {
       QueueRepeatMode.off => QueueRepeatMode.all,

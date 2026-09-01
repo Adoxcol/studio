@@ -123,6 +123,9 @@ class MediaKitAudioEngine implements AudioEngine {
     required int transportGeneration,
   }) async {
     if (!_isTransportCurrent(transportGeneration)) return;
+    // Record the new request before any asynchronous cleanup. Pause/resume
+    // arriving during opening owns this value from that point onward.
+    _paused = !play;
     _invalidatePreparation();
     await _cancelFade(snapIncoming: false);
     if (!_isTransportCurrent(transportGeneration)) return;
@@ -131,19 +134,13 @@ class MediaKitAudioEngine implements AudioEngine {
     _front = _primary;
     _ui = _primary;
     _started = true;
-    _paused = !play;
     _fading = false;
     int? operation;
     do {
-      operation = await _startAudible(
-        _primary,
-        uri: uri,
-        volume: 1,
-        play: play,
-      );
+      operation = await _startAudible(_primary, uri: uri, volume: 1);
     } while (operation == null && _isTransportCurrent(transportGeneration));
     if (!_isTransportCurrent(transportGeneration)) return;
-    if (!play) _emitPlaying(false);
+    _emitPlaying(!_paused);
   }
 
   @override
@@ -176,7 +173,6 @@ class MediaKitAudioEngine implements AudioEngine {
               idle,
               uri: uri,
               volume: 0,
-              play: false,
               preparationGeneration: requestGeneration,
             )
             .then((operation) {
@@ -268,8 +264,8 @@ class MediaKitAudioEngine implements AudioEngine {
 
   @override
   Future<void> pause() async {
-    if (!_started) return;
     _paused = true;
+    if (!_started) return;
     _pauseFadeClock();
     _emitPlaying(false);
     final targets = <Player>{_front};
@@ -283,8 +279,8 @@ class MediaKitAudioEngine implements AudioEngine {
 
   @override
   Future<void> resume() async {
-    if (!_started) return;
     _paused = false;
+    if (!_started) return;
     _emitPlaying(true);
     if (_fading || _fadeCleanup != null || _outgoing != null) {
       final outgoing = _outgoing;
@@ -748,7 +744,6 @@ class MediaKitAudioEngine implements AudioEngine {
     Player player, {
     required Uri uri,
     required double volume,
-    bool play = true,
     int? preparationGeneration,
   }) async {
     if (_disposed ||
@@ -779,7 +774,6 @@ class MediaKitAudioEngine implements AudioEngine {
     );
     if (graphRevision == null || !isCurrent()) return null;
 
-    final audible = play && volume > 0;
     final ready = _waitUntilAudioReady(player, operation);
     try {
       await player.open(Media(uri.toString()), play: false);
@@ -810,7 +804,9 @@ class MediaKitAudioEngine implements AudioEngine {
     }
     await _setPlayerVolume(player, volume);
     if (!isCurrent()) return null;
-    if (audible) {
+    // Prepared players stay silent; the audible player follows the latest
+    // pause intent, not the state captured before decoder initialization.
+    if (volume > 0 && !_paused) {
       await _setPaused(player, false);
     } else {
       await _setPaused(player, true);

@@ -160,7 +160,7 @@ void main() {
       final requests = <http.Request>[];
       lookup = MusicBrainzArtistPictureLookup(
         fanart: keys,
-        audioDb: AudioDbArtistPictureSource(requestSpacing: Duration.zero),
+        audioDb: AudioDbArtistPictureSource(),
         requestSpacing: Duration.zero,
         client: MockClient((request) async {
           requests.add(request);
@@ -316,6 +316,7 @@ void main() {
       lookup.close();
       final identities = ArtistIdentityStore();
       var searches = 0;
+      fixture.relation = 'https://invalid.example/Q123';
       lookup = MusicBrainzArtistPictureLookup(
         identities: identities,
         fanart: keys,
@@ -324,7 +325,7 @@ void main() {
           if (request.url.host == 'webservice.fanart.tv') {
             return http.Response('Busy', 429, headers: {'retry-after': '120'});
           }
-          searches++;
+          if (request.url.path == '/ws/2/artist/') searches++;
           return fixture.call(request);
         }),
       );
@@ -368,9 +369,9 @@ void main() {
           return fixture.call(request);
         }),
       );
-      await expectLater(
-        lookup.fetch(const ArtistImageRequest('Aria')),
-        throwsFormatException,
+      expect(
+        (await lookup.fetch(const ArtistImageRequest('Aria')))!.credit.source,
+        'Wikimedia Commons',
       );
       id = _id;
       expect(
@@ -577,6 +578,61 @@ void main() {
     );
   });
 
+  test(
+    'malformed HTTP 200 search responses are failures, not artist misses',
+    () async {
+      for (final data in [
+        {},
+        [],
+        {'error': 'temporarily unavailable'},
+        {'artists': null},
+        {
+          'artists': [null],
+        },
+        {
+          'artists': [{}],
+        },
+      ]) {
+        lookup.close();
+        lookup = MusicBrainzArtistPictureLookup(
+          client: MockClient((_) async => _json(data)),
+          requestSpacing: Duration.zero,
+        );
+        await expectLater(
+          lookup.fetch(const ArtistImageRequest('Aria')),
+          throwsFormatException,
+        );
+      }
+    },
+  );
+
+  test(
+    'malformed fallback responses cannot masquerade as missing portraits',
+    () async {
+      for (final host in [
+        'musicbrainz.org',
+        'www.wikidata.org',
+        'commons.wikimedia.org',
+      ]) {
+        lookup.close();
+        lookup = MusicBrainzArtistPictureLookup(
+          requestSpacing: Duration.zero,
+          client: MockClient((request) async {
+            if (request.url.host == host &&
+                request.url.path != '/ws/2/artist/') {
+              return _json({});
+            }
+            return fixture.call(request);
+          }),
+        );
+        await expectLater(
+          lookup.fetch(const ArtistImageRequest('Aria')),
+          throwsFormatException,
+        );
+      }
+    },
+  );
+
   test('oversized responses are rejected before JSON decoding', () async {
     lookup.close();
     lookup = MusicBrainzArtistPictureLookup(
@@ -600,7 +656,7 @@ void main() {
     );
     await expectLater(
       lookup.fetch(const ArtistImageRequest('Aria')),
-      throwsA(isA<http.RequestAbortedException>()),
+      throwsA(isA<ArtistServiceException>()),
     );
   });
 
@@ -628,7 +684,7 @@ void main() {
     );
     await expectLater(
       lookup.fetch(const ArtistImageRequest('Aria')),
-      throwsA(isA<http.RequestAbortedException>()),
+      throwsA(isA<ArtistServiceException>()),
     );
   });
 
@@ -646,7 +702,7 @@ void main() {
     await expectation;
   });
 
-  test('rate spacing applies across requests and across artists', () async {
+  test('rate spacing applies per metadata host across artists', () async {
     lookup.close();
     lookup = MusicBrainzArtistPictureLookup(
       client: MockClient(fixture.call),
@@ -654,9 +710,13 @@ void main() {
     );
     await lookup.fetch(const ArtistImageRequest('Aria'));
     await lookup.fetch(const ArtistImageRequest('No match'));
-    for (var i = 1; i < fixture.times.length; i++) {
+    final times = [
+      for (var i = 0; i < fixture.requests.length; i++)
+        if (fixture.requests[i].url.host == 'musicbrainz.org') fixture.times[i],
+    ];
+    for (var i = 1; i < times.length; i++) {
       expect(
-        fixture.times[i].difference(fixture.times[i - 1]).inMilliseconds,
+        times[i].difference(times[i - 1]).inMilliseconds,
         greaterThanOrEqualTo(24),
       );
     }
@@ -667,4 +727,136 @@ void main() {
       greaterThanOrEqualTo(const Duration(seconds: 1)),
     );
   });
+
+  test(
+    'MusicBrainz cooldown does not block cached identities or healthy image sources',
+    () async {
+      lookup.close();
+      final identities = ArtistIdentityStore();
+      await identities.save(const ArtistImageRequest('Known'), _id);
+      var searches = 0;
+      lookup = MusicBrainzArtistPictureLookup(
+        identities: identities,
+        fanart: keys,
+        requestSpacing: Duration.zero,
+        client: MockClient((request) async {
+          if (request.url.host == 'musicbrainz.org') {
+            searches++;
+            return http.Response('Busy', 503, headers: {'retry-after': '120'});
+          }
+          if (request.url.host == 'webservice.fanart.tv') {
+            return _json({
+              'mbid_id': _id,
+              'artistthumb': [
+                {'url': 'https://assets.fanart.tv/portrait.jpg'},
+              ],
+            });
+          }
+          return http.Response.bytes([1, 2], 200);
+        }),
+      );
+      await expectLater(
+        lookup.fetch(const ArtistImageRequest('Unknown')),
+        throwsA(isA<ArtistServiceException>()),
+      );
+      final picture = await lookup.fetch(const ArtistImageRequest('Known'));
+      expect(picture!.credit.source, 'fanart.tv');
+      await expectLater(
+        lookup.fetch(const ArtistImageRequest('Another unknown')),
+        throwsA(isA<ArtistServiceException>()),
+      );
+      expect(searches, 1);
+    },
+  );
+
+  test(
+    'fanart outage falls through to AudioDB and honors only its own cooldown',
+    () async {
+      lookup.close();
+      var fanartCalls = 0;
+      var audioDbCalls = 0;
+      lookup = MusicBrainzArtistPictureLookup(
+        fanart: keys,
+        enableAudioDb: true,
+        requestSpacing: Duration.zero,
+        audioDbSpacing: Duration.zero,
+        client: MockClient((request) async {
+          if (request.url.host == 'webservice.fanart.tv') {
+            fanartCalls++;
+            return http.Response('Busy', 503);
+          }
+          if (request.url.host == 'www.theaudiodb.com') {
+            audioDbCalls++;
+            return _json({
+              'artists': [
+                {
+                  'strMusicBrainzID': _id,
+                  'idArtist': '1',
+                  'strArtistThumb':
+                      'https://r2.theaudiodb.com/images/media/artist/thumb/a.jpg',
+                },
+              ],
+            });
+          }
+          return fixture.call(request);
+        }),
+      );
+      for (var i = 0; i < 2; i++) {
+        expect(
+          (await lookup.fetch(const ArtistImageRequest('Aria')))!.credit.source,
+          'TheAudioDB',
+        );
+      }
+      expect(fanartCalls, 1);
+      expect(audioDbCalls, 2);
+    },
+  );
+
+  test(
+    'real lookup overlaps bounded downloads while metadata keeps progressing',
+    () async {
+      lookup.close();
+      final identities = ArtistIdentityStore();
+      final artists = List.generate(5, (i) => ArtistImageRequest('Known $i'));
+      for (final artist in artists) {
+        await identities.save(artist, _id);
+      }
+      final downloads = <Completer<http.Response>>[];
+      var metadata = 0;
+      lookup = MusicBrainzArtistPictureLookup(
+        identities: identities,
+        fanart: keys,
+        requestSpacing: Duration.zero,
+        maxImageDownloads: 2,
+        client: MockClient((request) async {
+          if (request.url.host == 'webservice.fanart.tv') {
+            metadata++;
+            return _json({
+              'mbid_id': _id,
+              'artistthumb': [
+                {'url': 'https://assets.fanart.tv/portrait.jpg'},
+              ],
+            });
+          }
+          final gate = Completer<http.Response>();
+          downloads.add(gate);
+          return gate.future;
+        }),
+      );
+      final pending = Future.wait(artists.map(lookup.fetch));
+      for (var i = 0; i < 20; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(metadata, 5);
+      expect(downloads, hasLength(2));
+      for (var i = 0; i < artists.length; i++) {
+        downloads[i].complete(http.Response.bytes([1, 2], 200));
+        for (var j = 0; j < 10; j++) {
+          await Future<void>.delayed(Duration.zero);
+        }
+        expect(downloads.length - i - 1, lessThanOrEqualTo(2));
+      }
+      expect((await pending).every((p) => p != null), isTrue);
+    },
+  );
 }

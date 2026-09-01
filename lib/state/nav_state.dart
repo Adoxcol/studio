@@ -1,6 +1,7 @@
 enum StudioDestination {
   library,
   nowPlaying,
+  playbackMode,
   queue,
   artist,
   album,

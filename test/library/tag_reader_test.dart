@@ -14,5 +14,12 @@ void main() {
       ..writeAsStringSync('not audio');
     final tags = const TagReader().read(file);
     expect(tags.title, 'Ghosts');
+    expect(tags.readSucceeded, isFalse);
+  });
+
+  test('missing optional tags are distinct from a failed read', () {
+    const tags = ParsedTags(title: 'Untitled');
+    expect(tags.artist, equals(null));
+    expect(tags.readSucceeded, isTrue);
   });
 }

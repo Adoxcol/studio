@@ -183,8 +183,13 @@ void main() {
       ],
     );
 
+    await tester.enterText(find.byType(TextField), 'nocturne');
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.enterText(find.byType(TextField), 'harbor');
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    // A superseded search must not run during rapid typing.
+    expect(find.text('Nocturne in Blue'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('Glass Harbor'), findsOneWidget);
     expect(find.text('Nocturne in Blue'), findsNothing);

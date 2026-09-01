@@ -63,4 +63,12 @@ void main() {
     expect(queue.index, 0);
     expect(queue.ids.toSet(), {10, 20, 30, 40});
   });
+
+  test('discardBeforeCurrent keeps the current track and remaining order', () {
+    final queue = PlaybackQueue(ids: [1, 2, 3, 4], index: 2);
+    queue.discardBeforeCurrent();
+    expect(queue.ids, [3, 4]);
+    expect(queue.index, 0);
+    expect(queue.currentId, 3);
+  });
 }

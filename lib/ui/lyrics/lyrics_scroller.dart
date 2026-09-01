@@ -8,7 +8,9 @@ import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 
 class LyricsPane extends ConsumerWidget {
-  const LyricsPane({super.key});
+  const LyricsPane({super.key, this.immersive = false});
+
+  final bool immersive;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -17,25 +19,35 @@ class LyricsPane extends ConsumerWidget {
       data: (document) {
         if (document == null) return const SizedBox.shrink();
         if (document.instrumental) {
-          return const _LyricsMessage(text: 'Instrumental');
+          return _LyricsMessage(text: 'Instrumental', immersive: immersive);
         }
         if (document.missing || !document.hasLines) {
-          return const _LyricsMessage(text: 'No lyrics for this track.');
+          return _LyricsMessage(
+            text: 'No lyrics for this track.',
+            immersive: immersive,
+          );
         }
-        return LyricsScroller(document: document);
+        return LyricsScroller(document: document, immersive: immersive);
       },
-      loading: () => const _LyricsMessage(text: 'Looking up lyrics…'),
-      error: (_, _) => const _LyricsMessage(text: 'Lyrics unavailable.'),
+      loading: () =>
+          _LyricsMessage(text: 'Looking up lyrics…', immersive: immersive),
+      error: (_, _) =>
+          _LyricsMessage(text: 'Lyrics unavailable.', immersive: immersive),
     );
   }
 }
 
 class LyricsScroller extends ConsumerStatefulWidget {
-  const LyricsScroller({super.key, required this.document});
+  const LyricsScroller({
+    super.key,
+    required this.document,
+    this.immersive = false,
+  });
 
   static const double lineExtent = 40;
 
   final LyricsDocument document;
+  final bool immersive;
 
   @override
   ConsumerState<LyricsScroller> createState() => _LyricsScrollerState();
@@ -71,7 +83,7 @@ class _LyricsScrollerState extends ConsumerState<LyricsScroller> {
     final first = _lastIndex < 0;
     _lastIndex = index;
     final max = _controller.position.maxScrollExtent;
-    final target = (index * LyricsScroller.lineExtent).clamp(0.0, max);
+    final target = (index * _lineExtent).clamp(0.0, max);
     if ((_controller.offset - target).abs() < 0.5) return;
     if (first) {
       _controller.jumpTo(target);
@@ -100,12 +112,12 @@ class _LyricsScrollerState extends ConsumerState<LyricsScroller> {
     }
     return LayoutBuilder(
       builder: (context, constraints) {
-        final pad =
-            (constraints.maxHeight / 2) - (LyricsScroller.lineExtent / 2);
+        final lineExtent = _lineExtent;
+        final pad = (constraints.maxHeight / 2) - (lineExtent / 2);
         return ListView.builder(
           controller: _controller,
           padding: EdgeInsets.symmetric(vertical: pad < 0 ? 0 : pad),
-          itemExtent: LyricsScroller.lineExtent,
+          itemExtent: lineExtent,
           addAutomaticKeepAlives: false,
           itemCount: lines.length,
           itemBuilder: (context, index) {
@@ -115,13 +127,31 @@ class _LyricsScrollerState extends ConsumerState<LyricsScroller> {
               alignment: Alignment.center,
               child: Text(
                 line.text,
-                maxLines: 2,
+                maxLines: widget.immersive ? 3 : 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: active ? palette.accent : palette.inkMuted,
-                  fontWeight: active ? FontWeight.w500 : FontWeight.w400,
-                ),
+                style: widget.immersive
+                    ? TextStyle(
+                        color: active ? Colors.white : Colors.white60,
+                        fontSize: active ? 30 : 23,
+                        height: 1.18,
+                        letterSpacing: active ? -0.35 : -0.15,
+                        fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                        leadingDistribution: TextLeadingDistribution.even,
+                        shadows: const [
+                          Shadow(
+                            color: Color(0xcc000000),
+                            blurRadius: 4,
+                            offset: Offset(0, 1),
+                          ),
+                          Shadow(color: Color(0xaa000000), blurRadius: 14),
+                          Shadow(color: Color(0x66000000), blurRadius: 28),
+                        ],
+                      )
+                    : Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: active ? palette.accent : palette.inkMuted,
+                        fontWeight: active ? FontWeight.w500 : FontWeight.w400,
+                      ),
               ),
             );
             if (!widget.document.synced) return text;
@@ -137,7 +167,7 @@ class _LyricsScrollerState extends ConsumerState<LyricsScroller> {
                         .seekTo(line.start),
                   );
                 },
-                child: SizedBox(height: LyricsScroller.lineExtent, child: text),
+                child: SizedBox(height: lineExtent, child: text),
               ),
             );
           },
@@ -145,12 +175,15 @@ class _LyricsScrollerState extends ConsumerState<LyricsScroller> {
       },
     );
   }
+
+  double get _lineExtent => widget.immersive ? 76 : LyricsScroller.lineExtent;
 }
 
 class _LyricsMessage extends StatelessWidget {
-  const _LyricsMessage({required this.text});
+  const _LyricsMessage({required this.text, this.immersive = false});
 
   final String text;
+  final bool immersive;
 
   @override
   Widget build(BuildContext context) {
@@ -161,9 +194,11 @@ class _LyricsMessage extends StatelessWidget {
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: palette.inkMuted),
+          style: immersive
+              ? const TextStyle(color: Colors.white70, fontSize: 23)
+              : Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: palette.inkMuted),
         ),
       ),
     );
