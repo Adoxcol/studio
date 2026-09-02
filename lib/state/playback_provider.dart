@@ -340,10 +340,26 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     _scheduleSessionSave(flush: true);
   }
 
-  void removeUpcomingAt(int index) {
-    if (!queue.removeUpcomingAt(index)) return;
+  bool removeUpcomingAt(int index) {
+    if (!queue.removeUpcomingAt(index)) return false;
     _publishQueue();
     _scheduleSessionSave(flush: true);
+    return true;
+  }
+
+  bool insertUpcomingAt(int index, int id) {
+    if (!queue.insertUpcomingAt(index, id)) return false;
+    _publishQueue();
+    _scheduleSessionSave(flush: true);
+    return true;
+  }
+
+  int removeUpcomingIds(Set<int> ids) {
+    final removed = queue.removeUpcomingIds(ids);
+    if (removed == 0) return 0;
+    _publishQueue();
+    _scheduleSessionSave(flush: true);
+    return removed;
   }
 
   void moveUpcoming(int oldIndex, int newIndex) {
