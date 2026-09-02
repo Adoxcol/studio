@@ -36,8 +36,8 @@ class _PlayerBarScrubber extends ConsumerWidget {
       progress: snapshot.duration.inMilliseconds <= 0
           ? 0
           : (snapshot.position.inMilliseconds /
-                    snapshot.duration.inMilliseconds)
-                .clamp(0.0, 1.0),
+                  snapshot.duration.inMilliseconds)
+              .clamp(0.0, 1.0),
       duration: snapshot.duration,
       onSeek: (fraction) {
         ref.read(playbackControllerProvider.notifier).seekFraction(fraction);
@@ -115,12 +115,16 @@ class _TrackInfo extends ConsumerWidget {
         children: [
           Tooltip(
             message: 'Open Playback Mode',
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: ref.read(playbackModeProvider.notifier).enter,
-                child: CoverArt(path: track.artworkPath, size: 40),
+            child: Semantics(
+              button: true,
+              label: 'Open Playback Mode',
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: ref.read(playbackModeProvider.notifier).enter,
+                  child: CoverArt(path: track.artworkPath, size: 40),
+                ),
               ),
             ),
           ),
