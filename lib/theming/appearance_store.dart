@@ -48,6 +48,9 @@ class FileAppearanceStore implements AppearanceStore {
         fullPlayerFileInfo: json['fullPlayerFileInfo'] as bool? ?? true,
         fullPlayerAudioSettings:
             json['fullPlayerAudioSettings'] as bool? ?? true,
+        fullPlayerBackground: PlaybackBackgroundMode.fromName(
+          json['fullPlayerBackground'] as String?,
+        ),
       );
     } on Object {
       return AppearanceState.defaults;
@@ -71,6 +74,7 @@ class FileAppearanceStore implements AppearanceStore {
         'fullPlayerLyrics': state.fullPlayerLyrics,
         'fullPlayerFileInfo': state.fullPlayerFileInfo,
         'fullPlayerAudioSettings': state.fullPlayerAudioSettings,
+        'fullPlayerBackground': state.fullPlayerBackground.name,
       }),
     );
   }

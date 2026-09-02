@@ -70,5 +70,35 @@ void main() {
     expect(queue.ids, [3, 4]);
     expect(queue.index, 0);
     expect(queue.currentId, 3);
+    expect(queue.historyIds, [1, 2]);
+  });
+
+  test('previous restores the latest consumed track from history', () {
+    final queue = PlaybackQueue(ids: [2, 3], historyIds: [1]);
+    expect(queue.movePrevious(), isTrue);
+    expect(queue.ids, [1, 2, 3]);
+    expect(queue.historyIds, isEmpty);
+    expect(queue.currentId, 1);
+  });
+
+  test('upcoming items can be inserted, moved, removed, and cleared', () {
+    final queue = PlaybackQueue(ids: [1, 2, 3]);
+    queue.playNext(4);
+    expect(queue.ids, [1, 4, 2, 3]);
+    queue.addToEnd(5);
+    expect(queue.ids, [1, 4, 2, 3, 5]);
+    expect(queue.moveUpcoming(4, 1), isTrue);
+    expect(queue.ids, [1, 5, 4, 2, 3]);
+    expect(queue.removeUpcomingAt(2), isTrue);
+    expect(queue.ids, [1, 5, 2, 3]);
+    queue.clearUpcoming();
+    expect(queue.ids, [1]);
+  });
+
+  test('play next inserts after a non-zero current index', () {
+    final queue = PlaybackQueue(ids: [1, 2, 3, 4], index: 2);
+    queue.playNext(5);
+    expect(queue.ids, [1, 2, 3, 5, 4]);
+    expect(queue.currentId, 3);
   });
 }

@@ -7,6 +7,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Full-screen Playback Mode now offers persistent Studio gradient, album
+  artwork, artist image, and solid-color backgrounds, with responsive layouts
+  for narrow, ultrawide, and low-height windows and subtle content transitions.
+- Queue history keeps played tracks discoverable after they leave the upcoming
+  list. Tracks can be reordered, removed, cleared, restored from history, played
+  next, or added to the end from library actions.
+
 ## [0.1.2] - 2026-09-02
 
 ### Changed

@@ -123,36 +123,50 @@ class _LyricsScrollerState extends ConsumerState<LyricsScroller> {
           itemBuilder: (context, index) {
             final active = index == current;
             final line = lines[index];
-            final text = Align(
-              alignment: Alignment.center,
-              child: Text(
-                line.text,
-                maxLines: widget.immersive ? 3 : 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: widget.immersive
-                    ? TextStyle(
-                        color: active ? Colors.white : Colors.white60,
-                        fontSize: active ? 30 : 23,
-                        height: 1.18,
-                        letterSpacing: active ? -0.35 : -0.15,
-                        fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-                        leadingDistribution: TextLeadingDistribution.even,
-                        shadows: const [
-                          Shadow(
-                            color: Color(0xcc000000),
-                            blurRadius: 4,
-                            offset: Offset(0, 1),
-                          ),
-                          Shadow(color: Color(0xaa000000), blurRadius: 14),
-                          Shadow(color: Color(0x66000000), blurRadius: 28),
-                        ],
-                      )
-                    : Theme.of(context).textTheme.bodyMedium?.copyWith(
+            final lineStyle = widget.immersive
+                ? TextStyle(
+                    color: active ? Colors.white : Colors.white60,
+                    fontSize: active ? 30 : 23,
+                    height: 1.18,
+                    letterSpacing: active ? -0.35 : -0.15,
+                    fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                    leadingDistribution: TextLeadingDistribution.even,
+                    shadows: const [
+                      Shadow(
+                        color: Color(0xcc000000),
+                        blurRadius: 4,
+                        offset: Offset(0, 1),
+                      ),
+                      Shadow(color: Color(0xaa000000), blurRadius: 14),
+                      Shadow(color: Color(0x66000000), blurRadius: 28),
+                    ],
+                  )
+                : (Theme.of(context).textTheme.bodyMedium ?? const TextStyle())
+                      .copyWith(
                         color: active ? palette.accent : palette.inkMuted,
                         fontWeight: active ? FontWeight.w500 : FontWeight.w400,
+                      );
+            final text = Align(
+              alignment: Alignment.center,
+              child: widget.immersive
+                  ? AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 240),
+                      curve: Curves.easeOutCubic,
+                      style: lineStyle,
+                      child: Text(
+                        line.text,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
                       ),
-              ),
+                    )
+                  : Text(
+                      line.text,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: lineStyle,
+                    ),
             );
             if (!widget.document.synced) return text;
             return MouseRegion(

@@ -85,13 +85,33 @@ void main() {
 
     await controller().skipNext();
     expect(ui().queueIds, ids.sublist(1));
+    expect(ui().historyIds, [ids.first]);
     expect(ui().title, 'Second');
 
     await controller().playQueueIndex(2);
     expect(ui().queueIds, [ids.last]);
+    expect(ui().historyIds, ids.sublist(0, 3));
     expect(ui().title, 'Fourth');
     expect(ui().upcomingIds, isEmpty);
   });
+
+  test(
+    'queue editing APIs preserve current track and publish changes',
+    () async {
+      final ids = await insertTitles(['First', 'Second', 'Third', 'Fourth']);
+      await controller().playTracks(ids.take(3).toList());
+
+      controller().playNext(ids.last);
+      expect(ui().queueIds, [ids[0], ids[3], ids[1], ids[2]]);
+      controller().moveUpcoming(3, 1);
+      expect(ui().queueIds, [ids[0], ids[2], ids[3], ids[1]]);
+      controller().removeUpcomingAt(2);
+      expect(ui().queueIds, [ids[0], ids[2], ids[1]]);
+      controller().clearUpcoming();
+      expect(ui().queueIds, [ids.first]);
+      expect(ui().trackId, ids.first);
+    },
+  );
 
   test('pause during a slow open remains paused after it finishes', () async {
     final ids = await insertTitles(['First']);
@@ -284,8 +304,8 @@ void main() {
     await controller().playTracks(ids, startIndex: 1);
     await controller().seekFraction(0.5);
     controller().saveSession();
-    expect(sessionStore.value.queueIds, ids);
-    expect(sessionStore.value.index, 1);
+    expect(sessionStore.value.queueIds, [ids.last]);
+    expect(sessionStore.value.index, 0);
     expect(
       sessionStore.value.position,
       const Duration(minutes: 1, seconds: 30),
@@ -295,18 +315,18 @@ void main() {
   test('toggleShuffle reorders upcoming ids and restores them', () async {
     final ids = await insertTitles(['A', 'B', 'C', 'D']);
     await controller().playTracks(ids, startIndex: 1);
-    expect(ui().queueIds, ids);
+    expect(ui().queueIds, ids.sublist(1));
     expect(ui().trackId, ids[1]);
 
     controller().toggleShuffle();
     expect(ui().shuffle, isTrue);
     expect(ui().queueIds.first, ids[1]);
-    expect(ui().queueIds.toSet(), ids.toSet());
+    expect(ui().queueIds.toSet(), ids.sublist(1).toSet());
     expect(ui().trackId, ids[1]);
 
     controller().toggleShuffle();
     expect(ui().shuffle, isFalse);
-    expect(ui().queueIds, ids);
+    expect(ui().queueIds, ids.sublist(1));
     expect(ui().trackId, ids[1]);
   });
 
