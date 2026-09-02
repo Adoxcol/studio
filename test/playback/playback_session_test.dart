@@ -9,6 +9,7 @@ void main() {
   test('fromJson round-trips queue, index, and playhead', () {
     const session = PlaybackSession(
       queueIds: [10, 20, 30],
+      historyIds: [7, 8],
       index: 1,
       position: Duration(minutes: 1, seconds: 12),
       repeat: QueueRepeatMode.all,
@@ -17,6 +18,7 @@ void main() {
     expect(PlaybackSession.fromJson(session.toJson()), isA<PlaybackSession>());
     final restored = PlaybackSession.fromJson(session.toJson());
     expect(restored.queueIds, [10, 20, 30]);
+    expect(restored.historyIds, [7, 8]);
     expect(restored.index, 1);
     expect(restored.currentId, 20);
     expect(restored.position, const Duration(minutes: 1, seconds: 12));
@@ -27,11 +29,13 @@ void main() {
   test('keepKnown drops missing tracks and keeps the same current id', () {
     const session = PlaybackSession(
       queueIds: [1, 2, 3, 4],
+      historyIds: [8, 9],
       index: 2,
       position: Duration(seconds: 40),
     );
     final kept = session.keepKnown({2, 3, 9});
     expect(kept.queueIds, [2, 3]);
+    expect(kept.historyIds, [9]);
     expect(kept.currentId, 3);
     expect(kept.position, const Duration(seconds: 40));
   });
@@ -64,12 +68,14 @@ void main() {
     });
     const session = PlaybackSession(
       queueIds: [7, 8],
+      historyIds: [5, 6],
       index: 1,
       position: Duration(milliseconds: 1500),
     );
     FilePlaybackSessionStore(file).save(session);
     final loaded = FilePlaybackSessionStore(file).load();
     expect(loaded.queueIds, [7, 8]);
+    expect(loaded.historyIds, [5, 6]);
     expect(loaded.index, 1);
     expect(loaded.position, const Duration(milliseconds: 1500));
   });

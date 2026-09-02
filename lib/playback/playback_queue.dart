@@ -14,14 +14,19 @@ enum QueueRepeatMode {
 class PlaybackQueue {
   PlaybackQueue({
     List<int>? ids,
+    List<int>? historyIds,
     this.index = 0,
     this.repeat = QueueRepeatMode.off,
     this.shuffle = false,
   }) : ids = List<int>.of(ids ?? const []),
+       historyIds = List<int>.of(historyIds ?? const []),
        _source = List<int>.of(ids ?? const []);
+
+  static const int historyLimit = 200;
 
   /// Current play order (shuffled when [shuffle] is on).
   List<int> ids;
+  List<int> historyIds;
 
   /// Original order, restored when shuffle is turned off.
   List<int> _source;
@@ -44,6 +49,7 @@ class PlaybackQueue {
   }
 
   void replace(List<int> nextIds, {int startIndex = 0}) {
+    historyIds.clear();
     _source = List<int>.of(nextIds);
     ids = List<int>.of(nextIds);
     if (shuffle && ids.isNotEmpty) {
@@ -63,6 +69,14 @@ class PlaybackQueue {
     _source = List<int>.of(nextIds);
     ids = List<int>.of(nextIds);
     index = ids.isEmpty ? 0 : nextIndex.clamp(0, ids.length - 1);
+  }
+
+  void loadHistory(List<int> nextHistoryIds) {
+    historyIds = List<int>.of(
+      nextHistoryIds.length <= historyLimit
+          ? nextHistoryIds
+          : nextHistoryIds.sublist(nextHistoryIds.length - historyLimit),
+    );
   }
 
   /// Turns shuffle on or off. On: current track stays first, the rest is
@@ -115,6 +129,13 @@ class PlaybackQueue {
       index--;
       return true;
     }
+    if (historyIds.isNotEmpty) {
+      final previous = historyIds.removeLast();
+      ids.insert(0, previous);
+      _source = List<int>.of(ids);
+      index = 0;
+      return true;
+    }
     if (repeat == QueueRepeatMode.all) {
       index = ids.length - 1;
       return true;
@@ -124,11 +145,76 @@ class PlaybackQueue {
 
   /// Drops queue history while keeping the current track and everything after
   /// it in the same play order.
-  void discardBeforeCurrent() {
+  void discardBeforeCurrent({bool remember = true}) {
     if (ids.isEmpty || index <= 0) return;
+    if (remember) _remember(ids.take(index));
     ids = List<int>.of(ids.sublist(index));
     _source = List<int>.of(ids);
     index = 0;
+  }
+
+  void _remember(Iterable<int> consumed) {
+    historyIds.addAll(consumed);
+    if (historyIds.length > historyLimit) {
+      historyIds = historyIds.sublist(historyIds.length - historyLimit);
+    }
+  }
+
+  void playNext(int id) {
+    if (ids.isEmpty) {
+      ids = [id];
+      _source = [id];
+      index = 0;
+      return;
+    }
+    final insertionIndex = index + 1;
+    final existing = ids.indexOf(id, insertionIndex);
+    if (existing >= 0) ids.removeAt(existing);
+    ids.insert(insertionIndex.clamp(0, ids.length), id);
+    _source = List<int>.of(ids);
+  }
+
+  void addToEnd(int id) {
+    if (ids.contains(id)) return;
+    ids.add(id);
+    _source = List<int>.of(ids);
+  }
+
+  bool removeUpcomingAt(int queueIndex) {
+    if (queueIndex <= index || queueIndex >= ids.length) return false;
+    ids.removeAt(queueIndex);
+    _source = List<int>.of(ids);
+    return true;
+  }
+
+  bool moveUpcoming(int oldIndex, int newIndex) {
+    if (oldIndex <= index || oldIndex >= ids.length) return false;
+    final target = newIndex.clamp(index + 1, ids.length);
+    final id = ids.removeAt(oldIndex);
+    var insertion = target;
+    if (oldIndex < insertion) insertion--;
+    ids.insert(insertion.clamp(index + 1, ids.length), id);
+    _source = List<int>.of(ids);
+    return true;
+  }
+
+  void clearUpcoming() {
+    if (ids.isEmpty) return;
+    ids = [currentId!];
+    _source = List<int>.of(ids);
+    index = 0;
+  }
+
+  void clearHistory() => historyIds.clear();
+
+  bool restoreHistoryAt(int historyIndex) {
+    if (historyIndex < 0 || historyIndex >= historyIds.length) return false;
+    final restored = historyIds.sublist(historyIndex);
+    historyIds = List<int>.of(historyIds.take(historyIndex));
+    ids = [...restored, ...ids];
+    _source = List<int>.of(ids);
+    index = 0;
+    return true;
   }
 
   void cycleRepeat() {

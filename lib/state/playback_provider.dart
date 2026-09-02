@@ -33,6 +33,7 @@ class PlaybackUiState {
     this.repeat = QueueRepeatMode.off,
     this.shuffle = false,
     this.queueIds = const [],
+    this.historyIds = const [],
   });
 
   final int? trackId;
@@ -52,6 +53,7 @@ class PlaybackUiState {
   final QueueRepeatMode repeat;
   final bool shuffle;
   final List<int> queueIds;
+  final List<int> historyIds;
 
   List<int> get upcomingIds {
     final id = trackId;
@@ -85,6 +87,7 @@ class PlaybackUiState {
     QueueRepeatMode? repeat,
     bool? shuffle,
     List<int>? queueIds,
+    List<int>? historyIds,
     bool clearArtist = false,
     bool clearAlbum = false,
     bool clearGenre = false,
@@ -111,6 +114,7 @@ class PlaybackUiState {
       repeat: repeat ?? this.repeat,
       shuffle: shuffle ?? this.shuffle,
       queueIds: queueIds ?? this.queueIds,
+      historyIds: historyIds ?? this.historyIds,
     );
   }
 }
@@ -310,7 +314,8 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     if (shuffle != null) {
       queue.shuffle = shuffle;
     }
-    queue.replace(ids, startIndex: startIndex);
+    final safeIndex = startIndex.clamp(0, ids.length - 1);
+    queue.replace(ids.sublist(safeIndex));
     await _openCurrent();
     _scheduleSessionSave(flush: true);
   }
@@ -321,6 +326,55 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     queue.discardBeforeCurrent();
     await _openCurrent();
     _scheduleSessionSave(flush: true);
+  }
+
+  void playNext(int id) {
+    queue.playNext(id);
+    _publishQueue();
+    _scheduleSessionSave(flush: true);
+  }
+
+  void addToQueue(int id) {
+    queue.addToEnd(id);
+    _publishQueue();
+    _scheduleSessionSave(flush: true);
+  }
+
+  void removeUpcomingAt(int index) {
+    if (!queue.removeUpcomingAt(index)) return;
+    _publishQueue();
+    _scheduleSessionSave(flush: true);
+  }
+
+  void moveUpcoming(int oldIndex, int newIndex) {
+    if (!queue.moveUpcoming(oldIndex, newIndex)) return;
+    _publishQueue();
+    _scheduleSessionSave(flush: true);
+  }
+
+  void clearUpcoming() {
+    queue.clearUpcoming();
+    _publishQueue();
+    _scheduleSessionSave(flush: true);
+  }
+
+  void clearHistory() {
+    queue.clearHistory();
+    _publishQueue();
+    _scheduleSessionSave(flush: true);
+  }
+
+  Future<void> playHistoryIndex(int index) async {
+    if (!queue.restoreHistoryAt(index)) return;
+    await _openCurrent();
+    _scheduleSessionSave(flush: true);
+  }
+
+  void _publishQueue() {
+    state = state.copyWith(
+      queueIds: List<int>.of(queue.ids),
+      historyIds: List<int>.of(queue.historyIds),
+    );
   }
 
   Future<void> togglePlayPause() async {
@@ -444,6 +498,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     state = state.copyWith(
       shuffle: queue.shuffle,
       queueIds: List<int>.of(queue.ids),
+      historyIds: List<int>.of(queue.historyIds),
     );
     _scheduleSessionSave(flush: true);
   }
@@ -496,6 +551,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
             clearSampleRate: track.sampleRateHz == null,
             clearArtwork: track.artworkPath == null,
             queueIds: List<int>.of(queue.ids),
+            historyIds: List<int>.of(queue.historyIds),
             repeat: queue.repeat,
             shuffle: queue.shuffle,
             playing: _wantPlaying,
@@ -593,6 +649,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
       queue.shuffle = session.shuffle;
       queue.repeat = session.repeat;
       queue.load(session.queueIds, nextIndex: session.index);
+      queue.loadHistory(session.historyIds);
       final opening = _openCurrent(play: false);
       final revision = _openRevision;
       final seekRevision = _seekGen;
@@ -617,6 +674,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     _sessionStore.save(
       PlaybackSession(
         queueIds: List<int>.of(queue.ids),
+        historyIds: List<int>.of(queue.historyIds),
         index: queue.index,
         position: state.position,
         repeat: queue.repeat,

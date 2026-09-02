@@ -11,6 +11,8 @@ class QueueTrackRow extends StatelessWidget {
     required this.track,
     this.current = false,
     this.onTap,
+    this.onRemove,
+    this.dragHandle,
   });
 
   static const double height = 64;
@@ -19,6 +21,8 @@ class QueueTrackRow extends StatelessWidget {
   final Track? track;
   final bool current;
   final VoidCallback? onTap;
+  final VoidCallback? onRemove;
+  final Widget? dragHandle;
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +95,21 @@ class QueueTrackRow extends StatelessWidget {
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
+                  ],
+                  if (onRemove != null)
+                    IconButton(
+                      tooltip: 'Remove from queue',
+                      onPressed: onRemove,
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(
+                        Icons.close,
+                        size: 17,
+                        color: palette.inkMuted,
+                      ),
+                    ),
+                  if (dragHandle != null) ...[
+                    const SizedBox(width: 4),
+                    dragHandle!,
                   ],
                 ],
               ),

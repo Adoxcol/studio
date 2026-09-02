@@ -239,6 +239,15 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       ),
       items: [
         const PopupMenuItem<Object>(
+          value: 'play-next',
+          child: Text('Play next'),
+        ),
+        const PopupMenuItem<Object>(
+          value: 'add-to-queue',
+          child: Text('Add to queue'),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem<Object>(
           value: 'details',
           child: Text('View details'),
         ),
@@ -252,6 +261,14 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       ],
     );
     if (selected == null || !mounted) return;
+    if (selected == 'play-next') {
+      ref.read(playbackControllerProvider.notifier).playNext(track.id);
+      return;
+    }
+    if (selected == 'add-to-queue') {
+      ref.read(playbackControllerProvider.notifier).addToQueue(track.id);
+      return;
+    }
     if (selected == 'details') {
       ref.read(detailSelectionProvider.notifier).inspect(track.id);
       return;
