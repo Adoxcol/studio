@@ -78,6 +78,7 @@ class LibraryView {
     this.album,
     this.genre,
     this.folderId,
+    this.filters = const LibraryTrackFilters(),
     required this.sort,
     required this.order,
   });
@@ -88,6 +89,7 @@ class LibraryView {
   final String? album;
   final String? genre;
   final int? folderId;
+  final LibraryTrackFilters filters;
   final LibrarySort sort;
   final LibraryOrder order;
 
@@ -95,6 +97,7 @@ class LibraryView {
   late final filtered = [
     for (final track in searched)
       if ((folderId == null || track.folderId == folderId) &&
+          filters.matches(track) &&
           (artist == null ||
               index
                   .creditsOf(track)
@@ -112,14 +115,14 @@ class LibraryView {
     artistOf: index.artistOf,
   );
   late final artists = LibraryQuery.groupArtists(
-    searched,
+    filtered,
     order: order,
     creditsOf: index.creditsOf,
   );
   late final albums = LibraryQuery.albumSections(
-    searched,
+    filtered,
     order: order,
     artistOf: index.artistOf,
   );
-  late final genres = LibraryQuery.groupGenres(searched, order: order);
+  late final genres = LibraryQuery.groupGenres(filtered, order: order);
 }
