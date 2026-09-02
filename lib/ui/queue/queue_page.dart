@@ -58,6 +58,9 @@ class _QueuePageState extends ConsumerState<QueuePage> {
               buildDefaultDragHandles: false,
               itemExtent: QueueTrackRow.height + 1,
               itemCount: playback.queueIds.length,
+              // Flutter 3.47 deprecates this in favor of onReorderItem, which
+              // is not available on the project's currently supported SDK.
+              // ignore: deprecated_member_use
               onReorder: controller.moveUpcoming,
               itemBuilder: (context, index) {
                 final id = playback.queueIds[index];
