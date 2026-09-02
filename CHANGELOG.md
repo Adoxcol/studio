@@ -23,6 +23,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Player-bar artwork exposes its Playback Mode action to screen readers as a
   labeled button.
+- Queue rows gain clearer lifted drag feedback, an upcoming-track selection
+  mode for batch removal, and Undo after removing or clearing tracks.
 
 ## [0.1.2] - 2026-09-02
 

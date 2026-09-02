@@ -187,6 +187,29 @@ class PlaybackQueue {
     return true;
   }
 
+  bool insertUpcomingAt(int queueIndex, int id) {
+    if (ids.isEmpty) return false;
+    final existing = ids.indexOf(id, index + 1);
+    if (existing >= 0) ids.removeAt(existing);
+    final insertion = queueIndex.clamp(index + 1, ids.length);
+    ids.insert(insertion, id);
+    _source = List<int>.of(ids);
+    return true;
+  }
+
+  int removeUpcomingIds(Set<int> removedIds) {
+    if (removedIds.isEmpty || ids.isEmpty) return 0;
+    var removed = 0;
+    for (var queueIndex = ids.length - 1; queueIndex > index; queueIndex--) {
+      if (removedIds.contains(ids[queueIndex])) {
+        ids.removeAt(queueIndex);
+        removed++;
+      }
+    }
+    if (removed > 0) _source = List<int>.of(ids);
+    return removed;
+  }
+
   bool moveUpcoming(int oldIndex, int newIndex) {
     if (oldIndex <= index || oldIndex >= ids.length) return false;
     final target = newIndex.clamp(index + 1, ids.length);

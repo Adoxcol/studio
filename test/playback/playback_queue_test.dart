@@ -101,4 +101,14 @@ void main() {
     expect(queue.ids, [1, 2, 3, 5, 4]);
     expect(queue.currentId, 3);
   });
+
+  test('batch removal and insertion support undo without moving current', () {
+    final queue = PlaybackQueue(ids: [1, 2, 3, 4]);
+    expect(queue.removeUpcomingIds({2, 4}), 2);
+    expect(queue.ids, [1, 3]);
+    expect(queue.insertUpcomingAt(1, 2), isTrue);
+    expect(queue.insertUpcomingAt(3, 4), isTrue);
+    expect(queue.ids, [1, 2, 3, 4]);
+    expect(queue.currentId, 1);
+  });
 }
