@@ -7,6 +7,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- A Studio-native metadata editor previews changes before safely writing title,
+  artist, album, genre, year, and track number into supported local audio files.
+
 ## [0.2.0] - 2026-09-03
 
 ### Added

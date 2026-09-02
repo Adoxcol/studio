@@ -84,6 +84,37 @@ void main() {
     expect((await db.allTracks()).single.year, 2024);
   });
 
+  test('metadata edit updates tags without replacing technical data', () async {
+    final db = StudioDatabase.memory();
+    addTearDown(db.close);
+    await db.upsertTrack(
+      TracksCompanion.insert(
+        locator: '/music/a.flac',
+        title: 'Before',
+        durationMs: const Value(180000),
+        sampleRateHz: const Value(96000),
+      ),
+    );
+    final id = (await db.allTracks()).single.id;
+
+    await db.updateTrackTags(
+      id: id,
+      title: 'After',
+      artist: 'Aria',
+      album: 'Blue',
+      genre: 'Ambient',
+      year: 2026,
+      trackNumber: 3,
+      fileModifiedMs: 1234,
+    );
+
+    final track = (await db.allTracks()).single;
+    expect(track.title, 'After');
+    expect(track.sampleRateHz, 96000);
+    expect(track.durationMs, 180000);
+    expect(track.fileModifiedMs, 1234);
+  });
+
   test('upsertTracks writes a batch in one go', () async {
     final db = StudioDatabase.memory();
     addTearDown(db.close);
