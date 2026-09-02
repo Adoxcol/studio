@@ -70,6 +70,26 @@ void main() {
     expect(unknown.single.title, 'Untitled');
   });
 
+  test('detects lossless formats and estimates bitrate from size', () {
+    final flac = testTrack(
+      locator: '/music/MASTER.FLAC?cache=1',
+      durationMs: 200000,
+      fileSizeBytes: 25000000,
+    );
+    expect(LibraryQuery.isLossless(flac), isTrue);
+    expect(
+      LibraryQuery.isLossless(testTrack(locator: '/music/song.mp3')),
+      isFalse,
+    );
+    expect(LibraryQuery.estimatedBitrateKbps(flac), 1000);
+    expect(
+      LibraryQuery.estimatedBitrateKbps(
+        testTrack(durationMs: null, fileSizeBytes: 100),
+      ),
+      isNull,
+    );
+  });
+
   test('sorts by title, artist, album, and duration', () {
     expect(
       LibraryQuery.sorted(

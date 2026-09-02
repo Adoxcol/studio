@@ -63,4 +63,50 @@ void main() {
     expect(details.artistAlbums, same(details.artistAlbums));
     expect(details.genres, same(details.genres));
   });
+
+  test('quality filters combine and also constrain catalogue groups', () {
+    final candidates = [
+      testTrack(
+        id: 10,
+        title: 'Studio Master',
+        artist: 'Aria',
+        genre: 'Jazz',
+        year: 2025,
+        locator: '/music/master.flac',
+        durationMs: 100000,
+        fileSizeBytes: 12500000,
+        sampleRateHz: 96000,
+        folderId: 2,
+      ),
+      testTrack(
+        id: 11,
+        title: 'Compressed',
+        artist: 'Hal',
+        genre: 'Jazz',
+        year: 2025,
+        locator: '/music/song.mp3',
+        durationMs: 100000,
+        fileSizeBytes: 4000000,
+        sampleRateHz: 44100,
+        folderId: 2,
+      ),
+    ];
+    final view = LibraryView(
+      index: LibraryIndex(candidates),
+      sort: LibrarySort.title,
+      order: LibraryOrder.ascending,
+      filters: const LibraryTrackFilters(
+        losslessOnly: true,
+        minimumSampleRateHz: 88200,
+        minimumBitrateKbps: 900,
+        genre: 'Jazz',
+        year: 2025,
+        folderId: 2,
+      ),
+    );
+
+    expect(view.filtered.map((track) => track.id), [10]);
+    expect(view.artists.map((group) => group.name), ['Aria']);
+    expect(view.albums.single.albums.single.trackCount, 1);
+  });
 }

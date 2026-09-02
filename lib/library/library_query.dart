@@ -6,6 +6,63 @@ enum LibrarySort { title, artist, album, track, time }
 
 enum LibraryOrder { ascending, descending }
 
+class LibraryTrackFilters {
+  const LibraryTrackFilters({
+    this.losslessOnly = false,
+    this.minimumSampleRateHz,
+    this.minimumBitrateKbps,
+    this.genre,
+    this.year,
+    this.folderId,
+  });
+
+  final bool losslessOnly;
+  final int? minimumSampleRateHz;
+  final int? minimumBitrateKbps;
+  final String? genre;
+  final int? year;
+  final int? folderId;
+
+  bool get isActive =>
+      losslessOnly ||
+      minimumSampleRateHz != null ||
+      minimumBitrateKbps != null ||
+      genre != null ||
+      year != null ||
+      folderId != null;
+
+  int get activeCount => [
+    losslessOnly,
+    minimumSampleRateHz != null,
+    minimumBitrateKbps != null,
+    genre != null,
+    year != null,
+    folderId != null,
+  ].where((active) => active).length;
+
+  bool matches(Track track) {
+    if (losslessOnly && !LibraryQuery.isLossless(track)) return false;
+    if (minimumSampleRateHz case final minimum?) {
+      if ((track.sampleRateHz ?? 0) < minimum) return false;
+    }
+    if (minimumBitrateKbps case final minimum?) {
+      if ((LibraryQuery.estimatedBitrateKbps(track) ?? 0) < minimum) {
+        return false;
+      }
+    }
+    if (genre case final selected?) {
+      if (LibraryQuery.genreName(track) != selected) return false;
+    }
+    if (year case final selected?) {
+      if (track.year != selected) return false;
+    }
+    if (folderId case final selected?) {
+      if (track.folderId != selected) return false;
+    }
+    return true;
+  }
+}
+
 class LibraryGroup {
   const LibraryGroup({
     required this.name,
@@ -138,6 +195,24 @@ abstract final class LibraryQuery {
   }
 
   static String genreName(Track track) => _label(track.genre, unknownGenre);
+
+  static const _losslessExtensions = {'flac', 'alac', 'wav', 'aiff', 'aif'};
+
+  static bool isLossless(Track track) {
+    final path = track.locator.split('?').first;
+    final dot = path.lastIndexOf('.');
+    if (dot < 0) return false;
+    return _losslessExtensions.contains(path.substring(dot + 1).toLowerCase());
+  }
+
+  static int? estimatedBitrateKbps(Track track) {
+    final bytes = track.fileSizeBytes;
+    final durationMs = track.durationMs;
+    if (bytes == null || bytes <= 0 || durationMs == null || durationMs <= 0) {
+      return null;
+    }
+    return (bytes * 8 / durationMs).round();
+  }
 
   static bool matchesQuery(Track track, String query) {
     final needle = query.trim().toLowerCase();

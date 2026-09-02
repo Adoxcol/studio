@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Library filters for lossless formats, minimum sample rate, estimated bitrate,
+  genre, year, and source folder, applied consistently to tracks and catalogues.
 - Full-screen Playback Mode now offers persistent Studio gradient, album
   artwork, artist image, and solid-color backgrounds, with responsive layouts
   for narrow, ultrawide, and low-height windows and subtle content transitions.
