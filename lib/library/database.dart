@@ -158,6 +158,8 @@ class StudioDatabase extends _$StudioDatabase {
     required int? year,
     required int? trackNumber,
     required int fileModifiedMs,
+    String? artworkPath,
+    bool updateArtwork = false,
   }) {
     return (update(tracks)..where((t) => t.id.equals(id))).write(
       TracksCompanion(
@@ -168,6 +170,7 @@ class StudioDatabase extends _$StudioDatabase {
         year: Value(year),
         trackNumber: Value(trackNumber),
         fileModifiedMs: Value(fileModifiedMs),
+        artworkPath: updateArtwork ? Value(artworkPath) : const Value.absent(),
       ),
     );
   }

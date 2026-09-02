@@ -93,6 +93,7 @@ void main() {
         title: 'Before',
         durationMs: const Value(180000),
         sampleRateHz: const Value(96000),
+        artworkPath: const Value('/cache/original.jpg'),
       ),
     );
     final id = (await db.allTracks()).single.id;
@@ -113,6 +114,7 @@ void main() {
     expect(track.sampleRateHz, 96000);
     expect(track.durationMs, 180000);
     expect(track.fileModifiedMs, 1234);
+    expect(track.artworkPath, '/cache/original.jpg');
   });
 
   test('upsertTracks writes a batch in one go', () async {
