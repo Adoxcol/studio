@@ -11,6 +11,7 @@ import 'package:studio/state/playback_mode_provider.dart';
 import 'package:studio/ui/layout/icon_rail.dart';
 import 'package:studio/ui/layout/studio_workspace.dart';
 import 'package:studio/ui/layout/title_bar.dart';
+import 'package:studio/ui/keyboard_shortcuts/studio_keyboard_shortcuts.dart';
 import 'package:studio/ui/library_browser/scan_notice.dart';
 import 'package:studio/ui/now_playing/player_bar.dart';
 import 'package:studio/ui/now_playing/now_playing_page.dart';
@@ -28,38 +29,41 @@ class StudioShell extends ConsumerWidget {
     ref.listen(playbackModeProvider, (_, enabled) {
       unawaited(_setNativeFullscreen(enabled));
     });
-    if (playbackMode) {
-      return const Scaffold(body: PlaybackModePage());
-    }
-    return Scaffold(
-      body: Column(
-        children: [
-          Expanded(
-            child: Row(
+    final content = playbackMode
+        ? const Scaffold(body: PlaybackModePage())
+        : Scaffold(
+            body: Column(
               children: [
-                StudioIconRail(
-                  selected: destination,
-                  onSelect: (next) =>
-                      ref.read(studioNavProvider.notifier).select(next),
-                ),
                 Expanded(
-                  child: Column(
+                  child: Row(
                     children: [
-                      const StudioTitleBar(),
+                      StudioIconRail(
+                        selected: destination,
+                        onSelect: (next) =>
+                            ref.read(studioNavProvider.notifier).select(next),
+                      ),
                       Expanded(
-                        child: Stack(
+                        child: Column(
                           children: [
-                            Offstage(
-                              offstage:
-                                  destination == StudioDestination.settings,
-                              child: const StudioWorkspace(),
-                            ),
-                            if (destination == StudioDestination.settings)
-                              const SettingsPage(),
-                            const Positioned(
-                              right: 20,
-                              bottom: 72,
-                              child: ScanNotice(),
+                            const StudioTitleBar(),
+                            Expanded(
+                              child: Stack(
+                                children: [
+                                  Offstage(
+                                    offstage:
+                                        destination ==
+                                        StudioDestination.settings,
+                                    child: const StudioWorkspace(),
+                                  ),
+                                  if (destination == StudioDestination.settings)
+                                    const SettingsPage(),
+                                  const Positioned(
+                                    right: 20,
+                                    bottom: 72,
+                                    child: ScanNotice(),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -67,13 +71,11 @@ class StudioShell extends ConsumerWidget {
                     ],
                   ),
                 ),
+                const PlayerBar(),
               ],
             ),
-          ),
-          const PlayerBar(),
-        ],
-      ),
-    );
+          );
+    return StudioKeyboardShortcuts(child: content);
   }
 
   Future<void> _setNativeFullscreen(bool enabled) async {

@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Global keyboard shortcuts cover transport, seeking, volume, shuffle, repeat,
+  Playback Mode, and primary navigation, with an in-app shortcut reference.
 - Library filters for lossless formats, minimum sample rate, estimated bitrate,
   genre, year, and source folder, applied consistently to tracks and catalogues.
 - Full-screen Playback Mode now offers persistent Studio gradient, album
