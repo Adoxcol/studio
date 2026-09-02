@@ -842,7 +842,10 @@ class _LibraryFilterDialogState extends State<_LibraryFilterDialog> {
         borderRadius: BorderRadius.zero,
         side: BorderSide(color: palette.hairline),
       ),
-      title: Text('Filter library', style: Theme.of(context).textTheme.headlineMedium),
+      title: Text(
+        'Filter library',
+        style: Theme.of(context).textTheme.headlineMedium,
+      ),
       content: SizedBox(
         width: 360,
         child: SingleChildScrollView(
@@ -871,7 +874,12 @@ class _LibraryFilterDialogState extends State<_LibraryFilterDialog> {
               _FilterDropdown<int>(
                 label: 'Minimum estimated bitrate',
                 value: _bitrate,
-                choices: const {256: '256 kbps', 320: '320 kbps', 500: '500 kbps', 1000: '1000 kbps'},
+                choices: const {
+                  256: '256 kbps',
+                  320: '320 kbps',
+                  500: '500 kbps',
+                  1000: '1000 kbps',
+                },
                 onChanged: (value) => setState(() => _bitrate = value),
               ),
               _FilterDropdown<String>(
@@ -889,7 +897,9 @@ class _LibraryFilterDialogState extends State<_LibraryFilterDialog> {
               _FilterDropdown<int>(
                 label: 'Folder',
                 value: _folderId,
-                choices: {for (final folder in widget.folders) folder.id: folder.path},
+                choices: {
+                  for (final folder in widget.folders) folder.id: folder.path,
+                },
                 onChanged: (value) => setState(() => _folderId = value),
               ),
             ],
@@ -940,7 +950,11 @@ class _FilterDropdown<T> extends StatelessWidget {
         for (final entry in choices.entries)
           DropdownMenuItem<T?>(
             value: entry.key,
-            child: Text(entry.value, maxLines: 1, overflow: TextOverflow.ellipsis),
+            child: Text(
+              entry.value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
       ],
       onChanged: onChanged,

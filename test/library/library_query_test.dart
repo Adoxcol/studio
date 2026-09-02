@@ -77,7 +77,10 @@ void main() {
       fileSizeBytes: 25000000,
     );
     expect(LibraryQuery.isLossless(flac), isTrue);
-    expect(LibraryQuery.isLossless(testTrack(locator: '/music/song.mp3')), isFalse);
+    expect(
+      LibraryQuery.isLossless(testTrack(locator: '/music/song.mp3')),
+      isFalse,
+    );
     expect(LibraryQuery.estimatedBitrateKbps(flac), 1000);
     expect(
       LibraryQuery.estimatedBitrateKbps(
