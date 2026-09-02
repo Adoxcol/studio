@@ -124,6 +124,65 @@ void main() {
     expect(find.byType(PlayerBar), findsNothing);
   });
 
+  testWidgets('Playback Mode adapts without overflow at desktop extremes', (
+    tester,
+  ) async {
+    await db.upsertTrack(
+      TracksCompanion.insert(
+        locator: '/music/responsive.flac',
+        title: 'Responsive Playback',
+        artist: const Value('Studio Artist'),
+        album: const Value('Studio Album'),
+      ),
+    );
+    final rows = await db.allTracks();
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    tester.view.physicalSize = const Size(1200, 800);
+    await tester.pumpWidget(
+      testStudioApp(db: db, engine: engine, tracks: rows),
+    );
+    await tester.pump();
+    await tester.tap(find.byTooltip('Library'));
+    await tester.pump();
+    await tester.tap(find.text('Responsive Playback'));
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byTooltip('Enter Playback Mode'));
+    await tester.pump();
+
+    for (final size in const <Size>[
+      Size(620, 900),
+      Size(2200, 900),
+      Size(1200, 480),
+    ]) {
+      tester.view.physicalSize = size;
+      await tester.pump();
+      expect(find.byType(PlaybackModePage), findsOneWidget);
+      expect(tester.takeException(), isNull, reason: 'Playback Mode at $size');
+    }
+  });
+
+  testWidgets('Playback Mode offers all permanent background choices', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(testStudioApp(db: db, engine: engine));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Enter Playback Mode'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Customize Full Player'));
+    await tester.pump();
+
+    expect(find.text('Studio gradient'), findsOneWidget);
+    expect(find.text('Album artwork'), findsOneWidget);
+    expect(find.text('Artist image'), findsOneWidget);
+    expect(find.text('Solid color'), findsOneWidget);
+  });
+
   testWidgets('Now Playing does not load the queue track map', (tester) async {
     await tester.pumpWidget(
       testStudioApp(

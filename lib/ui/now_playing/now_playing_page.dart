@@ -8,6 +8,7 @@ import 'package:studio/state/library_providers.dart' show spectrumBandsProvider;
 import 'package:studio/library/library_query.dart';
 import 'package:studio/discord/discord_template.dart';
 import 'package:studio/features/artist_artwork/presentation/artist_portrait.dart';
+import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
 import 'package:studio/playback/dsp/equalizer.dart';
 import 'package:studio/playback/dsp/replay_gain.dart';
 import 'package:studio/playback/playback_queue.dart';
@@ -203,91 +204,121 @@ class _PlaybackModeHero extends ConsumerWidget {
     final creditedArtist = artist == null
         ? null
         : LibraryQuery.creditedArtists(artist).first;
-    return ColoredBox(
-      color: const Color(0xff171713),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          const _PermanentPlaybackBackground(),
-          _PlaybackBackdrop(path: playback.artworkPath),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0x33000000),
-                  Color(0x66000000),
-                  Color(0xee090908),
-                ],
-                stops: [0, 0.48, 1],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final narrow = constraints.maxWidth < 720;
+        final lowHeight = constraints.maxHeight < 620;
+        final ultrawide = constraints.maxWidth >= 1500;
+        final compact = embedded || narrow || lowHeight;
+        final artSize = lowHeight
+            ? 76.0
+            : narrow
+            ? 88.0
+            : embedded
+            ? 118.0
+            : 210.0;
+        final lyricsWidth = narrow || embedded
+            ? double.infinity
+            : ultrawide
+            ? constraints.maxWidth * 0.42
+            : 680.0;
+        return ColoredBox(
+          color: const Color(0xff171713),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _PlaybackBackground(
+                mode: appearance.fullPlayerBackground,
+                albumPath: playback.artworkPath,
+                artist: creditedArtist,
               ),
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                embedded ? 18 : 28,
-                embedded ? 10 : 18,
-                embedded ? 18 : 28,
-                embedded ? 16 : 24,
-              ),
-              child: Column(
-                children: [
-                  _PlaybackModeTopBar(
-                    appearance: appearance,
-                    embedded: embedded,
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0x33000000),
+                      Color(0x66000000),
+                      Color(0xee090908),
+                    ],
+                    stops: [0, 0.48, 1],
                   ),
-                  if (hasTrack && appearance.fullPlayerLyrics)
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: SizedBox(
-                          width: embedded ? double.infinity : 680,
-                          child: const _ImmersiveLyrics(),
-                        ),
-                      ),
-                    )
-                  else
-                    const Spacer(),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                ),
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    compact ? 14 : 28,
+                    compact ? 8 : 18,
+                    compact ? 14 : 28,
+                    compact ? 10 : 24,
+                  ),
+                  child: Column(
                     children: [
-                      if (appearance.fullPlayerAlbumArt) ...[
-                        CoverArt(
-                          path: playback.artworkPath,
-                          size: embedded ? 118 : 210,
-                        ),
-                        const SizedBox(width: 28),
-                      ],
-                      if (!embedded &&
-                          appearance.fullPlayerArtistArt &&
-                          creditedArtist != null) ...[
-                        ArtistPortrait(artist: creditedArtist, size: 120),
-                        const SizedBox(width: 22),
-                      ],
-                      Expanded(
-                        child: _ImmersiveMetadata(
-                          playback: playback,
-                          showFileInfo: appearance.fullPlayerFileInfo,
+                      _PlaybackModeTopBar(
+                        appearance: appearance,
+                        embedded: embedded,
+                      ),
+                      if (hasTrack && appearance.fullPlayerLyrics)
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: SizedBox(
+                              width: lyricsWidth,
+                              child: const _ImmersiveLyrics(),
+                            ),
+                          ),
+                        )
+                      else
+                        const Spacer(),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 320),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        child: Row(
+                          key: ValueKey(playback.trackId),
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            if (appearance.fullPlayerAlbumArt) ...[
+                              CoverArt(
+                                path: playback.artworkPath,
+                                size: artSize,
+                              ),
+                              SizedBox(width: compact ? 14 : 28),
+                            ],
+                            if (!compact &&
+                                appearance.fullPlayerArtistArt &&
+                                creditedArtist != null) ...[
+                              ArtistPortrait(artist: creditedArtist, size: 120),
+                              const SizedBox(width: 22),
+                            ],
+                            Expanded(
+                              child: _ImmersiveMetadata(
+                                playback: playback,
+                                showFileInfo: appearance.fullPlayerFileInfo,
+                                compact: compact,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      SizedBox(height: compact ? 10 : 24),
+                      _ImmersiveProgress(playback: playback),
+                      SizedBox(height: lowHeight ? 2 : 10),
+                      _ImmersiveTransport(compact: lowHeight),
+                      if (hasTrack && appearance.fullPlayerAudioSettings) ...[
+                        SizedBox(height: compact ? 6 : 14),
+                        _ImmersiveAudioSettings(compact: compact),
+                      ],
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  _ImmersiveProgress(playback: playback),
-                  const SizedBox(height: 10),
-                  const _ImmersiveTransport(),
-                  if (hasTrack && appearance.fullPlayerAudioSettings) ...[
-                    const SizedBox(height: 14),
-                    const _ImmersiveAudioSettings(),
-                  ],
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -350,21 +381,56 @@ class _PermanentPlaybackBackground extends StatelessWidget {
   }
 }
 
-class _PlaybackBackdrop extends StatelessWidget {
-  const _PlaybackBackdrop({required this.path});
-  final String? path;
+class _PlaybackBackground extends ConsumerWidget {
+  const _PlaybackBackground({
+    required this.mode,
+    required this.albumPath,
+    required this.artist,
+  });
+  final PlaybackBackgroundMode mode;
+  final String? albumPath;
+  final String? artist;
 
   @override
-  Widget build(BuildContext context) {
-    if (path == null || path!.isEmpty) return const SizedBox.shrink();
-    return Opacity(
-      opacity: 0.48,
-      child: Image.file(
-        File(path!),
-        fit: BoxFit.cover,
-        color: const Color(0xffb7a99a),
-        colorBlendMode: BlendMode.modulate,
-        errorBuilder: (_, _, _) => const SizedBox.shrink(),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final artistPath =
+        mode == PlaybackBackgroundMode.artistImage && artist != null
+        ? ref.watch(artistPictureProvider(artist!)).value?.path
+        : null;
+    final path = switch (mode) {
+      PlaybackBackgroundMode.albumArtwork => albumPath,
+      PlaybackBackgroundMode.artistImage => artistPath ?? albumPath,
+      _ => null,
+    };
+    final background = switch (mode) {
+      PlaybackBackgroundMode.solidColor => const ColoredBox(
+        color: Color(0xff201b18),
+      ),
+      _ => Stack(
+        fit: StackFit.expand,
+        children: [
+          const _PermanentPlaybackBackground(),
+          if (path != null && path.isNotEmpty)
+            Opacity(
+              opacity: 0.52,
+              child: Image.file(
+                File(path),
+                fit: BoxFit.cover,
+                color: const Color(0xffb7a99a),
+                colorBlendMode: BlendMode.modulate,
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              ),
+            ),
+        ],
+      ),
+    };
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 600),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      child: KeyedSubtree(
+        key: ValueKey('${mode.name}-${path ?? ''}'),
+        child: background,
       ),
     );
   }
@@ -420,9 +486,11 @@ class _ImmersiveMetadata extends StatelessWidget {
   const _ImmersiveMetadata({
     required this.playback,
     required this.showFileInfo,
+    required this.compact,
   });
   final PlaybackUiState playback;
   final bool showFileInfo;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -435,9 +503,9 @@ class _ImmersiveMetadata extends StatelessWidget {
           playback.title,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 38,
+            fontSize: compact ? 26 : 38,
             height: 1.05,
           ),
         ),
@@ -511,7 +579,8 @@ class _ImmersiveProgress extends ConsumerWidget {
 }
 
 class _ImmersiveTransport extends ConsumerWidget {
-  const _ImmersiveTransport();
+  const _ImmersiveTransport({required this.compact});
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -528,25 +597,25 @@ class _ImmersiveTransport extends ConsumerWidget {
         IconButton(
           onPressed: controller.skipPrevious,
           color: Colors.white,
-          iconSize: 30,
+          iconSize: compact ? 24 : 30,
           icon: const Icon(Icons.skip_previous),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: compact ? 2 : 8),
         IconButton.filled(
           tooltip: state.playing ? 'Pause' : 'Play',
           onPressed: controller.togglePlayPause,
           style: IconButton.styleFrom(
             backgroundColor: Colors.white,
             foregroundColor: Colors.black,
-            minimumSize: const Size(52, 52),
+            minimumSize: Size.square(compact ? 42 : 52),
           ),
           icon: Icon(state.playing ? Icons.pause : Icons.play_arrow),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: compact ? 2 : 8),
         IconButton(
           onPressed: controller.skipNext,
           color: Colors.white,
-          iconSize: 30,
+          iconSize: compact ? 24 : 30,
           icon: const Icon(Icons.skip_next),
         ),
         IconButton(
@@ -566,7 +635,8 @@ class _ImmersiveTransport extends ConsumerWidget {
 }
 
 class _ImmersiveAudioSettings extends StatelessWidget {
-  const _ImmersiveAudioSettings();
+  const _ImmersiveAudioSettings({required this.compact});
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -576,11 +646,17 @@ class _ImmersiveAudioSettings extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white12),
       ),
-      child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-        child: DefaultTextStyle(
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 10 : 18,
+          vertical: compact ? 3 : 8,
+        ),
+        child: const DefaultTextStyle(
           style: TextStyle(color: Colors.white70, fontSize: 12),
-          child: _AudioSettings(immersive: true),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: _AudioSettings(immersive: true),
+          ),
         ),
       ),
     );
@@ -613,12 +689,17 @@ class _FullPlayerMenu extends ConsumerWidget {
         appearance.fullPlayerAudioSettings,
       ),
     };
-    return PopupMenuButton<FullPlayerSection>(
+    return PopupMenuButton<Object>(
       tooltip: 'Customize Full Player',
       icon: const Icon(Icons.tune, size: 19),
-      onSelected: (section) => ref
-          .read(appearanceProvider.notifier)
-          .setFullPlayerSection(section, !values[section]!.$2),
+      onSelected: (selection) {
+        final notifier = ref.read(appearanceProvider.notifier);
+        if (selection case final FullPlayerSection section) {
+          notifier.setFullPlayerSection(section, !values[section]!.$2);
+        } else if (selection case final PlaybackBackgroundMode mode) {
+          notifier.setFullPlayerBackground(mode);
+        }
+      },
       itemBuilder: (_) => [
         for (final entry in values.entries)
           PopupMenuItem(
@@ -634,6 +715,31 @@ class _FullPlayerMenu extends ConsumerWidget {
                 ),
                 const SizedBox(width: 10),
                 Text(entry.value.$1),
+              ],
+            ),
+          ),
+        const PopupMenuDivider(),
+        const PopupMenuItem<Object>(
+          enabled: false,
+          height: 30,
+          child: Text('Background'),
+        ),
+        for (final mode in PlaybackBackgroundMode.values)
+          PopupMenuItem<Object>(
+            value: mode,
+            child: Row(
+              children: [
+                Icon(
+                  appearance.fullPlayerBackground == mode
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  size: 18,
+                  color: appearance.fullPlayerBackground == mode
+                      ? palette.accent
+                      : palette.inkMutedAlt,
+                ),
+                const SizedBox(width: 10),
+                Text(mode.label),
               ],
             ),
           ),

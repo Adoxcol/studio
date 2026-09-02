@@ -91,6 +91,24 @@ enum TrackLayout {
   }
 }
 
+enum PlaybackBackgroundMode {
+  studio,
+  albumArtwork,
+  artistImage,
+  solidColor;
+
+  String get label => switch (this) {
+    studio => 'Studio gradient',
+    albumArtwork => 'Album artwork',
+    artistImage => 'Artist image',
+    solidColor => 'Solid color',
+  };
+
+  static PlaybackBackgroundMode fromName(String? name) {
+    return values.where((value) => value.name == name).firstOrNull ?? studio;
+  }
+}
+
 class AppearanceState {
   const AppearanceState({
     this.mode = AccentMode.auto,
@@ -105,6 +123,7 @@ class AppearanceState {
     bool? fullPlayerLyrics,
     bool? fullPlayerFileInfo,
     bool? fullPlayerAudioSettings,
+    PlaybackBackgroundMode? fullPlayerBackground,
   }) : _trackLayout = trackLayout,
        _showTrackArtwork = showTrackArtwork,
        _fetchMissingArtwork = fetchMissingArtwork,
@@ -114,7 +133,8 @@ class AppearanceState {
        _fullPlayerArtistArt = fullPlayerArtistArt,
        _fullPlayerLyrics = fullPlayerLyrics,
        _fullPlayerFileInfo = fullPlayerFileInfo,
-       _fullPlayerAudioSettings = fullPlayerAudioSettings;
+       _fullPlayerAudioSettings = fullPlayerAudioSettings,
+       _fullPlayerBackground = fullPlayerBackground;
 
   final AccentMode mode;
   final double customHue;
@@ -128,6 +148,7 @@ class AppearanceState {
   final bool? _fullPlayerLyrics;
   final bool? _fullPlayerFileInfo;
   final bool? _fullPlayerAudioSettings;
+  final PlaybackBackgroundMode? _fullPlayerBackground;
 
   TrackLayout get trackLayout => _trackLayout ?? TrackLayout.cards;
   bool get showTrackArtwork => _showTrackArtwork ?? true;
@@ -139,6 +160,8 @@ class AppearanceState {
   bool get fullPlayerLyrics => _fullPlayerLyrics ?? true;
   bool get fullPlayerFileInfo => _fullPlayerFileInfo ?? true;
   bool get fullPlayerAudioSettings => _fullPlayerAudioSettings ?? true;
+  PlaybackBackgroundMode get fullPlayerBackground =>
+      _fullPlayerBackground ?? PlaybackBackgroundMode.studio;
 
   static const defaults = AppearanceState();
 
@@ -155,6 +178,7 @@ class AppearanceState {
     bool? fullPlayerLyrics,
     bool? fullPlayerFileInfo,
     bool? fullPlayerAudioSettings,
+    PlaybackBackgroundMode? fullPlayerBackground,
   }) {
     return AppearanceState(
       mode: mode ?? this.mode,
@@ -170,6 +194,7 @@ class AppearanceState {
       fullPlayerFileInfo: fullPlayerFileInfo ?? this.fullPlayerFileInfo,
       fullPlayerAudioSettings:
           fullPlayerAudioSettings ?? this.fullPlayerAudioSettings,
+      fullPlayerBackground: fullPlayerBackground ?? this.fullPlayerBackground,
     );
   }
 }

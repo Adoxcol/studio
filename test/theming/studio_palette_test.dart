@@ -138,6 +138,40 @@ void main() {
     expect(loaded.fullPlayerAudioSettings, isTrue);
   });
 
+  test('file store round-trips the Full Player background', () {
+    final file = File(
+      '${Directory.systemTemp.createTempSync('studio-appearance').path}/appearance.json',
+    );
+    addTearDown(() {
+      if (file.parent.existsSync()) file.parent.deleteSync(recursive: true);
+    });
+    FileAppearanceStore(file).save(
+      const AppearanceState(
+        fullPlayerBackground: PlaybackBackgroundMode.artistImage,
+      ),
+    );
+
+    expect(
+      FileAppearanceStore(file).load().fullPlayerBackground,
+      PlaybackBackgroundMode.artistImage,
+    );
+  });
+
+  test('Full Player background names remain backwards compatible', () {
+    expect(
+      PlaybackBackgroundMode.fromName(null),
+      PlaybackBackgroundMode.studio,
+    );
+    expect(
+      PlaybackBackgroundMode.fromName('solidColor'),
+      PlaybackBackgroundMode.solidColor,
+    );
+    expect(
+      PlaybackBackgroundMode.fromName('unknown'),
+      PlaybackBackgroundMode.studio,
+    );
+  });
+
   test('omitted track layout and artwork default', () {
     const state = AppearanceState(mode: AccentMode.custom);
     expect(state.trackLayout, TrackLayout.cards);

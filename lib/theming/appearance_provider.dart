@@ -62,6 +62,11 @@ class AppearanceNotifier extends Notifier<AppearanceState> {
     };
     ref.read(appearanceStoreProvider).save(state);
   }
+
+  void setFullPlayerBackground(PlaybackBackgroundMode mode) {
+    state = state.copyWith(fullPlayerBackground: mode);
+    ref.read(appearanceStoreProvider).save(state);
+  }
 }
 
 enum FullPlayerSection { albumArt, artistArt, lyrics, fileInfo, audioSettings }
