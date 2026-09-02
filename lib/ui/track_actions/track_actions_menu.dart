@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/features/track_details/presentation/detail_context_provider.dart';
+import 'package:studio/features/metadata_editor/presentation/metadata_editor_dialog.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/library/library_query.dart';
 import 'package:studio/state/library_navigation_provider.dart';
@@ -89,6 +90,10 @@ Future<void> showTrackActions({
           child: Text('View album'),
         ),
       const PopupMenuItem(
+        value: _NamedAction('edit-metadata'),
+        child: Text('Edit metadata'),
+      ),
+      const PopupMenuItem(
         value: _NamedAction('details'),
         child: Text('Track details'),
       ),
@@ -129,6 +134,8 @@ Future<void> showTrackActions({
     case _NamedAction(name: 'details'):
       ref.read(detailSelectionProvider.notifier).inspect(track.id);
       ref.read(studioNavProvider.notifier).select(StudioDestination.track);
+    case _NamedAction(name: 'edit-metadata'):
+      await showMetadataEditor(context: context, track: track);
     case _NamedAction(name: 'new-playlist'):
       final name = await _promptPlaylistName(context);
       if (name == null || !context.mounted) return;

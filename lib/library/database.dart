@@ -149,6 +149,29 @@ class StudioDatabase extends _$StudioDatabase {
     return (select(tracks)..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
+  Future<void> updateTrackTags({
+    required int id,
+    required String title,
+    required String? artist,
+    required String? album,
+    required String? genre,
+    required int? year,
+    required int? trackNumber,
+    required int fileModifiedMs,
+  }) {
+    return (update(tracks)..where((t) => t.id.equals(id))).write(
+      TracksCompanion(
+        title: Value(title),
+        artist: Value(artist),
+        album: Value(album),
+        genre: Value(genre),
+        year: Value(year),
+        trackNumber: Value(trackNumber),
+        fileModifiedMs: Value(fileModifiedMs),
+      ),
+    );
+  }
+
   Future<Set<int>> existingTrackIds(Iterable<int> ids) async {
     final wanted = ids.toSet();
     if (wanted.isEmpty) return {};
