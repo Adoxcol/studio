@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:studio/library/library_index.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:studio/features/track_details/presentation/detail_context_provider.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/library/library_query.dart';
 import 'package:studio/state/library_providers.dart';
@@ -16,6 +15,7 @@ import 'package:studio/ui/library_browser/library_browse_view.dart';
 import 'package:studio/features/library_folders/presentation/library_folders_panel.dart';
 import 'package:studio/ui/library_browser/library_text_action.dart';
 import 'package:studio/ui/library_browser/library_track_table.dart';
+import 'package:studio/ui/track_actions/track_actions_menu.dart';
 
 class LibraryPage extends ConsumerStatefulWidget {
   const LibraryPage({super.key});
@@ -221,69 +221,12 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   }
 
   Future<void> _showTrackMenu(Track track, Offset globalPosition) async {
-    final lists = ref.read(playlistsProvider).value ?? const [];
-    final palette = StudioPalette.of(context);
-    final selected = await showMenu<Object>(
+    await showTrackActions(
       context: context,
-      position: RelativeRect.fromLTRB(
-        globalPosition.dx,
-        globalPosition.dy,
-        globalPosition.dx,
-        globalPosition.dy,
-      ),
-      color: palette.bg,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: palette.hairline),
-        borderRadius: BorderRadius.zero,
-      ),
-      items: [
-        const PopupMenuItem<Object>(
-          value: 'play-next',
-          child: Text('Play next'),
-        ),
-        const PopupMenuItem<Object>(
-          value: 'add-to-queue',
-          child: Text('Add to queue'),
-        ),
-        const PopupMenuDivider(),
-        const PopupMenuItem<Object>(
-          value: 'details',
-          child: Text('View details'),
-        ),
-        const PopupMenuDivider(),
-        for (final list in lists)
-          PopupMenuItem<Object>(value: list.id, child: Text(list.name)),
-        PopupMenuItem<Object>(
-          value: 'new',
-          child: Text(lists.isEmpty ? 'New playlist' : 'New playlist…'),
-        ),
-      ],
+      ref: ref,
+      track: track,
+      position: globalPosition,
     );
-    if (selected == null || !mounted) return;
-    if (selected == 'play-next') {
-      ref.read(playbackControllerProvider.notifier).playNext(track.id);
-      return;
-    }
-    if (selected == 'add-to-queue') {
-      ref.read(playbackControllerProvider.notifier).addToQueue(track.id);
-      return;
-    }
-    if (selected == 'details') {
-      ref.read(detailSelectionProvider.notifier).inspect(track.id);
-      return;
-    }
-    final db = ref.read(studioDatabaseProvider);
-    if (selected == 'new') {
-      final name = await _promptPlaylistName();
-      if (name == null || !mounted) return;
-      final id = await db.createPlaylist(name);
-      await db.addTrackToPlaylist(playlistId: id, trackId: track.id);
-      return;
-    }
-    if (selected is int) {
-      await db.addTrackToPlaylist(playlistId: selected, trackId: track.id);
-    }
   }
 
   @override

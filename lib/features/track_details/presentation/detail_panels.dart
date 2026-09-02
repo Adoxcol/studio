@@ -12,6 +12,7 @@ import 'package:studio/state/nav_state.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/ui/now_playing/cover_art.dart';
 import 'package:studio/ui/queue/queue_track_row.dart';
+import 'package:studio/ui/track_actions/track_actions_menu.dart';
 
 class ArtistDetailPanel extends ConsumerWidget {
   const ArtistDetailPanel({super.key});
@@ -132,6 +133,18 @@ class AlbumDetailPanel extends ConsumerWidget {
                   details.albumTracks.map((track) => track.id).toList(),
                   startIndex: index,
                 ),
+            onMenu: (position) => showTrackActions(
+              context: context,
+              ref: ref,
+              track: track,
+              position: position,
+              onPlayNow: () => ref
+                  .read(playbackControllerProvider.notifier)
+                  .playTracks(
+                    details.albumTracks.map((track) => track.id).toList(),
+                    startIndex: index,
+                  ),
+            ),
           );
         },
       ),
@@ -151,6 +164,10 @@ class TrackDetailPanel extends StatelessWidget {
             path: details.track.artworkPath,
             title: details.track.title,
             subtitle: details.track.artist ?? 'Unknown artist',
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TrackActionsButton(track: details.track),
           ),
           const SizedBox(height: 16),
           _Field(label: 'Album', value: details.album),

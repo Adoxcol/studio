@@ -15,6 +15,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Queue history keeps played tracks discoverable after they leave the upcoming
   list. Tracks can be reordered, removed, cleared, restored from history, played
   next, or added to the end from library actions.
+- A unified track-actions menu now exposes playback, queue, playlist, artist,
+  album, and details actions across library views, queue/history, Up Next,
+  detail panels, Now Playing, Playback Mode, and the player bar.
 
 ### Changed
 
