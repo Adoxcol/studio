@@ -16,6 +16,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   list. Tracks can be reordered, removed, cleared, restored from history, played
   next, or added to the end from library actions.
 
+### Changed
+
+- Player-bar artwork exposes its Playback Mode action to screen readers as a
+  labeled button.
+
 ## [0.1.2] - 2026-09-02
 
 ### Changed

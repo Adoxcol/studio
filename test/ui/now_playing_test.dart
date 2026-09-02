@@ -117,6 +117,7 @@ void main() {
     await tester.pumpWidget(testStudioApp(db: db, engine: engine));
     await tester.pump();
 
+    expect(find.bySemanticsLabel('Open Playback Mode'), findsOneWidget);
     await tester.tap(find.byTooltip('Open Playback Mode'));
     await tester.pump();
 
