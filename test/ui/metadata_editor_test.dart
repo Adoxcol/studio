@@ -7,7 +7,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/features/metadata_editor/data/track_metadata_writer.dart';
 import 'package:studio/features/metadata_editor/domain/track_metadata_edit.dart';
+import 'package:studio/library/artwork_store.dart';
 import 'package:studio/library/database.dart';
+import 'package:studio/state/library_providers.dart';
 
 import '../helpers/pump_studio.dart';
 import '../playback/fake_audio_engine.dart';
@@ -37,6 +39,9 @@ void main() {
         genre: const Value('Jazz'),
         year: const Value(2024),
         trackNumber: const Value(1),
+        artworkPath: Value(
+          '${directory.path}${Platform.pathSeparator}missing-cover.jpg',
+        ),
       ),
     );
   });
@@ -58,7 +63,10 @@ void main() {
         db: db,
         engine: engine,
         tracks: tracks,
-        extraOverrides: [trackMetadataWriterProvider.overrideWithValue(writer)],
+        extraOverrides: [
+          trackMetadataWriterProvider.overrideWithValue(writer),
+          artworkStoreProvider.overrideWithValue(ArtworkStore(directory)),
+        ],
       ),
     );
     await tester.pump();
@@ -85,6 +93,45 @@ void main() {
     expect(saved.title, 'After');
     expect(saved.artist, 'Aria');
   });
+
+  testWidgets('removes embedded artwork with an explicit preview', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final tracks = await db.allTracks();
+    await tester.pumpWidget(
+      testStudioApp(
+        db: db,
+        engine: engine,
+        tracks: tracks,
+        extraOverrides: [
+          trackMetadataWriterProvider.overrideWithValue(writer),
+          artworkStoreProvider.overrideWithValue(ArtworkStore(directory)),
+        ],
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('Before').first, buttons: kSecondaryMouseButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit metadata'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('remove-cover')));
+    await tester.pump();
+
+    expect(find.textContaining('Current cover  →  Empty'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('write-metadata')));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(writer.cover?.action, EmbeddedCoverAction.remove);
+    expect((await db.allTracks()).single.artworkPath, isNull);
+  });
 }
 
 class _FakeWriter extends TrackMetadataWriter {
@@ -92,13 +139,19 @@ class _FakeWriter extends TrackMetadataWriter {
 
   final File file;
   TrackMetadataEdit? written;
+  EmbeddedCoverEdit? cover;
 
   @override
   bool supports(String path) => true;
 
   @override
-  Future<FileStat> write(String path, TrackMetadataEdit edit) async {
+  Future<FileStat> write(
+    String path,
+    TrackMetadataEdit edit, {
+    EmbeddedCoverEdit cover = const EmbeddedCoverEdit.keep(),
+  }) async {
     written = edit;
+    this.cover = cover;
     return file.stat();
   }
 }

@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/features/metadata_editor/data/track_metadata_writer.dart';
@@ -7,6 +9,7 @@ import 'package:studio/features/metadata_editor/domain/track_metadata_edit.dart'
 import 'package:studio/library/database.dart';
 import 'package:studio/state/library_providers.dart';
 import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/ui/now_playing/cover_art.dart';
 
 Future<bool> showMetadataEditor({
   required BuildContext context,
@@ -45,6 +48,9 @@ class _MetadataEditorDialogState extends ConsumerState<_MetadataEditorDialog> {
   );
   String? _error;
   bool _saving = false;
+  Uint8List? _coverBytes;
+  String? _coverMime;
+  bool _removeCover = false;
 
   bool get _writable =>
       widget.track.source == 'local' &&
@@ -59,7 +65,23 @@ class _MetadataEditorDialogState extends ConsumerState<_MetadataEditorDialog> {
     trackNumber: int.tryParse(_trackNumber.text.trim()),
   ).normalized();
 
-  List<MetadataChange> get _changes => _edit.changesFrom(widget.track);
+  bool get _artworkChanged => _coverBytes != null || _removeCover;
+
+  EmbeddedCoverEdit get _coverEdit => switch ((_coverBytes, _coverMime)) {
+    (final bytes?, final mime?) => EmbeddedCoverEdit.replace(bytes, mime),
+    _ when _removeCover => const EmbeddedCoverEdit.remove(),
+    _ => const EmbeddedCoverEdit.keep(),
+  };
+
+  List<MetadataChange> get _changes => [
+    ..._edit.changesFrom(widget.track),
+    if (_artworkChanged)
+      MetadataChange(
+        'Cover art',
+        widget.track.artworkPath == null ? null : 'Current cover',
+        _removeCover ? null : 'Selected image',
+      ),
+  ];
 
   @override
   void dispose() {
@@ -77,6 +99,39 @@ class _MetadataEditorDialogState extends ConsumerState<_MetadataEditorDialog> {
     setState(() {});
   }
 
+  Future<void> _pickCover() async {
+    late final Uint8List bytes;
+    try {
+      final picked = await FilePicker.pickFile(
+        dialogTitle: 'Choose cover art',
+        type: FileType.custom,
+        allowedExtensions: const ['jpg', 'jpeg', 'png'],
+      );
+      if (picked?.path == null || !mounted) return;
+      bytes = await File(picked!.path!).readAsBytes();
+      if (!mounted) return;
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() => _error = 'Could not read the selected image.\n$error');
+      return;
+    }
+    if (bytes.length > 20 * 1024 * 1024) {
+      setState(() => _error = 'Cover art must be 20 MB or smaller.');
+      return;
+    }
+    final mime = _imageMime(bytes);
+    if (mime == null) {
+      setState(() => _error = 'Choose a valid JPEG or PNG image.');
+      return;
+    }
+    setState(() {
+      _coverBytes = bytes;
+      _coverMime = mime;
+      _removeCover = false;
+      _error = null;
+    });
+  }
+
   Future<void> _save() async {
     final edit = _edit;
     final error = edit.validate() ?? _numericError();
@@ -92,11 +147,31 @@ class _MetadataEditorDialogState extends ConsumerState<_MetadataEditorDialog> {
       _saving = true;
       _error = null;
     });
+    String? artworkPath = widget.track.artworkPath;
+    if (_coverBytes case final bytes?) {
+      try {
+        artworkPath = await ref
+            .read(artworkStoreProvider)
+            ?.save(bytes, mime: _coverMime);
+        if (artworkPath == null) {
+          throw StateError('Studio artwork storage is unavailable.');
+        }
+      } on Object catch (error) {
+        if (!mounted) return;
+        setState(() {
+          _saving = false;
+          _error = 'Could not store the selected cover.\n$error';
+        });
+        return;
+      }
+    } else if (_removeCover) {
+      artworkPath = null;
+    }
     late final FileStat stat;
     try {
       stat = await ref
           .read(trackMetadataWriterProvider)
-          .write(widget.track.locator, edit);
+          .write(widget.track.locator, edit, cover: _coverEdit);
     } on Object catch (error) {
       if (!mounted) return;
       setState(() {
@@ -119,6 +194,8 @@ class _MetadataEditorDialogState extends ConsumerState<_MetadataEditorDialog> {
             year: edit.year,
             trackNumber: edit.trackNumber,
             fileModifiedMs: stat.modified.millisecondsSinceEpoch,
+            artworkPath: artworkPath,
+            updateArtwork: _artworkChanged,
           );
       if (mounted) Navigator.pop(context, true);
     } on Object catch (error) {
@@ -213,6 +290,29 @@ class _MetadataEditorDialogState extends ConsumerState<_MetadataEditorDialog> {
                   ),
                   const SizedBox(height: 18),
                 ],
+                _ArtworkEditor(
+                  currentPath: widget.track.artworkPath,
+                  selectedBytes: _coverBytes,
+                  removed: _removeCover,
+                  enabled:
+                      _writable &&
+                      !_saving &&
+                      ref.read(artworkStoreProvider) != null,
+                  onChoose: _pickCover,
+                  onRemove: () => setState(() {
+                    _coverBytes = null;
+                    _coverMime = null;
+                    _removeCover = true;
+                    _error = null;
+                  }),
+                  onRestore: () => setState(() {
+                    _coverBytes = null;
+                    _coverMime = null;
+                    _removeCover = false;
+                    _error = null;
+                  }),
+                ),
+                const SizedBox(height: 24),
                 if (wide)
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,6 +430,92 @@ class _MetadataForm extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ArtworkEditor extends StatelessWidget {
+  const _ArtworkEditor({
+    required this.currentPath,
+    required this.selectedBytes,
+    required this.removed,
+    required this.enabled,
+    required this.onChoose,
+    required this.onRemove,
+    required this.onRestore,
+  });
+
+  final String? currentPath;
+  final Uint8List? selectedBytes;
+  final bool removed;
+  final bool enabled;
+  final VoidCallback onChoose;
+  final VoidCallback onRemove;
+  final VoidCallback onRestore;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StudioPalette.of(context);
+    final changed = selectedBytes != null || removed;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        ClipRect(
+          child: selectedBytes != null
+              ? Image.memory(
+                  selectedBytes!,
+                  key: const ValueKey('selected-cover-preview'),
+                  width: 72,
+                  height: 72,
+                  fit: BoxFit.cover,
+                  gaplessPlayback: true,
+                )
+              : CoverArt(path: removed ? null : currentPath, size: 72),
+        ),
+        const SizedBox(width: 18),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Cover art', style: Theme.of(context).textTheme.bodyMedium),
+              const SizedBox(height: 4),
+              Text(
+                removed
+                    ? 'Will be removed from the audio file'
+                    : selectedBytes != null
+                    ? 'New JPEG or PNG selected'
+                    : 'Embedded artwork shown throughout Studio',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 14,
+                children: [
+                  TextButton(
+                    key: const ValueKey('choose-cover'),
+                    onPressed: enabled ? onChoose : null,
+                    child: const Text('Choose image'),
+                  ),
+                  if (!changed && currentPath != null)
+                    TextButton(
+                      key: const ValueKey('remove-cover'),
+                      onPressed: enabled ? onRemove : null,
+                      child: const Text('Remove'),
+                    ),
+                  if (changed)
+                    TextButton(
+                      key: const ValueKey('restore-cover'),
+                      onPressed: enabled ? onRestore : null,
+                      child: const Text('Restore current'),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -463,4 +649,21 @@ String _fileType(String path) {
   final clean = path.split('?').first;
   final dot = clean.lastIndexOf('.');
   return dot < 0 ? 'FILE' : clean.substring(dot + 1).toUpperCase();
+}
+
+String? _imageMime(Uint8List bytes) {
+  if (bytes.length >= 8 &&
+      bytes[0] == 0x89 &&
+      bytes[1] == 0x50 &&
+      bytes[2] == 0x4e &&
+      bytes[3] == 0x47) {
+    return 'image/png';
+  }
+  if (bytes.length >= 3 &&
+      bytes[0] == 0xff &&
+      bytes[1] == 0xd8 &&
+      bytes[2] == 0xff) {
+    return 'image/jpeg';
+  }
+  return null;
 }
