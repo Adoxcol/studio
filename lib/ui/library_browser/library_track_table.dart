@@ -188,6 +188,7 @@ class _TrackCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (onMenu != null) _TrackMenuButton(onMenu: onMenu!),
                 ],
               ),
             ),
@@ -380,10 +381,36 @@ class _TrackRow extends StatelessWidget {
                     style: muted,
                   ),
                 ),
+                if (onMenu != null) _TrackMenuButton(onMenu: onMenu!),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TrackMenuButton extends StatelessWidget {
+  const _TrackMenuButton({required this.onMenu});
+
+  final ValueChanged<Offset> onMenu;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StudioPalette.of(context);
+    return Builder(
+      builder: (buttonContext) => IconButton(
+        tooltip: 'Track actions',
+        visualDensity: VisualDensity.compact,
+        onPressed: () {
+          final box = buttonContext.findRenderObject()! as RenderBox;
+          final origin = box.localToGlobal(Offset.zero);
+          onMenu(
+            Offset(origin.dx + box.size.width, origin.dy + box.size.height),
+          );
+        },
+        icon: Icon(Icons.more_horiz, size: 18, color: palette.inkMuted),
       ),
     );
   }

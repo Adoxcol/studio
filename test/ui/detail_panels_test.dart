@@ -71,7 +71,7 @@ void main() {
       buttons: kSecondaryMouseButton,
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('View details'));
+    await tester.tap(find.text('Track details'));
     await tester.pumpAndSettle();
   }
 

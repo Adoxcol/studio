@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/core/time_format.dart';
-import 'package:studio/state/library_providers.dart' show spectrumBandsProvider;
+import 'package:studio/state/library_providers.dart'
+    show libraryTracksByIdProvider, spectrumBandsProvider;
 import 'package:studio/library/library_query.dart';
 import 'package:studio/discord/discord_template.dart';
 import 'package:studio/features/artist_artwork/presentation/artist_portrait.dart';
@@ -24,6 +25,7 @@ import 'package:studio/theming/accent_seed.dart';
 import 'package:studio/ui/library_browser/library_text_action.dart';
 import 'package:studio/ui/lyrics/lyrics_scroller.dart';
 import 'package:studio/ui/now_playing/cover_art.dart';
+import 'package:studio/ui/track_actions/track_actions_menu.dart';
 import 'package:studio/ui/visualizer/spectrum_visualizer.dart';
 
 class NowPlayingPage extends ConsumerWidget {
@@ -47,27 +49,31 @@ class NowPlayingPage extends ConsumerWidget {
       title: snapshot.title,
       artist: snapshot.artist,
       artworkPath: snapshot.artworkPath,
-      hasTrack: snapshot.trackId != null,
+      trackId: snapshot.trackId,
     );
   }
 }
 
-class _ClassicNowPlayingHero extends StatelessWidget {
+class _ClassicNowPlayingHero extends ConsumerWidget {
   const _ClassicNowPlayingHero({
     required this.title,
     required this.artist,
     required this.artworkPath,
-    required this.hasTrack,
+    required this.trackId,
   });
 
   final String title;
   final String? artist;
   final String? artworkPath;
-  final bool hasTrack;
+  final int? trackId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final palette = StudioPalette.of(context);
+    final hasTrack = trackId != null;
+    final track = trackId == null
+        ? null
+        : ref.watch(libraryTracksByIdProvider)[trackId];
     return LayoutBuilder(
       builder: (context, constraints) {
         const visualizerHeight = 44.0;
@@ -97,7 +103,26 @@ class _ClassicNowPlayingHero extends StatelessWidget {
         final header = Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CoverArt(path: artworkPath, size: artSize),
+            Stack(
+              children: [
+                CoverArt(path: artworkPath, size: artSize),
+                if (track != null)
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: DecoratedBox(
+                      decoration: const BoxDecoration(
+                        color: Color(0x99000000),
+                        shape: BoxShape.circle,
+                      ),
+                      child: TrackActionsButton(
+                        track: track,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(height: 16),
             _VisualizerSlot(width: artSize),
             const SizedBox(height: 24),
@@ -482,7 +507,7 @@ class _PlaybackModeTopBar extends ConsumerWidget {
   }
 }
 
-class _ImmersiveMetadata extends StatelessWidget {
+class _ImmersiveMetadata extends ConsumerWidget {
   const _ImmersiveMetadata({
     required this.playback,
     required this.showFileInfo,
@@ -493,8 +518,11 @@ class _ImmersiveMetadata extends StatelessWidget {
   final bool compact;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final album = (playback.album ?? '').trim();
+    final track = playback.trackId == null
+        ? null
+        : ref.watch(libraryTracksByIdProvider)[playback.trackId];
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -524,6 +552,8 @@ class _ImmersiveMetadata extends StatelessWidget {
           const SizedBox(height: 9),
           _FileInformation(playback: playback, immersive: true),
         ],
+        if (track != null)
+          TrackActionsButton(track: track, color: Colors.white70),
       ],
     );
   }

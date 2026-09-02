@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/core/time_format.dart';
 import 'package:studio/playback/playback_queue.dart';
+import 'package:studio/state/library_providers.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/state/playback_mode_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/now_playing/cover_art.dart';
+import 'package:studio/ui/track_actions/track_actions_menu.dart';
 
 class PlayerBar extends StatelessWidget {
   const PlayerBar({super.key});
@@ -105,9 +107,17 @@ class _TrackInfo extends ConsumerWidget {
     final palette = StudioPalette.of(context);
     final track = ref.watch(
       playbackControllerProvider.select(
-        (s) => (title: s.title, artist: s.artist, artworkPath: s.artworkPath),
+        (s) => (
+          id: s.trackId,
+          title: s.title,
+          artist: s.artist,
+          artworkPath: s.artworkPath,
+        ),
       ),
     );
+    final trackRecord = track.id == null
+        ? null
+        : ref.watch(libraryTracksByIdProvider)[track.id];
 
     return SizedBox(
       width: 260,
@@ -154,6 +164,7 @@ class _TrackInfo extends ConsumerWidget {
               ],
             ),
           ),
+          if (trackRecord != null) TrackActionsButton(track: trackRecord),
         ],
       ),
     );

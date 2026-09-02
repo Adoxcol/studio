@@ -4,6 +4,7 @@ import 'package:studio/state/library_providers.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/queue/queue_track_row.dart';
+import 'package:studio/ui/track_actions/track_actions_menu.dart';
 
 /// Queue-backed panel reserved for the future full-screen playback view.
 class UpNextPanel extends ConsumerWidget {
@@ -75,6 +76,19 @@ class UpNextPanel extends ConsumerWidget {
                             onTap: () => ref
                                 .read(playbackControllerProvider.notifier)
                                 .playQueueIndex(entry.queueIndex),
+                            onMenu: (position) => showTrackActions(
+                              context: context,
+                              ref: ref,
+                              track: entry.track,
+                              position: position,
+                              onPlayNow: () => ref
+                                  .read(playbackControllerProvider.notifier)
+                                  .playQueueIndex(entry.queueIndex),
+                              onRemove: () => ref
+                                  .read(playbackControllerProvider.notifier)
+                                  .removeUpcomingAt(entry.queueIndex),
+                              removeLabel: 'Remove from queue',
+                            ),
                           );
                         },
                       ),

@@ -1,10 +1,14 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/library/scan_progress.dart';
 import 'package:studio/state/library_providers.dart';
+import 'package:studio/state/library_navigation_provider.dart';
+import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/accent_seed.dart';
 import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/appearance_store.dart';
@@ -265,6 +269,49 @@ void main() {
 
     expect(engine.lastUri, isA<Uri>());
     expect(engine.lastUri!.scheme, 'file');
+  });
+
+  testWidgets('track actions queue tracks and navigate individual credits', (
+    tester,
+  ) async {
+    final track = testTrack(
+      id: 7,
+      title: 'Shared Signal',
+      artist: 'Drake feat. 21 Savage',
+      album: 'Night Radio',
+    );
+    await pumpLibrary(tester, tracks: [track]);
+
+    expect(find.byTooltip('Track actions'), findsOneWidget);
+    await tester.tap(
+      find.text('Shared Signal'),
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Play now'), findsOneWidget);
+    expect(find.text('Play next'), findsOneWidget);
+    expect(find.text('Add to queue'), findsOneWidget);
+    expect(find.text('View artist — Drake'), findsOneWidget);
+    expect(find.text('View artist — 21 Savage'), findsOneWidget);
+    expect(find.text('View album'), findsOneWidget);
+    expect(find.text('Track details'), findsOneWidget);
+
+    await tester.tap(find.text('Add to queue'));
+    await tester.pump();
+    final container = ProviderScope.containerOf(
+      tester.element(find.text('Shared Signal').first),
+    );
+    expect(container.read(playbackControllerProvider).queueIds, [7]);
+
+    await tester.tap(
+      find.text('Shared Signal').first,
+      buttons: kSecondaryMouseButton,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('View artist — 21 Savage'));
+    await tester.pump();
+    expect(container.read(libraryNavigationProvider).artist, '21 Savage');
   });
 
   testWidgets('Folders tab lists folders with add and remove actions', (

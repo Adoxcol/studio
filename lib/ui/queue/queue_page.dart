@@ -4,6 +4,7 @@ import 'package:studio/state/library_providers.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/queue/queue_track_row.dart';
+import 'package:studio/ui/track_actions/track_actions_menu.dart';
 
 class QueuePage extends ConsumerStatefulWidget {
   const QueuePage({super.key});
@@ -82,6 +83,19 @@ class _QueuePageState extends ConsumerState<QueuePage> {
                     onRemove: current
                         ? null
                         : () => controller.removeUpcomingAt(index),
+                    onMenu: track == null
+                        ? null
+                        : (position) => showTrackActions(
+                            context: context,
+                            ref: ref,
+                            track: track,
+                            position: position,
+                            onPlayNow: () => controller.playQueueIndex(index),
+                            onRemove: current
+                                ? null
+                                : () => controller.removeUpcomingAt(index),
+                            removeLabel: 'Remove from queue',
+                          ),
                     dragHandle: current
                         ? null
                         : ReorderableDragStartListener(
@@ -122,10 +136,21 @@ class _QueuePageState extends ConsumerState<QueuePage> {
                         itemCount: playback.historyIds.length,
                         itemBuilder: (context, index) {
                           final id = playback.historyIds[index];
+                          final track = byId[id];
                           return QueueTrackRow(
                             key: ValueKey('history-$index-$id'),
-                            track: byId[id],
+                            track: track,
                             onTap: () => controller.playHistoryIndex(index),
+                            onMenu: track == null
+                                ? null
+                                : (position) => showTrackActions(
+                                    context: context,
+                                    ref: ref,
+                                    track: track,
+                                    position: position,
+                                    onPlayNow: () =>
+                                        controller.playHistoryIndex(index),
+                                  ),
                           );
                         },
                       ),

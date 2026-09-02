@@ -11,6 +11,7 @@ class QueueTrackRow extends StatelessWidget {
     required this.track,
     this.current = false,
     this.onTap,
+    this.onMenu,
     this.onRemove,
     this.dragHandle,
   });
@@ -21,6 +22,7 @@ class QueueTrackRow extends StatelessWidget {
   final Track? track;
   final bool current;
   final VoidCallback? onTap;
+  final ValueChanged<Offset>? onMenu;
   final VoidCallback? onRemove;
   final Widget? dragHandle;
 
@@ -42,6 +44,9 @@ class QueueTrackRow extends StatelessWidget {
         type: MaterialType.transparency,
         child: InkWell(
           onTap: onTap,
+          onSecondaryTapUp: onMenu == null
+              ? null
+              : (details) => onMenu!(details.globalPosition),
           mouseCursor: onTap == null
               ? MouseCursor.defer
               : SystemMouseCursors.click,
@@ -96,6 +101,29 @@ class QueueTrackRow extends StatelessWidget {
                       ),
                     ),
                   ],
+                  if (onMenu != null)
+                    Builder(
+                      builder: (buttonContext) => IconButton(
+                        tooltip: 'Track actions',
+                        onPressed: () {
+                          final box =
+                              buttonContext.findRenderObject()! as RenderBox;
+                          final origin = box.localToGlobal(Offset.zero);
+                          onMenu!(
+                            Offset(
+                              origin.dx + box.size.width,
+                              origin.dy + box.size.height,
+                            ),
+                          );
+                        },
+                        visualDensity: VisualDensity.compact,
+                        icon: Icon(
+                          Icons.more_horiz,
+                          size: 19,
+                          color: palette.inkMuted,
+                        ),
+                      ),
+                    ),
                   if (onRemove != null)
                     IconButton(
                       tooltip: 'Remove from queue',
