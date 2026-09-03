@@ -310,8 +310,9 @@ class StudioDatabase extends _$StudioDatabase {
 
   Future<void> updateSmartPlaylist(int id, String name, String rules) async {
     SmartPlaylistDefinition.decode(rules);
-    if (name.trim().isEmpty)
+    if (name.trim().isEmpty) {
       throw ArgumentError('A playlist name is required.');
+    }
     await (update(
       playlists,
     )..where((p) => p.id.equals(id) & p.smartRules.isNotNull())).write(

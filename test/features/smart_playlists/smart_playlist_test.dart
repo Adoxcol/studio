@@ -108,4 +108,13 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test('saved unknown metadata groups match the library filters', () {
+    final track = testTrack(album: null, genre: null);
+    final definition = SmartPlaylistDefinition.fromFilters(
+      filters: const LibraryTrackFilters(genre: LibraryQuery.unknownGenre),
+      album: LibraryQuery.unknownAlbum,
+    );
+    expect(definition.evaluate([track]), hasLength(1));
+  });
 }

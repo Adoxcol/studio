@@ -14,12 +14,12 @@ enum SmartField {
   bitrate('Estimated bitrate (kbps)'),
   sampleRate('Sample rate (Hz)'),
   lossless('Lossless format'),
-  folder('Folder ID');
+  folder('Folder');
 
   const SmartField(this.label);
   final String label;
   bool get numeric => [year, bitrate, sampleRate, folder].contains(this);
-  List<SmartOperator> get operators => this == lossless
+  List<SmartOperator> get operators => this == lossless || this == folder
       ? [SmartOperator.equals]
       : numeric
       ? [SmartOperator.equals, SmartOperator.atLeast, SmartOperator.atMost]
@@ -45,8 +45,9 @@ class SmartRule {
   final String value;
 
   String? validate() {
-    if (!field.operators.contains(operator))
+    if (!field.operators.contains(operator)) {
       return 'Unsupported rule operator.';
+    }
     if (value.trim().isEmpty) return '${field.label} needs a value.';
     if (field.numeric &&
         (int.tryParse(value.trim()) == null || int.parse(value.trim()) < 0)) {
@@ -61,10 +62,12 @@ class SmartRule {
   bool matches(Track track) {
     if (validate() != null) return false;
     final needle = value.trim().toLowerCase();
-    if (field == SmartField.search)
+    if (field == SmartField.search) {
       return LibraryQuery.matchesQuery(track, needle);
-    if (field == SmartField.lossless)
+    }
+    if (field == SmartField.lossless) {
       return LibraryQuery.isLossless(track) == (value == 'true');
+    }
     if (field.numeric) {
       final actual = switch (field) {
         SmartField.year => track.year,
@@ -88,8 +91,14 @@ class SmartRule {
     }
     final actual = switch (field) {
       SmartField.artist => track.artist,
-      SmartField.album => track.album,
-      SmartField.genre => track.genre,
+      SmartField.album =>
+        operator == SmartOperator.equals
+            ? LibraryQuery.albumName(track)
+            : track.album,
+      SmartField.genre =>
+        operator == SmartOperator.equals
+            ? LibraryQuery.genreName(track)
+            : track.genre,
       SmartField.format =>
         p.extension(track.locator.split('?').first).replaceFirst('.', ''),
       _ => null,
@@ -159,8 +168,9 @@ class SmartPlaylistDefinition {
 
   factory SmartPlaylistDefinition.decode(String text) {
     final json = jsonDecode(text) as Map<String, dynamic>;
-    if (json['version'] != 1)
+    if (json['version'] != 1) {
       throw const FormatException('Unsupported smart playlist version.');
+    }
     final result = SmartPlaylistDefinition(
       rules: (json['rules'] as List)
           .map((rule) => SmartRule.fromJson(rule as Map<String, dynamic>))
