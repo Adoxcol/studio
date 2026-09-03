@@ -1134,6 +1134,17 @@ class $PlaylistsTable extends Playlists
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _smartRulesMeta = const VerificationMeta(
+    'smartRules',
+  );
+  @override
+  late final GeneratedColumn<String> smartRules = GeneratedColumn<String>(
+    'smart_rules',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1147,7 +1158,7 @@ class $PlaylistsTable extends Playlists
     defaultValue: currentDateAndTime,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, name, createdAt];
+  List<GeneratedColumn> get $columns => [id, name, smartRules, createdAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1170,6 +1181,12 @@ class $PlaylistsTable extends Playlists
       );
     } else if (isInserting) {
       context.missing(_nameMeta);
+    }
+    if (data.containsKey('smart_rules')) {
+      context.handle(
+        _smartRulesMeta,
+        smartRules.isAcceptableOrUnknown(data['smart_rules']!, _smartRulesMeta),
+      );
     }
     if (data.containsKey('created_at')) {
       context.handle(
@@ -1194,6 +1211,10 @@ class $PlaylistsTable extends Playlists
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      smartRules: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}smart_rules'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1210,10 +1231,12 @@ class $PlaylistsTable extends Playlists
 class Playlist extends DataClass implements Insertable<Playlist> {
   final int id;
   final String name;
+  final String? smartRules;
   final DateTime createdAt;
   const Playlist({
     required this.id,
     required this.name,
+    this.smartRules,
     required this.createdAt,
   });
   @override
@@ -1221,6 +1244,9 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
+    if (!nullToAbsent || smartRules != null) {
+      map['smart_rules'] = Variable<String>(smartRules);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -1229,6 +1255,9 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     return PlaylistsCompanion(
       id: Value(id),
       name: Value(name),
+      smartRules: smartRules == null && nullToAbsent
+          ? const Value.absent()
+          : Value(smartRules),
       createdAt: Value(createdAt),
     );
   }
@@ -1241,6 +1270,7 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     return Playlist(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
+      smartRules: serializer.fromJson<String?>(json['smartRules']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -1250,19 +1280,29 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
+      'smartRules': serializer.toJson<String?>(smartRules),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
-  Playlist copyWith({int? id, String? name, DateTime? createdAt}) => Playlist(
+  Playlist copyWith({
+    int? id,
+    String? name,
+    Value<String?> smartRules = const Value.absent(),
+    DateTime? createdAt,
+  }) => Playlist(
     id: id ?? this.id,
     name: name ?? this.name,
+    smartRules: smartRules.present ? smartRules.value : this.smartRules,
     createdAt: createdAt ?? this.createdAt,
   );
   Playlist copyWithCompanion(PlaylistsCompanion data) {
     return Playlist(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
+      smartRules: data.smartRules.present
+          ? data.smartRules.value
+          : this.smartRules,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -1272,44 +1312,51 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     return (StringBuffer('Playlist(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('smartRules: $smartRules, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, createdAt);
+  int get hashCode => Object.hash(id, name, smartRules, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Playlist &&
           other.id == this.id &&
           other.name == this.name &&
+          other.smartRules == this.smartRules &&
           other.createdAt == this.createdAt);
 }
 
 class PlaylistsCompanion extends UpdateCompanion<Playlist> {
   final Value<int> id;
   final Value<String> name;
+  final Value<String?> smartRules;
   final Value<DateTime> createdAt;
   const PlaylistsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
+    this.smartRules = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   PlaylistsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
+    this.smartRules = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : name = Value(name);
   static Insertable<Playlist> custom({
     Expression<int>? id,
     Expression<String>? name,
+    Expression<String>? smartRules,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
+      if (smartRules != null) 'smart_rules': smartRules,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -1317,11 +1364,13 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
   PlaylistsCompanion copyWith({
     Value<int>? id,
     Value<String>? name,
+    Value<String?>? smartRules,
     Value<DateTime>? createdAt,
   }) {
     return PlaylistsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
+      smartRules: smartRules ?? this.smartRules,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -1335,6 +1384,9 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (smartRules.present) {
+      map['smart_rules'] = Variable<String>(smartRules.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1346,6 +1398,7 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
     return (StringBuffer('PlaylistsCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('smartRules: $smartRules, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -2560,12 +2613,14 @@ typedef $$PlaylistsTableCreateCompanionBuilder =
     PlaylistsCompanion Function({
       Value<int> id,
       required String name,
+      Value<String?> smartRules,
       Value<DateTime> createdAt,
     });
 typedef $$PlaylistsTableUpdateCompanionBuilder =
     PlaylistsCompanion Function({
       Value<int> id,
       Value<String> name,
+      Value<String?> smartRules,
       Value<DateTime> createdAt,
     });
 
@@ -2611,6 +2666,11 @@ class $$PlaylistsTableFilterComposer
 
   ColumnFilters<String> get name => $composableBuilder(
     column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get smartRules => $composableBuilder(
+    column: $table.smartRules,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2664,6 +2724,11 @@ class $$PlaylistsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get smartRules => $composableBuilder(
+    column: $table.smartRules,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -2684,6 +2749,11 @@ class $$PlaylistsTableAnnotationComposer
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get smartRules => $composableBuilder(
+    column: $table.smartRules,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -2744,17 +2814,24 @@ class $$PlaylistsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<String?> smartRules = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
-              }) =>
-                  PlaylistsCompanion(id: id, name: name, createdAt: createdAt),
+              }) => PlaylistsCompanion(
+                id: id,
+                name: name,
+                smartRules: smartRules,
+                createdAt: createdAt,
+              ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String name,
+                Value<String?> smartRules = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => PlaylistsCompanion.insert(
                 id: id,
                 name: name,
+                smartRules: smartRules,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0
