@@ -9,6 +9,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Smart playlists support all/any rules for artist, album, genre, year, file
+  format, estimated bitrate, sample rate, and lossless format, with sorting and
+  a live preview. Save the current library search and filters as a smart playlist;
+  membership updates automatically as the library changes.
+
 - A Studio-native metadata editor previews changes before safely writing title,
   artist, album, genre, year, and track number into supported local audio files.
 - Embedded cover art can be replaced with a JPEG/PNG or removed from the same
