@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:studio/library/tables.dart';
 import 'package:studio/library/watch_coalesced_query.dart';
+import 'package:studio/features/smart_playlists/domain/smart_playlist.dart';
 
 part 'database.g.dart';
 
@@ -20,7 +21,7 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -60,6 +61,12 @@ class StudioDatabase extends _$StudioDatabase {
         await customStatement(
           "UPDATE tracks SET file_modified_ms = NULL WHERE source = 'local'",
         );
+      }
+      if (from < 9) {
+        final columns = await _columnNames('playlists');
+        if (!columns.contains('smart_rules')) {
+          await m.addColumn(playlists, playlists.smartRules);
+        }
       }
     },
     beforeOpen: (details) async {
@@ -285,11 +292,13 @@ class StudioDatabase extends _$StudioDatabase {
 
   Future<List<Playlist>> allPlaylists() => select(playlists).get();
 
-  Future<int> createPlaylist(String name) {
+  Future<int> createPlaylist(String name, {String? smartRules}) {
+    if (smartRules != null) SmartPlaylistDefinition.decode(smartRules);
     final trimmed = name.trim();
     return into(playlists).insert(
       PlaylistsCompanion.insert(
         name: trimmed.isEmpty ? 'Untitled playlist' : trimmed,
+        smartRules: Value(smartRules),
       ),
     );
   }
@@ -299,10 +308,28 @@ class StudioDatabase extends _$StudioDatabase {
     await (delete(playlists)..where((p) => p.id.equals(id))).go();
   }
 
+  Future<void> updateSmartPlaylist(int id, String name, String rules) async {
+    SmartPlaylistDefinition.decode(rules);
+    if (name.trim().isEmpty) {
+      throw ArgumentError('A playlist name is required.');
+    }
+    await (update(
+      playlists,
+    )..where((p) => p.id.equals(id) & p.smartRules.isNotNull())).write(
+      PlaylistsCompanion(name: Value(name.trim()), smartRules: Value(rules)),
+    );
+  }
+
   Future<void> addTrackToPlaylist({
     required int playlistId,
     required int trackId,
   }) async {
+    final playlist = await (select(
+      playlists,
+    )..where((p) => p.id.equals(playlistId))).getSingle();
+    if (playlist.smartRules != null) {
+      throw StateError('Smart playlist membership is controlled by its rules.');
+    }
     final existing = await (select(
       playlistEntries,
     )..where((e) => e.playlistId.equals(playlistId))).get();
@@ -316,15 +343,33 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   Stream<List<Track>> watchPlaylistTracks(int playlistId) {
+    return watchCoalescedQuery(
+      tableUpdates(
+        TableUpdateQuery.onAllTables([tracks, playlists, playlistEntries]),
+      ),
+      () async {
+        final playlist = await (select(
+          playlists,
+        )..where((p) => p.id.equals(playlistId))).getSingleOrNull();
+        if (playlist == null) return <Track>[];
+        if (playlist.smartRules case final rules?) {
+          return SmartPlaylistDefinition.decode(
+            rules,
+          ).evaluate(await allTracks());
+        }
+        return _manualPlaylistTracks(playlistId);
+      },
+    );
+  }
+
+  Future<List<Track>> _manualPlaylistTracks(int playlistId) async {
     final query =
         select(playlistEntries).join([
             innerJoin(tracks, tracks.id.equalsExp(playlistEntries.trackId)),
           ])
           ..where(playlistEntries.playlistId.equals(playlistId))
           ..orderBy([OrderingTerm.asc(playlistEntries.position)]);
-    return query.watch().map(
-      (rows) => [for (final row in rows) row.readTable(tracks)],
-    );
+    return [for (final row in await query.get()) row.readTable(tracks)];
   }
 }
 

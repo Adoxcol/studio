@@ -39,7 +39,9 @@ Future<void> showTrackActions({
   VoidCallback? onRemove,
   String removeLabel = 'Remove',
 }) async {
-  final playlists = ref.read(playlistsProvider).value ?? const [];
+  final playlists = (ref.read(playlistsProvider).value ?? const <Playlist>[])
+      .where((playlist) => playlist.smartRules == null)
+      .toList();
   final artists = LibraryQuery.creditedArtists(
     track.artist,
   ).where((artist) => artist != LibraryQuery.unknownArtist).toList();

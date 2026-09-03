@@ -104,7 +104,9 @@ class PlaylistListView extends StatelessWidget {
               final playlist = playlists[index];
               return _NameTile(
                 name: playlist.name,
-                detail: 'Playlist',
+                detail: playlist.smartRules == null
+                    ? 'Playlist'
+                    : 'Smart playlist',
                 onTap: () => onSelect(playlist),
               );
             },

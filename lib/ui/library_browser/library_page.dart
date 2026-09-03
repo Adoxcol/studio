@@ -13,6 +13,9 @@ import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/library_browser/library_browse_view.dart';
 import 'package:studio/features/library_folders/presentation/library_folders_panel.dart';
+import 'package:studio/features/metadata_editor/presentation/batch_metadata_editor_dialog.dart';
+import 'package:studio/features/smart_playlists/domain/smart_playlist.dart';
+import 'package:studio/features/smart_playlists/presentation/smart_playlist_editor.dart';
 import 'package:studio/ui/library_browser/library_text_action.dart';
 import 'package:studio/ui/library_browser/library_track_table.dart';
 import 'package:studio/ui/track_actions/track_actions_menu.dart';
@@ -35,6 +38,7 @@ typedef _LibraryLocation = ({
   int? playlistId,
   int? folderId,
   PageStorageBucket scrollStorage,
+  LibraryTrackFilters filters,
 });
 
 class _LibraryPageState extends ConsumerState<LibraryPage> {
@@ -47,7 +51,12 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   void _onSearch() {
     _searchTimer?.cancel();
     _searchTimer = Timer(const Duration(milliseconds: 150), () {
-      if (mounted) setState(() => _query = _search.text);
+      if (mounted) {
+        setState(() {
+          _query = _search.text;
+          _clearSelection();
+        });
+      }
     });
   }
 
@@ -67,6 +76,33 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   int? _playlistId;
   int? _folderId;
   LibraryTrackFilters _trackFilters = const LibraryTrackFilters();
+  bool _selectionMode = false;
+  final Set<int> _selectedTrackIds = {};
+
+  void _clearSelection() {
+    _selectionMode = false;
+    _selectedTrackIds.clear();
+  }
+
+  void _toggleSelection(Track track) {
+    setState(() {
+      if (!_selectedTrackIds.add(track.id)) {
+        _selectedTrackIds.remove(track.id);
+      }
+    });
+  }
+
+  Future<void> _editSelected(List<Track> visibleTracks) async {
+    final selected = visibleTracks
+        .where((track) => _selectedTrackIds.contains(track.id))
+        .toList();
+    if (selected.isEmpty) return;
+    final changed = await showBatchMetadataEditor(
+      context: context,
+      tracks: selected,
+    );
+    if (changed && mounted) setState(_clearSelection);
+  }
 
   @override
   void dispose() {
@@ -88,12 +124,14 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         playlistId: _playlistId,
         folderId: _folderId,
         scrollStorage: _scrollStorage,
+        filters: _trackFilters,
       ));
       _scrollStorage = PageStorageBucket();
       // A catalogue search selects a group, not a subset of its tracks.
       // Keep the original query in history and open the complete group.
       _search.clear();
       _syncSearch();
+      _clearSelection();
       select();
     });
   }
@@ -113,6 +151,8 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       _playlistId = previous.playlistId;
       _folderId = previous.folderId;
       _scrollStorage = previous.scrollStorage;
+      _trackFilters = previous.filters;
+      _clearSelection();
     });
   }
 
@@ -133,6 +173,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       _artistFilter = null;
       _albumFilter = null;
       _genreFilter = null;
+      _clearSelection();
     });
   }
 
@@ -221,6 +262,23 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     await ref.read(studioDatabaseProvider).createPlaylist(name);
   }
 
+  Future<void> _editSmartPlaylist({
+    Playlist? playlist,
+    SmartPlaylistDefinition? initial,
+  }) async {
+    final id = await showSmartPlaylistEditor(
+      context: context,
+      playlist: playlist,
+      initial: initial,
+    );
+    if (id == null || !mounted || id == _playlistId) return;
+    _open(() {
+      _tab = LibraryTab.playlists;
+      _playlistId = id;
+      _trackFilters = const LibraryTrackFilters();
+    });
+  }
+
   Future<void> _showFilters(
     List<Track> tracks,
     List<LibraryFolder> folders,
@@ -234,7 +292,10 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       ),
     );
     if (selected != null && mounted) {
-      setState(() => _trackFilters = selected);
+      setState(() {
+        _trackFilters = selected;
+        _clearSelection();
+      });
     }
   }
 
@@ -320,6 +381,11 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     final view = _view!;
     final playlists = ref.watch(playlistsProvider).value ?? const [];
     final viewingPlaylist = _tab == LibraryTab.playlists && _playlistId != null;
+    final selectedPlaylist = playlists
+        .where((playlist) => playlist.id == _playlistId)
+        .firstOrNull;
+    final smartPlaylist =
+        viewingPlaylist && selectedPlaylist?.smartRules != null;
     final playlistTracks = viewingPlaylist
         ? (ref.watch(playlistTracksProvider(_playlistId!)).value ?? const [])
         : const <Track>[];
@@ -431,6 +497,72 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                             filterCount: _trackFilters.activeCount,
                             onFilters: () => _showFilters(allTracks, folders),
                             extras: [
+                              if (showTable && !viewingPlaylist)
+                                LibraryTextAction(
+                                  label: 'Save as smart playlist',
+                                  onTap: () => _editSmartPlaylist(
+                                    initial:
+                                        SmartPlaylistDefinition.fromFilters(
+                                          filters: _trackFilters,
+                                          query: _query,
+                                          artist: _artistFilter,
+                                          album: _albumFilter,
+                                          genre: _genreFilter,
+                                          folderId: folder?.id,
+                                          sort: _sort,
+                                          order: _order,
+                                        ),
+                                  ),
+                                ),
+                              if (_tab == LibraryTab.playlists &&
+                                  !viewingPlaylist)
+                                LibraryTextAction(
+                                  label: 'New smart playlist',
+                                  onTap: () => _editSmartPlaylist(),
+                                ),
+                              if (smartPlaylist)
+                                LibraryTextAction(
+                                  label: 'Edit rules',
+                                  onTap: () => _editSmartPlaylist(
+                                    playlist: selectedPlaylist,
+                                  ),
+                                ),
+                              if (_selectionMode) ...[
+                                Text(
+                                  '${tableTracks.where((track) => _selectedTrackIds.contains(track.id)).length} selected',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                LibraryTextAction(
+                                  label: 'Select all',
+                                  onTap: () => setState(() {
+                                    _selectedTrackIds
+                                      ..clear()
+                                      ..addAll(
+                                        tableTracks.map((track) => track.id),
+                                      );
+                                  }),
+                                ),
+                              ],
+                              if (_selectionMode &&
+                                  _selectedTrackIds.isNotEmpty)
+                                LibraryTextAction(
+                                  label: 'Edit metadata',
+                                  onTap: () => _editSelected(tableTracks),
+                                ),
+                              if (showTable)
+                                LibraryTextAction(
+                                  label: _selectionMode
+                                      ? 'Done selecting'
+                                      : 'Select',
+                                  onTap: () => setState(() {
+                                    if (_selectionMode) {
+                                      _clearSelection();
+                                    } else {
+                                      _selectionMode = true;
+                                    }
+                                  }),
+                                  muted: _selectionMode,
+                                ),
                               if (_tab == LibraryTab.all &&
                                   (_artistFilter != null ||
                                       _albumFilter != null ||
@@ -508,7 +640,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                         ? _EmptyLibrary(
                                             palette: palette,
                                             text: viewingPlaylist
-                                                ? 'This playlist is empty. Right-click a track to add it.'
+                                                ? smartPlaylist
+                                                      ? 'No tracks match this smart playlist. Edit its rules or add music to your library.'
+                                                      : 'This playlist is empty. Right-click a track to add it.'
                                                 : viewingFolder &&
                                                       _search.text
                                                           .trim()
@@ -518,6 +652,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                           )
                                         : LibraryTrackTable(
                                             tracks: tableTracks,
+                                            selectionMode: _selectionMode,
+                                            selectedIds: _selectedTrackIds,
+                                            onToggleSelection: _toggleSelection,
                                             bottomInset: _history.isEmpty
                                                 ? 0
                                                 : 64,
