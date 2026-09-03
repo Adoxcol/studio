@@ -48,7 +48,12 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   void _onSearch() {
     _searchTimer?.cancel();
     _searchTimer = Timer(const Duration(milliseconds: 150), () {
-      if (mounted) setState(() => _query = _search.text);
+      if (mounted) {
+        setState(() {
+          _query = _search.text;
+          _clearSelection();
+        });
+      }
     });
   }
 
@@ -265,7 +270,10 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       ),
     );
     if (selected != null && mounted) {
-      setState(() => _trackFilters = selected);
+      setState(() {
+        _trackFilters = selected;
+        _clearSelection();
+      });
     }
   }
 
@@ -462,6 +470,22 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                             filterCount: _trackFilters.activeCount,
                             onFilters: () => _showFilters(allTracks, folders),
                             extras: [
+                              if (_selectionMode) ...[
+                                Text(
+                                  '${tableTracks.where((track) => _selectedTrackIds.contains(track.id)).length} selected',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                LibraryTextAction(
+                                  label: 'Select all',
+                                  onTap: () => setState(() {
+                                    _selectedTrackIds
+                                      ..clear()
+                                      ..addAll(
+                                        tableTracks.map((track) => track.id),
+                                      );
+                                  }),
+                                ),
+                              ],
                               if (_selectionMode &&
                                   _selectedTrackIds.isNotEmpty)
                                 LibraryTextAction(
@@ -471,7 +495,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                               if (showTable)
                                 LibraryTextAction(
                                   label: _selectionMode
-                                      ? '${_selectedTrackIds.length} selected'
+                                      ? 'Done selecting'
                                       : 'Select',
                                   onTap: () => setState(() {
                                     if (_selectionMode) {

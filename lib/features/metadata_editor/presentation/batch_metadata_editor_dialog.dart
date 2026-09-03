@@ -45,6 +45,8 @@ class _BatchMetadataEditorDialogState
   bool _saving = false;
   int _processed = 0;
   int _written = 0;
+  int _total = 0;
+  bool _finished = false;
   List<String> _failures = const [];
   String? _error;
 
@@ -59,6 +61,24 @@ class _BatchMetadataEditorDialogState
 
   bool get _artworkChanged => _coverBytes != null || _removeCover;
   bool get _hasChanges => _enabledFields.isNotEmpty || _artworkChanged;
+
+  TrackMetadataEdit _editFor(Track track) => TrackMetadataEdit(
+    title: track.title,
+    artist: _valueFor('artist', _artist.text, track.artist),
+    album: _valueFor('album', _album.text, track.album),
+    genre: _valueFor('genre', _genre.text, track.genre),
+    year: _enabledFields.contains('year')
+        ? int.tryParse(_year.text.trim())
+        : track.year,
+    trackNumber: track.trackNumber,
+  ).normalized();
+
+  List<Track> get _targets => _writableTracks
+      .where(
+        (track) =>
+            _artworkChanged || _editFor(track).changesFrom(track).isNotEmpty,
+      )
+      .toList();
 
   @override
   void dispose() {
@@ -116,12 +136,14 @@ class _BatchMetadataEditorDialogState
       setState(() => _error = validation);
       return;
     }
-    final targets = _writableTracks;
+    final targets = _targets;
     if (targets.isEmpty) return;
     setState(() {
       _saving = true;
       _processed = 0;
       _written = 0;
+      _total = targets.length;
+      _finished = false;
       _failures = const [];
       _error = null;
     });
@@ -150,23 +172,16 @@ class _BatchMetadataEditorDialogState
     final writer = ref.read(trackMetadataWriterProvider);
     final database = ref.read(studioDatabaseProvider);
     for (final track in targets) {
+      var fileWritten = false;
       try {
-        final edit = TrackMetadataEdit(
-          title: track.title,
-          artist: _valueFor('artist', _artist.text, track.artist),
-          album: _valueFor('album', _album.text, track.album),
-          genre: _valueFor('genre', _genre.text, track.genre),
-          year: _enabledFields.contains('year')
-              ? int.tryParse(_year.text.trim())
-              : track.year,
-          trackNumber: track.trackNumber,
-        ).normalized();
+        final edit = _editFor(track);
         final cover = _coverBytes != null
             ? EmbeddedCoverEdit.replace(_coverBytes!, _coverMime!)
             : _removeCover
             ? const EmbeddedCoverEdit.remove()
             : const EmbeddedCoverEdit.keep();
         final stat = await writer.write(track.locator, edit, cover: cover);
+        fileWritten = true;
         await database.updateTrackTags(
           id: track.id,
           title: edit.title,
@@ -181,7 +196,9 @@ class _BatchMetadataEditorDialogState
         );
         _written++;
       } on Object catch (error) {
-        failures.add('${track.title}: $error');
+        failures.add(
+          '${track.title}: ${fileWritten ? 'File updated; library refresh failed. Rescan required. ' : 'File write failed. '}$error',
+        );
       }
       _processed++;
       if (mounted) setState(() {});
@@ -190,6 +207,7 @@ class _BatchMetadataEditorDialogState
     setState(() {
       _saving = false;
       _failures = failures;
+      _finished = true;
     });
   }
 
@@ -202,7 +220,8 @@ class _BatchMetadataEditorDialogState
     final palette = StudioPalette.of(context);
     final writable = _writableTracks.length;
     final skipped = widget.tracks.length - writable;
-    final complete = _processed == writable && writable > 0 && !_saving;
+    final complete = _finished;
+    final affected = _targets.length;
     return PopScope(
       canPop: !_saving,
       child: AlertDialog(
@@ -231,6 +250,11 @@ class _BatchMetadataEditorDialogState
                   ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
                 ),
                 const SizedBox(height: 20),
+                Text(
+                  'Only checked fields change. A checked empty field clears it. Titles and track numbers stay individual.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
                 for (final entry in [
                   ('artist', 'Artist credits', _artist),
                   ('album', 'Album', _album),
@@ -243,6 +267,7 @@ class _BatchMetadataEditorDialogState
                     controller: entry.$3,
                     checked: _enabledFields.contains(entry.$1),
                     enabled: !_saving && !complete,
+                    onChanged: () => setState(() => _error = null),
                     onToggle: (checked) => setState(() {
                       if (checked) {
                         _enabledFields.add(entry.$1);
@@ -253,6 +278,16 @@ class _BatchMetadataEditorDialogState
                     }),
                   ),
                 const SizedBox(height: 12),
+                if (_coverBytes case final bytes?)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Image.memory(
+                      bytes,
+                      width: 72,
+                      height: 72,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 Text(
                   'Cover art',
                   style: Theme.of(context).textTheme.bodyMedium,
@@ -307,7 +342,7 @@ class _BatchMetadataEditorDialogState
                 if (_saving || complete) ...[
                   const SizedBox(height: 16),
                   LinearProgressIndicator(
-                    value: writable == 0 ? 0 : _processed / writable,
+                    value: _total == 0 ? 0 : _processed / _total,
                     minHeight: 1,
                     color: palette.accent,
                     backgroundColor: palette.hairline,
@@ -315,8 +350,8 @@ class _BatchMetadataEditorDialogState
                   const SizedBox(height: 8),
                   Text(
                     complete
-                        ? 'Updated $_written of $writable tracks.'
-                        : 'Writing ${_processed + 1} of $writable…',
+                        ? 'Updated $_written of $_total tracks.'
+                        : 'Writing $_processed of $_total…',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -328,7 +363,7 @@ class _BatchMetadataEditorDialogState
                       context,
                     ).textTheme.bodySmall?.copyWith(color: palette.accent),
                   ),
-                  for (final failure in _failures.take(5))
+                  for (final failure in _failures)
                     Text(
                       failure,
                       maxLines: 2,
@@ -361,10 +396,10 @@ class _BatchMetadataEditorDialogState
           if (!complete)
             TextButton(
               key: const ValueKey('apply-batch-metadata'),
-              onPressed: _saving || !_hasChanges || writable == 0
+              onPressed: _saving || !_hasChanges || affected == 0
                   ? null
                   : _apply,
-              child: const Text('Apply changes'),
+              child: Text('Apply to $affected tracks'),
             ),
         ],
       ),
@@ -380,6 +415,7 @@ class _BatchField extends StatelessWidget {
     required this.checked,
     required this.enabled,
     required this.onToggle,
+    required this.onChanged,
   });
 
   final String id;
@@ -388,6 +424,7 @@ class _BatchField extends StatelessWidget {
   final bool checked;
   final bool enabled;
   final ValueChanged<bool> onToggle;
+  final VoidCallback onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -403,6 +440,7 @@ class _BatchField extends StatelessWidget {
         Expanded(
           child: TextField(
             controller: controller,
+            onChanged: (_) => onChanged(),
             enabled: enabled && checked,
             keyboardType: id == 'year'
                 ? TextInputType.number

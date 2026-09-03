@@ -73,6 +73,8 @@ void main() {
     await tester.tap(find.text('Two'));
     await tester.pump();
     expect(find.text('2 selected'), findsOneWidget);
+    expect(engine.playCount, 0);
+    expect(engine.loadCount, 0);
 
     await tester.tap(find.text('Edit metadata'));
     await tester.pumpAndSettle();
@@ -82,8 +84,23 @@ void main() {
     await tester.pump();
     await tester.enterText(
       find.widgetWithText(TextField, 'Artist credits'),
+      'Old artist',
+    );
+    await tester.pump();
+    expect(find.text('Apply to 0 tracks'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextButton>(
+            find.byKey(const ValueKey('apply-batch-metadata')),
+          )
+          .onPressed,
+      isNull,
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Artist credits'),
       'New artist',
     );
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('apply-batch-metadata')));
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 50)),
@@ -104,10 +121,70 @@ void main() {
     );
     expect(tracks.firstWhere((track) => track.title == 'One').trackNumber, 1);
   });
+
+  testWidgets('select all continues after an individual write failure', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final extra = File('${directory.path}${Platform.pathSeparator}three.flac');
+    await tester.runAsync(() => extra.writeAsBytes([3]));
+    await db.upsertTrack(
+      TracksCompanion.insert(
+        locator: extra.path,
+        title: 'Three',
+        artist: const Value('Old artist'),
+      ),
+    );
+    writer.failName = 'one.flac';
+    await tester.pumpWidget(
+      testStudioApp(
+        db: db,
+        engine: engine,
+        tracks: await db.allTracks(),
+        extraOverrides: [trackMetadataWriterProvider.overrideWithValue(writer)],
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text('Select'));
+    await tester.pump();
+    await tester.tap(find.text('Select all'));
+    await tester.pump();
+    expect(find.text('3 selected'), findsOneWidget);
+    await tester.tap(find.text('Edit metadata'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('batch-field-artist')));
+    await tester.pump();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Artist credits'),
+      'Shared',
+    );
+    await tester.pump();
+    expect(find.text('Apply to 2 tracks'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('apply-batch-metadata')));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Updated 1 of 2 tracks.'), findsOneWidget);
+    expect(find.textContaining('One: File write failed.'), findsOneWidget);
+    final tracks = await db.allTracks();
+    expect(
+      tracks.firstWhere((track) => track.title == 'One').artist,
+      'Old artist',
+    );
+    expect(
+      tracks.firstWhere((track) => track.title == 'Three').artist,
+      'Shared',
+    );
+  });
 }
 
 class _BatchFakeWriter extends TrackMetadataWriter {
   final writes = <(String, TrackMetadataEdit)>[];
+  String? failName;
 
   @override
   Future<FileStat> write(
@@ -116,6 +193,9 @@ class _BatchFakeWriter extends TrackMetadataWriter {
     EmbeddedCoverEdit cover = const EmbeddedCoverEdit.keep(),
   }) async {
     writes.add((path, edit));
+    if (failName != null && path.endsWith(failName!)) {
+      throw const FileSystemException('Test write failure');
+    }
     return File(path).stat();
   }
 }
