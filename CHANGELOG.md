@@ -9,6 +9,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Playlist management supports renaming, independent duplicates, and confirmed
+  deletion without removing music. Regular playlists have a drag-to-reorder
+  editor with keyboard-accessible move controls and Save/Cancel; smart playlist
+  copies retain their rules. Repeated tracks and saved ordering are preserved.
+
 - Smart playlists support all/any rules for artist, album, genre, year, file
   format, estimated bitrate, sample rate, and lossless format, with sorting and
   a live preview. Save the current library search and filters as a smart playlist;
