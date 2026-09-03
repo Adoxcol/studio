@@ -8,3 +8,6 @@
 ## 2024-05-24 - N+1 Query Optimization in Folder Scanner
 **Learning:** In Dart/Drift DB access, iteratively looping and querying relations (like folders and their tracks) can introduce massive N+1 delays. Fetching all items and batching/grouping them in-memory is significantly faster (~90% improvement on 500 folders).
 **Action:** When a function accepts a single ID to fetch from the DB and is called iteratively, check if the data can be batched-loaded upstream and passed in as an optional parameter to avoid N+1 querying.
+## 2024-05-24 - Avoiding O(N log N) Computation in Widget Getters
+**Learning:** In Flutter, it is important not to put O(N log N) processing (like looping over tens of thousands of tracks and sorting the results) inside getter methods of widgets that might rebuild frequently (e.g., from `setState` interacting with UI elements like dropdowns). In `_LibraryFilterDialogState`, doing this recalculates everything on every state change unnecessarily.
+**Action:** When a property depends on a static input (like `widget.tracks`) but requires heavy processing, initialize it once (e.g., using `late final`) rather than inside a getter.
