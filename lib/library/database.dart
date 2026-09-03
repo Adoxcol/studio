@@ -304,9 +304,104 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   Future<void> deletePlaylist(int id) async {
-    await (delete(playlistEntries)..where((e) => e.playlistId.equals(id))).go();
-    await (delete(playlists)..where((p) => p.id.equals(id))).go();
+    await transaction(() async {
+      await (delete(
+        playlistEntries,
+      )..where((e) => e.playlistId.equals(id))).go();
+      await (delete(playlists)..where((p) => p.id.equals(id))).go();
+    });
   }
+
+  Future<void> renamePlaylist(int id, String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) throw ArgumentError('A playlist name is required.');
+    final changed = await (update(playlists)..where((p) => p.id.equals(id)))
+        .write(PlaylistsCompanion(name: Value(trimmed)));
+    if (changed == 0) throw StateError('This playlist no longer exists.');
+  }
+
+  /// Copies occurrences in order, or copies the rules of a smart playlist.
+  Future<int> duplicatePlaylist(int id, String name) => transaction(() async {
+    if (name.trim().isEmpty) {
+      throw ArgumentError('A playlist name is required.');
+    }
+    final source = await (select(
+      playlists,
+    )..where((p) => p.id.equals(id))).getSingle();
+    final copyId = await createPlaylist(name, smartRules: source.smartRules);
+    if (source.smartRules == null) {
+      final entries = await _orderedPlaylistEntries(id);
+      await batch((batch) {
+        batch.insertAll(playlistEntries, [
+          for (var i = 0; i < entries.length; i++)
+            PlaylistEntriesCompanion.insert(
+              playlistId: copyId,
+              trackId: entries[i].trackId,
+              position: i,
+            ),
+        ]);
+      });
+    }
+    return copyId;
+  });
+
+  Future<List<PlaylistEntry>> _orderedPlaylistEntries(int id) =>
+      (select(playlistEntries)
+            ..where((e) => e.playlistId.equals(id))
+            ..orderBy([
+              (e) => OrderingTerm.asc(e.position),
+              (e) => OrderingTerm.asc(e.id),
+            ]))
+          .get();
+
+  /// Entry IDs distinguish repeated occurrences of the same track.
+  Future<List<({int entryId, Track track})>> playlistItems(int id) async {
+    final query =
+        select(playlistEntries).join([
+            innerJoin(tracks, tracks.id.equalsExp(playlistEntries.trackId)),
+          ])
+          ..where(playlistEntries.playlistId.equals(id))
+          ..orderBy([
+            OrderingTerm.asc(playlistEntries.position),
+            OrderingTerm.asc(playlistEntries.id),
+          ]);
+    return [
+      for (final row in await query.get())
+        (
+          entryId: row.readTable(playlistEntries).id,
+          track: row.readTable(tracks),
+        ),
+    ];
+  }
+
+  /// Refuse stale edits rather than dropping newly added or removed entries.
+  Future<void> reorderPlaylistEntries(int id, List<int> entryIds) =>
+      transaction(() async {
+        final playlist = await (select(
+          playlists,
+        )..where((p) => p.id.equals(id))).getSingle();
+        if (playlist.smartRules != null) {
+          throw StateError('Smart playlists use rule-based ordering.');
+        }
+        final current = await _orderedPlaylistEntries(id);
+        final requested = entryIds.toSet();
+        if (requested.length != entryIds.length ||
+            current.length != entryIds.length ||
+            !current.every((entry) => requested.contains(entry.id))) {
+          throw StateError(
+            'Playlist contents changed. Close and reopen Reorder tracks.',
+          );
+        }
+        await batch((batch) {
+          for (var i = 0; i < entryIds.length; i++) {
+            batch.update(
+              playlistEntries,
+              PlaylistEntriesCompanion(position: Value(i)),
+              where: (entry) => entry.id.equals(entryIds[i]),
+            );
+          }
+        });
+      });
 
   Future<void> updateSmartPlaylist(int id, String name, String rules) async {
     SmartPlaylistDefinition.decode(rules);
@@ -323,7 +418,7 @@ class StudioDatabase extends _$StudioDatabase {
   Future<void> addTrackToPlaylist({
     required int playlistId,
     required int trackId,
-  }) async {
+  }) => transaction(() async {
     final playlist = await (select(
       playlists,
     )..where((p) => p.id.equals(playlistId))).getSingle();
@@ -337,10 +432,15 @@ class StudioDatabase extends _$StudioDatabase {
       PlaylistEntriesCompanion.insert(
         playlistId: playlistId,
         trackId: trackId,
-        position: existing.length,
+        position:
+            existing.fold<int>(
+              -1,
+              (max, e) => e.position > max ? e.position : max,
+            ) +
+            1,
       ),
     );
-  }
+  });
 
   Stream<List<Track>> watchPlaylistTracks(int playlistId) {
     return watchCoalescedQuery(
@@ -363,13 +463,7 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   Future<List<Track>> _manualPlaylistTracks(int playlistId) async {
-    final query =
-        select(playlistEntries).join([
-            innerJoin(tracks, tracks.id.equalsExp(playlistEntries.trackId)),
-          ])
-          ..where(playlistEntries.playlistId.equals(playlistId))
-          ..orderBy([OrderingTerm.asc(playlistEntries.position)]);
-    return [for (final row in await query.get()) row.readTable(tracks)];
+    return [for (final item in await playlistItems(playlistId)) item.track];
   }
 }
 
