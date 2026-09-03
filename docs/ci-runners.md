@@ -46,8 +46,8 @@ on the host shared by testing and publishing.
 - Install Git, Bash, curl, unzip, xz/tar, and the standard Linux runtime
   dependencies required by Flutter and the runner's Node-based actions.
 - Give the runner user write access to its work, temporary, and tool-cache
-  directories. `subosito/flutter-action` installs the project's stable Flutter
-  SDK; workflows do not run `sudo` or provision the machine.
+  directories, `/opt/ci/cache/flutter`, and `/opt/ci/cache/pub`. Workflows do not
+  run `sudo` or provision the machine.
 - Allow outbound access to GitHub Actions/artifacts, Flutter downloads,
   pub.dev, and Codecov. Coverage upload remains non-blocking.
 - CI cancels superseded runs per PR/ref. CI and release jobs have execution
@@ -60,3 +60,36 @@ Validate changes with `actionlint`, the normal Flutter checks, and a trusted PR
 run. Verify the `analyze_and_test` job's runner name is `homelab-ci-201`.
 Release publishing is only exercised by a real release tag; do not create a
 release merely to test runner selection.
+
+## Persistent Flutter cache
+
+Both workflows pin Flutter to `3.47.2`, the stable version verified by CI before
+the migration. Update both `FLUTTER_VERSION` declarations together when upgrading.
+Hosted runners still use `subosito/flutter-action`; the Linux homelab uses
+`.github/scripts/setup-flutter-cache.sh`.
+
+- SDK: `/opt/ci/cache/flutter/stable-3.47.2-x64/flutter`.
+- Pub packages: `/opt/ci/cache/pub`.
+- Interrupted downloads: `/opt/ci/cache/flutter/downloads/*.part`.
+- These paths are outside `_work`, so the homelab's weekly workspace purge does
+  not remove them. Do not add them to general workspace cleanup.
+- A cold download resumes from the partial archive and must match the SHA-256
+  checksum in Flutter's official release manifest before extraction. Installation
+  is staged and published atomically. A failed download is kept for retry.
+- An already installed, verified SDK skips the network download. This is a local
+  disk cache, not an upload/download through GitHub Actions cache storage.
+- The initial setup may take up to 150 minutes on this connection. Analysis and
+  tests retain separate shorter timeouts. Normal runner slot/temperature hooks
+  still wrap the job; no extra background downloader bypasses these controls.
+- Old SDK versions are retained intentionally. When upgrading, inspect disk usage
+  and manually remove only confirmed unused version directories after CI passes.
+  Never delete an SDK or package cache while a job is using it.
+- The cache belongs to `github-runner`; fork jobs must remain on isolated hosted
+  runners. The checksum authenticates the initial download, not later changes by
+  code executed on this persistent host.
+
+The runner service hook paths must end in `.sh` (the scripts are Bash). The
+installed `.sh` aliases preserve the original scripts. `KillMode=control-group`
+ensures a service restart does not leave old Listener processes running. Original
+service configurations are backed up as `github-runner.service.studio-hook-fix.bak`
+alongside both `/etc/systemd/system` and `/opt/ci/systemd` service files.
