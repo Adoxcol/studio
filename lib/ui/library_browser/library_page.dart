@@ -13,6 +13,7 @@ import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/library_browser/library_browse_view.dart';
 import 'package:studio/features/library_folders/presentation/library_folders_panel.dart';
+import 'package:studio/features/metadata_editor/presentation/batch_metadata_editor_dialog.dart';
 import 'package:studio/ui/library_browser/library_text_action.dart';
 import 'package:studio/ui/library_browser/library_track_table.dart';
 import 'package:studio/ui/track_actions/track_actions_menu.dart';
@@ -81,6 +82,18 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         _selectedTrackIds.remove(track.id);
       }
     });
+  }
+
+  Future<void> _editSelected(List<Track> visibleTracks) async {
+    final selected = visibleTracks
+        .where((track) => _selectedTrackIds.contains(track.id))
+        .toList();
+    if (selected.isEmpty) return;
+    final changed = await showBatchMetadataEditor(
+      context: context,
+      tracks: selected,
+    );
+    if (changed && mounted) setState(_clearSelection);
   }
 
   @override
@@ -449,6 +462,12 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                             filterCount: _trackFilters.activeCount,
                             onFilters: () => _showFilters(allTracks, folders),
                             extras: [
+                              if (_selectionMode &&
+                                  _selectedTrackIds.isNotEmpty)
+                                LibraryTextAction(
+                                  label: 'Edit metadata',
+                                  onTap: () => _editSelected(tableTracks),
+                                ),
                               if (showTable)
                                 LibraryTextAction(
                                   label: _selectionMode
