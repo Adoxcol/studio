@@ -15,6 +15,9 @@ class LibraryTrackTable extends ConsumerWidget {
     required this.tracks,
     required this.onPlay,
     this.onTrackMenu,
+    this.selectionMode = false,
+    this.selectedIds = const {},
+    this.onToggleSelection,
     this.bottomInset = 0,
   });
 
@@ -25,6 +28,9 @@ class LibraryTrackTable extends ConsumerWidget {
   final List<Track> tracks;
   final void Function(int index) onPlay;
   final void Function(Track track, Offset globalPosition)? onTrackMenu;
+  final bool selectionMode;
+  final Set<int> selectedIds;
+  final ValueChanged<Track>? onToggleSelection;
 
   /// Extra scrollable space so floating navigation never traps the final row.
   final double bottomInset;
@@ -43,6 +49,9 @@ class LibraryTrackTable extends ConsumerWidget {
         onPlay: onPlay,
         onTrackMenu: onTrackMenu,
         bottomInset: bottomInset,
+        selectionMode: selectionMode,
+        selectedIds: selectedIds,
+        onToggleSelection: onToggleSelection,
       );
     }
     return _TrackList(
@@ -52,6 +61,9 @@ class LibraryTrackTable extends ConsumerWidget {
       onPlay: onPlay,
       onTrackMenu: onTrackMenu,
       bottomInset: bottomInset,
+      selectionMode: selectionMode,
+      selectedIds: selectedIds,
+      onToggleSelection: onToggleSelection,
     );
   }
 }
@@ -64,6 +76,9 @@ class _TrackCardGrid extends StatelessWidget {
     required this.onPlay,
     required this.bottomInset,
     this.onTrackMenu,
+    required this.selectionMode,
+    required this.selectedIds,
+    this.onToggleSelection,
   });
 
   final List<Track> tracks;
@@ -72,6 +87,9 @@ class _TrackCardGrid extends StatelessWidget {
   final double bottomInset;
   final void Function(int index) onPlay;
   final void Function(Track track, Offset globalPosition)? onTrackMenu;
+  final bool selectionMode;
+  final Set<int> selectedIds;
+  final ValueChanged<Track>? onToggleSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -93,6 +111,9 @@ class _TrackCardGrid extends StatelessWidget {
           playing: track.id == playingId,
           showArtwork: showArtwork,
           onPlay: () => onPlay(index),
+          selectionMode: selectionMode,
+          selected: selectedIds.contains(track.id),
+          onToggleSelection: () => onToggleSelection?.call(track),
           onMenu: onTrackMenu == null
               ? null
               : (offset) => onTrackMenu!(track, offset),
@@ -110,6 +131,9 @@ class _TrackCard extends StatelessWidget {
     required this.showArtwork,
     required this.onPlay,
     this.onMenu,
+    required this.selectionMode,
+    required this.selected,
+    required this.onToggleSelection,
   });
 
   final Track track;
@@ -117,6 +141,9 @@ class _TrackCard extends StatelessWidget {
   final bool showArtwork;
   final VoidCallback onPlay;
   final ValueChanged<Offset>? onMenu;
+  final bool selectionMode;
+  final bool selected;
+  final VoidCallback onToggleSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -133,10 +160,10 @@ class _TrackCard extends StatelessWidget {
 
     return Semantics(
       button: true,
-      selected: playing,
+      selected: selected || playing,
       label: semanticLabel,
       child: GestureDetector(
-        onTap: onPlay,
+        onTap: selectionMode ? onToggleSelection : onPlay,
         onSecondaryTapUp: onMenu == null
             ? null
             : (details) => onMenu!(details.globalPosition),
@@ -144,7 +171,9 @@ class _TrackCard extends StatelessWidget {
           cursor: SystemMouseCursors.click,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              border: Border.all(color: palette.hairline),
+              border: Border.all(
+                color: selected ? palette.accent : palette.hairline,
+              ),
             ),
             child: Padding(
               padding: const EdgeInsets.all(7),
@@ -189,6 +218,15 @@ class _TrackCard extends StatelessWidget {
                     ),
                   ),
                   if (onMenu != null) _TrackMenuButton(onMenu: onMenu!),
+                  if (selectionMode)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Icon(
+                        selected ? Icons.check : Icons.circle_outlined,
+                        size: 16,
+                        color: selected ? palette.accent : palette.inkMuted,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -207,6 +245,9 @@ class _TrackList extends StatelessWidget {
     required this.onPlay,
     required this.bottomInset,
     this.onTrackMenu,
+    required this.selectionMode,
+    required this.selectedIds,
+    this.onToggleSelection,
   });
 
   final List<Track> tracks;
@@ -215,6 +256,9 @@ class _TrackList extends StatelessWidget {
   final double bottomInset;
   final void Function(int index) onPlay;
   final void Function(Track track, Offset globalPosition)? onTrackMenu;
+  final bool selectionMode;
+  final Set<int> selectedIds;
+  final ValueChanged<Track>? onToggleSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -245,6 +289,9 @@ class _TrackList extends StatelessWidget {
                   playing: track.id == playingId,
                   showArtwork: showArtwork,
                   onPlay: () => onPlay(index),
+                  selectionMode: selectionMode,
+                  selected: selectedIds.contains(track.id),
+                  onToggleSelection: () => onToggleSelection?.call(track),
                   onMenu: onTrackMenu == null
                       ? null
                       : (offset) => onTrackMenu!(track, offset),
@@ -294,6 +341,9 @@ class _TrackRow extends StatelessWidget {
     required this.showArtwork,
     required this.onPlay,
     this.onMenu,
+    required this.selectionMode,
+    required this.selected,
+    required this.onToggleSelection,
   });
 
   final Track track;
@@ -301,6 +351,9 @@ class _TrackRow extends StatelessWidget {
   final bool showArtwork;
   final VoidCallback onPlay;
   final ValueChanged<Offset>? onMenu;
+  final bool selectionMode;
+  final bool selected;
+  final VoidCallback onToggleSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -316,10 +369,10 @@ class _TrackRow extends StatelessWidget {
 
     return Semantics(
       button: true,
-      selected: playing,
+      selected: selected || playing,
       label: semanticLabel,
       child: GestureDetector(
-        onTap: onPlay,
+        onTap: selectionMode ? onToggleSelection : onPlay,
         onSecondaryTapUp: onMenu == null
             ? null
             : (details) => onMenu!(details.globalPosition),
@@ -330,6 +383,15 @@ class _TrackRow extends StatelessWidget {
             height: LibraryTrackTable.rowExtent - 1,
             child: Row(
               children: [
+                if (selectionMode)
+                  SizedBox(
+                    width: 28,
+                    child: Icon(
+                      selected ? Icons.check : Icons.circle_outlined,
+                      size: 15,
+                      color: selected ? palette.accent : palette.inkMuted,
+                    ),
+                  ),
                 if (showArtwork) ...[
                   CoverArt(path: track.artworkPath, size: 28),
                   const SizedBox(width: 8),

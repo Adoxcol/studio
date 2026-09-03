@@ -13,6 +13,7 @@ import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/library_browser/library_browse_view.dart';
 import 'package:studio/features/library_folders/presentation/library_folders_panel.dart';
+import 'package:studio/features/metadata_editor/presentation/batch_metadata_editor_dialog.dart';
 import 'package:studio/ui/library_browser/library_text_action.dart';
 import 'package:studio/ui/library_browser/library_track_table.dart';
 import 'package:studio/ui/track_actions/track_actions_menu.dart';
@@ -47,7 +48,12 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   void _onSearch() {
     _searchTimer?.cancel();
     _searchTimer = Timer(const Duration(milliseconds: 150), () {
-      if (mounted) setState(() => _query = _search.text);
+      if (mounted) {
+        setState(() {
+          _query = _search.text;
+          _clearSelection();
+        });
+      }
     });
   }
 
@@ -67,6 +73,33 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   int? _playlistId;
   int? _folderId;
   LibraryTrackFilters _trackFilters = const LibraryTrackFilters();
+  bool _selectionMode = false;
+  final Set<int> _selectedTrackIds = {};
+
+  void _clearSelection() {
+    _selectionMode = false;
+    _selectedTrackIds.clear();
+  }
+
+  void _toggleSelection(Track track) {
+    setState(() {
+      if (!_selectedTrackIds.add(track.id)) {
+        _selectedTrackIds.remove(track.id);
+      }
+    });
+  }
+
+  Future<void> _editSelected(List<Track> visibleTracks) async {
+    final selected = visibleTracks
+        .where((track) => _selectedTrackIds.contains(track.id))
+        .toList();
+    if (selected.isEmpty) return;
+    final changed = await showBatchMetadataEditor(
+      context: context,
+      tracks: selected,
+    );
+    if (changed && mounted) setState(_clearSelection);
+  }
 
   @override
   void dispose() {
@@ -94,6 +127,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       // Keep the original query in history and open the complete group.
       _search.clear();
       _syncSearch();
+      _clearSelection();
       select();
     });
   }
@@ -113,6 +147,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       _playlistId = previous.playlistId;
       _folderId = previous.folderId;
       _scrollStorage = previous.scrollStorage;
+      _clearSelection();
     });
   }
 
@@ -133,6 +168,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       _artistFilter = null;
       _albumFilter = null;
       _genreFilter = null;
+      _clearSelection();
     });
   }
 
@@ -234,7 +270,10 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       ),
     );
     if (selected != null && mounted) {
-      setState(() => _trackFilters = selected);
+      setState(() {
+        _trackFilters = selected;
+        _clearSelection();
+      });
     }
   }
 
@@ -431,6 +470,42 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                             filterCount: _trackFilters.activeCount,
                             onFilters: () => _showFilters(allTracks, folders),
                             extras: [
+                              if (_selectionMode) ...[
+                                Text(
+                                  '${tableTracks.where((track) => _selectedTrackIds.contains(track.id)).length} selected',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                LibraryTextAction(
+                                  label: 'Select all',
+                                  onTap: () => setState(() {
+                                    _selectedTrackIds
+                                      ..clear()
+                                      ..addAll(
+                                        tableTracks.map((track) => track.id),
+                                      );
+                                  }),
+                                ),
+                              ],
+                              if (_selectionMode &&
+                                  _selectedTrackIds.isNotEmpty)
+                                LibraryTextAction(
+                                  label: 'Edit metadata',
+                                  onTap: () => _editSelected(tableTracks),
+                                ),
+                              if (showTable)
+                                LibraryTextAction(
+                                  label: _selectionMode
+                                      ? 'Done selecting'
+                                      : 'Select',
+                                  onTap: () => setState(() {
+                                    if (_selectionMode) {
+                                      _clearSelection();
+                                    } else {
+                                      _selectionMode = true;
+                                    }
+                                  }),
+                                  muted: _selectionMode,
+                                ),
                               if (_tab == LibraryTab.all &&
                                   (_artistFilter != null ||
                                       _albumFilter != null ||
@@ -518,6 +593,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                           )
                                         : LibraryTrackTable(
                                             tracks: tableTracks,
+                                            selectionMode: _selectionMode,
+                                            selectedIds: _selectedTrackIds,
+                                            onToggleSelection: _toggleSelection,
                                             bottomInset: _history.isEmpty
                                                 ? 0
                                                 : 64,
