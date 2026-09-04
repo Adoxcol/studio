@@ -998,11 +998,11 @@ class _LibraryFilterDialogState extends State<_LibraryFilterDialog> {
   late int? _year = widget.initial.year;
   late int? _folderId = widget.initial.folderId;
 
-  List<String> get _genres => {
+  late final List<String> _genres = {
     for (final track in widget.tracks) LibraryQuery.genreName(track),
   }.toList()..sort(LibraryQuery.compareText);
 
-  List<int> get _years => {
+  late final List<int> _years = {
     for (final track in widget.tracks)
       if ((track.year ?? 0) > 0) track.year!,
   }.toList()..sort((a, b) => b.compareTo(a));
