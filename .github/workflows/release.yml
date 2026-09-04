@@ -6,16 +6,27 @@ on:
       - 'v*.*.*'
 
 permissions:
-  contents: write
+  contents: read
+
+env:
+  FLUTTER_VERSION: '3.47.2'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   windows:
+    # The registered homelab runner is Linux, not a Windows build host.
     runs-on: windows-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
       - run: flutter pub get
       - name: Enable Windows desktop
@@ -38,19 +49,24 @@ jobs:
 
   release:
     needs: windows
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, homelab]
+    timeout-minutes: 15
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: studio-windows-x64
+          # Never pick up an artifact left by a previous run on this host.
+          path: ${{ runner.temp }}/studio-release-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           draft: false
           prerelease: false
-          files: studio-windows-x64.zip
+          fail_on_unmatched_files: true
+          files: ${{ runner.temp }}/studio-release-${{ github.run_id }}-${{ github.run_attempt }}/studio-windows-x64.zip
           body: |
             Windows x64.
 

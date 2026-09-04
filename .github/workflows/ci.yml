@@ -6,21 +6,50 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: '3.47.2'
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze_and_test:
-    runs-on: ubuntu-latest
+    # Forks and Dependabot stay hosted. Review all external workflow changes
+    # before approval: PR YAML can change this routing (see docs/ci-runners.md).
+    runs-on: ${{ fromJSON((github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) && '["self-hosted", "Linux", "X64", "homelab"]' || '["ubuntu-latest"]') }}
+    # Cold SDK downloads on the homelab are slow; subsequent runs reuse disk cache.
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          persist-credentials: false
+      - name: Test SDK cache helper
+        timeout-minutes: 2
+        shell: bash
+        run: bash .github/scripts/test-flutter-cache.sh
+      - uses: subosito/flutter-action@v2
+        if: runner.environment != 'self-hosted'
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
+      - name: Set up persistent Flutter cache
+        if: runner.environment == 'self-hosted'
+        timeout-minutes: 150
+        shell: bash
+        run: bash .github/scripts/setup-flutter-cache.sh
       - run: flutter pub get
+        timeout-minutes: 10
       - name: Format check
         run: dart format --output=none --set-exit-if-changed .
       - name: Analyze
+        timeout-minutes: 10
         run: flutter analyze
       - name: Test
+        timeout-minutes: 20
         run: flutter test --coverage
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -30,6 +59,7 @@ jobs:
 
   build_desktop:
     needs: analyze_and_test
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -37,9 +67,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
       - run: flutter pub get
       - name: Enable desktop targets
