@@ -14,6 +14,7 @@ import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/library_browser/library_browse_view.dart';
 import 'package:studio/features/library_folders/presentation/library_folders_panel.dart';
 import 'package:studio/features/metadata_editor/presentation/batch_metadata_editor_dialog.dart';
+import 'package:studio/features/playlist_management/presentation/playlist_dialogs.dart';
 import 'package:studio/features/smart_playlists/domain/smart_playlist.dart';
 import 'package:studio/features/smart_playlists/presentation/smart_playlist_editor.dart';
 import 'package:studio/ui/library_browser/library_text_action.dart';
@@ -77,6 +78,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   int? _folderId;
   LibraryTrackFilters _trackFilters = const LibraryTrackFilters();
   bool _selectionMode = false;
+  bool _playlistBusy = false;
   final Set<int> _selectedTrackIds = {};
 
   void _clearSelection() {
@@ -206,61 +208,74 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     });
   }
 
-  Future<String?> _promptPlaylistName() async {
-    final controller = TextEditingController();
-    final name = await showDialog<String>(
-      context: context,
-      builder: (ctx) {
-        final palette = StudioPalette.of(ctx);
-        return AlertDialog(
-          backgroundColor: palette.bg,
-          elevation: 0,
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-          title: Text(
-            'New playlist',
-            style: Theme.of(ctx).textTheme.headlineMedium,
-          ),
-          content: TextField(
-            key: const ValueKey('playlist-name-field'),
-            controller: controller,
-            autofocus: true,
-            cursorColor: palette.ink,
-            style: Theme.of(ctx).textTheme.bodyMedium,
-            decoration: InputDecoration(
-              isDense: true,
-              hintText: 'Name',
-              hintStyle: Theme.of(
-                ctx,
-              ).textTheme.bodyMedium?.copyWith(color: palette.inkMuted),
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-            ),
-            onSubmitted: (value) => Navigator.pop(ctx, value),
-          ),
-          actions: [
-            LibraryTextAction(
-              label: 'Cancel',
-              onTap: () => Navigator.pop(ctx),
-              muted: true,
-            ),
-            LibraryTextAction(
-              label: 'Create',
-              onTap: () => Navigator.pop(ctx, controller.text),
-            ),
-          ],
+  Future<void> _playlistAction(Future<void> Function() action) async {
+    if (_playlistBusy) return;
+    setState(() => _playlistBusy = true);
+    try {
+      await action();
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not update the playlist. $error')),
         );
-      },
-    );
-    controller.dispose();
-    return name;
+      }
+    } finally {
+      if (mounted) setState(() => _playlistBusy = false);
+    }
   }
 
-  Future<void> _createPlaylist() async {
-    final name = await _promptPlaylistName();
+  Future<void> _createPlaylist() => _playlistAction(() async {
+    final name = await showPlaylistNameDialog(context);
     if (name == null || !mounted) return;
     await ref.read(studioDatabaseProvider).createPlaylist(name);
-  }
+  });
+
+  Future<void> _renamePlaylist(Playlist playlist) => _playlistAction(() async {
+    final name = await showPlaylistNameDialog(
+      context,
+      title: 'Rename playlist',
+      initialName: playlist.name,
+      action: 'Rename',
+    );
+    if (name == null || !mounted) return;
+    await ref.read(studioDatabaseProvider).renamePlaylist(playlist.id, name);
+  });
+
+  Future<void> _duplicatePlaylist(
+    Playlist playlist,
+  ) => _playlistAction(() async {
+    final name = await showPlaylistNameDialog(
+      context,
+      title: 'Duplicate playlist',
+      initialName: '${playlist.name} (copy)',
+      action: 'Duplicate',
+      description: playlist.smartRules == null
+          ? 'Copy every track in its current order. Music files are not copied.'
+          : 'Copy the rules into a new smart playlist. The copy will also update automatically.',
+    );
+    if (name == null || !mounted) return;
+    final id = await ref
+        .read(studioDatabaseProvider)
+        .duplicatePlaylist(playlist.id, name);
+    if (mounted) {
+      _open(() {
+        _tab = LibraryTab.playlists;
+        _playlistId = id;
+        _trackFilters = const LibraryTrackFilters();
+      });
+    }
+  });
+
+  Future<void> _deletePlaylist(Playlist playlist) => _playlistAction(() async {
+    if (!await confirmPlaylistDeletion(context, playlist) || !mounted) return;
+    await ref.read(studioDatabaseProvider).deletePlaylist(playlist.id);
+    if (!mounted) return;
+    // A duplicate can have its deleted source in Back history.
+    _history.removeWhere((location) => location.playlistId == playlist.id);
+    if (_playlistId == playlist.id && _tab == LibraryTab.playlists) {
+      _selectTab(LibraryTab.playlists);
+    }
+  });
 
   Future<void> _editSmartPlaylist({
     Playlist? playlist,
@@ -431,6 +446,18 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                         const SizedBox(height: 16),
                         _Tabs(selected: _tab, onSelect: _selectTab),
                         const SizedBox(height: 12),
+                        if (viewingPlaylist && selectedPlaylist != null) ...[
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              selectedPlaylist.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                         if (viewingFolder) ...[
                           Row(
                             children: [
@@ -575,25 +602,46 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                 LibraryTextAction(
                                   label: 'New playlist',
                                   onTap: _createPlaylist,
+                                  enabled: !_playlistBusy,
                                 ),
-                              if (viewingPlaylist)
+                              if (viewingPlaylist &&
+                                  selectedPlaylist != null) ...[
+                                LibraryTextAction(
+                                  label: 'Rename playlist',
+                                  enabled: !_playlistBusy,
+                                  onTap: () =>
+                                      _renamePlaylist(selectedPlaylist),
+                                ),
+                                LibraryTextAction(
+                                  label: 'Duplicate playlist',
+                                  enabled: !_playlistBusy,
+                                  onTap: () =>
+                                      _duplicatePlaylist(selectedPlaylist),
+                                ),
+                                if (!smartPlaylist)
+                                  LibraryTextAction(
+                                    label: 'Reorder tracks',
+                                    enabled:
+                                        !_playlistBusy &&
+                                        playlistTracks.length > 1,
+                                    onTap: () => _playlistAction(
+                                      () => showPlaylistOrderEditor(
+                                        context,
+                                        database: ref.read(
+                                          studioDatabaseProvider,
+                                        ),
+                                        playlist: selectedPlaylist,
+                                      ),
+                                    ),
+                                  ),
                                 LibraryTextAction(
                                   label: 'Delete playlist',
-                                  onTap: () async {
-                                    final id = _playlistId;
-                                    if (id == null) return;
-                                    await ref
-                                        .read(studioDatabaseProvider)
-                                        .deletePlaylist(id);
-                                    if (!mounted ||
-                                        _tab != LibraryTab.playlists ||
-                                        _playlistId != id) {
-                                      return;
-                                    }
-                                    _selectTab(LibraryTab.playlists);
-                                  },
+                                  enabled: !_playlistBusy,
+                                  onTap: () =>
+                                      _deletePlaylist(selectedPlaylist),
                                   muted: true,
                                 ),
+                              ],
                             ],
                           ),
                         const SizedBox(height: 8),
