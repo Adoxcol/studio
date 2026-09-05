@@ -71,7 +71,10 @@ class _SmartPlaylistEditorState extends ConsumerState<_SmartPlaylistEditor> {
   /// Memoizes the evaluation of smart playlist rules against the entire library.
   /// `definition.evaluate` performs O(N log N) filtering and sorting. Caching this
   /// prevents significant UI lag during widget rebuilds when text fields change.
-  List<Track> _getMatches(SmartPlaylistDefinition definition, List<Track>? library) {
+  List<Track> _getMatches(
+    SmartPlaylistDefinition definition,
+    List<Track>? library,
+  ) {
     if (library == null) return const [];
     if (definition.validate() != null) return const [];
 
