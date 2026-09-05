@@ -112,15 +112,20 @@ class _RailButton extends StatelessWidget {
     final color = selected ? palette.accent : palette.inkMutedAlt;
     return Tooltip(
       message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        splashFactory: NoSplash.splashFactory,
-        hoverColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        child: SizedBox(
-          width: StudioIconRail.width,
-          height: 48,
-          child: Icon(selected ? selectedIcon : icon, color: color, size: 22),
+      child: Semantics(
+        button: true,
+        label: tooltip,
+        selected: selected,
+        child: InkWell(
+          onTap: onTap,
+          splashFactory: NoSplash.splashFactory,
+          hoverColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          child: SizedBox(
+            width: StudioIconRail.width,
+            height: 48,
+            child: Icon(selected ? selectedIcon : icon, color: color, size: 22),
+          ),
         ),
       ),
     );
