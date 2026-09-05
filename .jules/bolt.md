@@ -11,3 +11,6 @@
 ## 2024-05-24 - Avoiding O(N log N) Computation in Widget Getters
 **Learning:** In Flutter, it is important not to put O(N log N) processing (like looping over tens of thousands of tracks and sorting the results) inside getter methods of widgets that might rebuild frequently (e.g., from `setState` interacting with UI elements like dropdowns). In `_LibraryFilterDialogState`, doing this recalculates everything on every state change unnecessarily.
 **Action:** When a property depends on a static input (like `widget.tracks`) but requires heavy processing, initialize it once (e.g., using `late final`) rather than inside a getter.
+## 2024-05-24 - Avoiding unmemoized list traversal inside widget getters
+**Learning:** In Flutter, it is important not to put expensive O(N log N) processing (like sorting or filtering all tracks) directly inside `build` method getters without some form of caching. For instance, the smart playlist editor recalculates `matches = definition.evaluate(...)` frequently.
+**Action:** When a method processes tens of thousands of items, add memoization inside the Stateful widget instance variables to ensure the values are cached and reused on subsequent builds if inputs are unchanged.
