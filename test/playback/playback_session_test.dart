@@ -83,9 +83,7 @@ void main() {
 
   test('missing file loads empty', () {
     final dir = Directory.systemTemp.createTempSync('session_test');
-    final file = File(
-      '${dir.path}/studio_session_missing.json',
-    );
+    final file = File('${dir.path}/studio_session_missing.json');
     addTearDown(() {
       if (dir.existsSync()) dir.deleteSync(recursive: true);
     });

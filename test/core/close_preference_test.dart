@@ -70,9 +70,7 @@ void main() {
 
   test('file store round-trips a remembered quit', () {
     final dir = Directory.systemTemp.createTempSync('close_pref');
-    final file = File(
-      '${dir.path}/studio-close-pref-test.json',
-    );
+    final file = File('${dir.path}/studio-close-pref-test.json');
     addTearDown(() {
       if (dir.existsSync()) dir.deleteSync(recursive: true);
     });
