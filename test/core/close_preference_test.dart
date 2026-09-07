@@ -69,11 +69,10 @@ void main() {
   });
 
   test('file store round-trips a remembered quit', () {
-    final file = File(
-      '${Directory.systemTemp.path}/studio-close-pref-test.json',
-    );
+    final dir = Directory.systemTemp.createTempSync('close_pref');
+    final file = File('${dir.path}/studio-close-pref-test.json');
     addTearDown(() {
-      if (file.existsSync()) file.deleteSync();
+      if (dir.existsSync()) dir.deleteSync(recursive: true);
     });
     final store = FileClosePreferenceStore(file);
     store.save(const ClosePreference(ask: false, remember: CloseAction.quit));
