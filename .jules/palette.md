@@ -1,3 +1,6 @@
+## $(date +%Y-%m-%d) - Added accessibility tooltips to playback controls
+**Learning:** Found multiple icon-only buttons in `_ImmersiveTransport` missing tooltips, which hurts accessibility and screen readers. Flutter's `IconButton` `tooltip` property handles both visual tooltips on hover and semantic labels for screen readers.
+**Action:** When adding icon buttons, verify tooltips are always populated.
 ## 2024-05-18 - Missing Semantics in Custom Clickable Widgets
 **Learning:** Custom clickable widgets wrapped in `GestureDetector` lack proper semantics for screen readers, meaning they are not announced as interactive elements or buttons.
 **Action:** Wrap custom clickable widgets like `GestureDetector` with `Semantics(button: true, label: ...)` to ensure proper screen reader accessibility.
