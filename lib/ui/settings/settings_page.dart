@@ -1078,23 +1078,28 @@ class _Swatch extends StatelessWidget {
     ).accent;
     return Tooltip(
       message: seed.label,
-      child: GestureDetector(
-        onTap: onTap,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: SizedBox(
-            width: 28,
-            height: 28,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: selected ? fill : Colors.transparent,
-                  width: 1,
+      child: Semantics(
+        button: true,
+        label: seed.label,
+        selected: selected,
+        child: GestureDetector(
+          onTap: onTap,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: SizedBox(
+              width: 28,
+              height: 28,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: selected ? fill : Colors.transparent,
+                    width: 1,
+                  ),
                 ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(3),
-                child: ColoredBox(color: fill),
+                child: Padding(
+                  padding: const EdgeInsets.all(3),
+                  child: ColoredBox(color: fill),
+                ),
               ),
             ),
           ),

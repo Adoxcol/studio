@@ -10,3 +10,6 @@
 ## 2025-02-13 - Add `Semantics` wrapper to icon rail buttons
 **Learning:** `Tooltip` widgets provide a semantic label by default in Flutter, but wrapping custom interactive widgets (like `InkWell` or `GestureDetector`) inside an explicit `Semantics` widget makes it explicitly announce as a toggle button (`button: true`) and communicates selection states (`selected: true`), providing much better context for screen reader users on custom navigation menus.
 **Action:** When creating custom toggle buttons or navigation rails using generic touch handlers, always wrap them with `Semantics(button: true, selected: ...)` even if a Tooltip is present, to ensure the role and state are properly announced.
+## 2025-02-13 - Format commands affect third-party directories
+**Learning:** Running `dart format .` globally formats all code, including files in `third_party/`, which leads to bloated and undesirable PR diffs.
+**Action:** When running formatting tools, ensure any changes applied to third-party dependencies are explicitly reverted (e.g. `git restore --staged third_party/ && git checkout third_party/`) before committing.
