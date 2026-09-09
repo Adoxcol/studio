@@ -13,3 +13,6 @@
 ## 2025-02-13 - Format commands affect third-party directories
 **Learning:** Running `dart format .` globally formats all code, including files in `third_party/`, which leads to bloated and undesirable PR diffs.
 **Action:** When running formatting tools, ensure any changes applied to third-party dependencies are explicitly reverted (e.g. `git restore --staged third_party/ && git checkout third_party/`) before committing.
+## 2025-02-13 - Add Semantics wrapper to Library Browse custom views
+**Learning:** In the Library view, custom cards for artists and albums implemented using `GestureDetector` are not inherently accessible as buttons to screen readers. Relying only on text labels inside the cards is insufficient to communicate their interactive role.
+**Action:** When building custom grid or list views for visual media (like album art and artist portraits) using `GestureDetector`, always wrap the entire card in a `Semantics` widget with `button: true` and a descriptive label (e.g., 'Album [Name] by [Artist]').
