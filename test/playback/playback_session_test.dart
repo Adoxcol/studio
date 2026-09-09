@@ -61,7 +61,7 @@ void main() {
     expect(kept.position, Duration.zero);
   });
 
-  test('file store round-trips a session', () {
+  test('file store round-trips a session', () async {
     final dir = Directory.systemTemp.createTempSync('session_test');
     final file = File('${dir.path}/studio_session_test.json');
     addTearDown(() {
@@ -74,19 +74,20 @@ void main() {
       position: Duration(milliseconds: 1500),
     );
     FilePlaybackSessionStore(file).save(session);
-    final loaded = FilePlaybackSessionStore(file).load();
+    final loaded = await FilePlaybackSessionStore(file).load();
     expect(loaded.queueIds, [7, 8]);
     expect(loaded.historyIds, [5, 6]);
     expect(loaded.index, 1);
     expect(loaded.position, const Duration(milliseconds: 1500));
   });
 
-  test('missing file loads empty', () {
+  test('missing file loads empty', () async {
     final dir = Directory.systemTemp.createTempSync('session_test');
     final file = File('${dir.path}/studio_session_missing.json');
     addTearDown(() {
       if (dir.existsSync()) dir.deleteSync(recursive: true);
     });
-    expect(FilePlaybackSessionStore(file).load().isEmpty, isTrue);
+    final loaded = await FilePlaybackSessionStore(file).load();
+    expect(loaded.isEmpty, isTrue);
   });
 }
