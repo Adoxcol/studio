@@ -1,3 +1,6 @@
+## 2024-06-25 - Avoid Synchronous File I/O for Playback Session Loading
+**Learning:** `file.readAsStringSync()` and `file.existsSync()` can block the main UI isolate for over 40ms when parsing large JSON blobs (~50k tracks, >500KB), causing 60Hz/120Hz frame drops (jank) in a Flutter desktop application. Even though asynchronous alternatives (`readAsString()`) might have slightly slower raw execution times because of the overhead of executing on the thread pool or spanning isolate boundaries, their non-blocking nature is essential for maintaining UI responsiveness.
+**Action:** When designing a persistence layer (e.g., `PlaybackSessionStore`), design interfaces using `Future<T>` from the start so implementations can safely use asynchronous filesystem methods without propagating refactoring ripples.
 ## 2026-08-30 - [Optimization] Added O(1) map for tracking Library Tracks
 **Learning:** The application was constantly regenerating the track hash map in `NowPlayingPage` and `QueuePage` by looping over tens of thousands of tracks from `libraryTracksProvider`. By adding `libraryTracksByIdProvider`, we get O(1) lookup on widget rebuilds with zero overhead.
 **Action:** Moving O(N) inline list/map processing to a Riverpod Provider to take advantage of caching on rebuilds.

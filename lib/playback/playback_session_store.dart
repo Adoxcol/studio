@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:studio/playback/playback_session.dart';
 
 abstract class PlaybackSessionStore {
-  PlaybackSession load();
+  Future<PlaybackSession> load();
   void save(PlaybackSession session);
 }
 
@@ -14,7 +14,7 @@ class MemoryPlaybackSessionStore implements PlaybackSessionStore {
   PlaybackSession value;
 
   @override
-  PlaybackSession load() => value;
+  Future<PlaybackSession> load() async => value;
 
   @override
   void save(PlaybackSession session) {
@@ -28,10 +28,10 @@ class FilePlaybackSessionStore implements PlaybackSessionStore {
   final File file;
 
   @override
-  PlaybackSession load() {
-    if (!file.existsSync()) return PlaybackSession.empty;
+  Future<PlaybackSession> load() async {
+    if (!await file.exists()) return PlaybackSession.empty;
     try {
-      final decoded = jsonDecode(file.readAsStringSync());
+      final decoded = jsonDecode(await file.readAsString());
       if (decoded is! Map) return PlaybackSession.empty;
       return PlaybackSession.fromJson(Map<String, dynamic>.from(decoded));
     } on Object {
