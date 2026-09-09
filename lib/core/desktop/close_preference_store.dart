@@ -44,8 +44,11 @@ class FileClosePreferenceStore implements ClosePreferenceStore {
   @override
   void save(ClosePreference preference) {
     file.parent.createSync(recursive: true);
-    file.writeAsStringSync(
+    final part = File('${file.path}.part');
+    part.writeAsStringSync(
       jsonEncode({'ask': preference.ask, 'remember': preference.remember.name}),
+      flush: true,
     );
+    part.renameSync(file.path);
   }
 }
