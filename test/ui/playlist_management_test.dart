@@ -6,8 +6,19 @@ import 'package:studio/features/smart_playlists/domain/smart_playlist.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/theming/studio_theme.dart';
 import '../helpers/playlists.dart';
+import 'package:drift/native.dart';
+
 import '../helpers/pump_studio.dart';
 import '../playback/fake_audio_engine.dart';
+
+class _ThrowingDatabase extends StudioDatabase {
+  _ThrowingDatabase() : super(NativeDatabase.memory());
+
+  @override
+  Future<List<({int entryId, Track track})>> playlistItems(int id) async {
+    throw Exception('Simulated load failure');
+  }
+}
 
 Future<void> settleDatabase(WidgetTester tester) async {
   await tester.runAsync(
@@ -252,6 +263,51 @@ void main() {
       await tester.pumpAndSettle();
     },
   );
+
+  testWidgets('shows error state when playlistItems fails to load', (
+    tester,
+  ) async {
+    final db = _ThrowingDatabase();
+    addTearDown(db.close);
+    final playlist = Playlist(
+      id: 1,
+      name: 'Test Playlist',
+      createdAt: DateTime.now(),
+      smartRules: null,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: StudioTheme.light(),
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => showPlaylistOrderEditor(
+                context,
+                database: db,
+                playlist: playlist,
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await settleDatabase(tester);
+
+    expect(
+      find.textContaining('Could not load this playlist.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Simulated load failure'), findsOneWidget);
+    expect(find.text('Close and try again.'), findsOneWidget);
+
+    // Check that we can still dismiss the dialog
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+  });
 
   testWidgets(
     'library actions rename, duplicate and confirm deletion without deleting music',
