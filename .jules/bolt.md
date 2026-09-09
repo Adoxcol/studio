@@ -14,3 +14,8 @@
 ## 2024-05-24 - Avoiding unmemoized list traversal inside widget getters
 **Learning:** In Flutter, it is important not to put expensive O(N log N) processing (like sorting or filtering all tracks) directly inside `build` method getters without some form of caching. For instance, the smart playlist editor recalculates `matches = definition.evaluate(...)` frequently.
 **Action:** When a method processes tens of thousands of items, add memoization inside the Stateful widget instance variables to ensure the values are cached and reused on subsequent builds if inputs are unchanged.
+## 2024-09-09 - Async File System Operations
+
+**Learning:** Using synchronous file operations like `existsSync()` inside async functions blocks the current thread, potentially causing UI stutters or jank.
+
+**Action:** Always prefer asynchronous file I/O operations (e.g., `await file.exists()`) inside `async` methods to keep the event loop unblocked.
