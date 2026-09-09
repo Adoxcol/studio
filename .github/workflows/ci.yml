@@ -18,69 +18,108 @@ concurrency:
 
 jobs:
   analyze_and_test:
-    # Forks and Dependabot stay hosted. Review all external workflow changes
-    # before approval: PR YAML can change this routing (see docs/ci-runners.md).
     runs-on: ${{ fromJSON((github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) && '["self-hosted", "Linux", "X64", "homelab"]' || '["ubuntu-latest"]') }}
-    # Cold SDK downloads on the homelab are slow; subsequent runs reuse disk cache.
     timeout-minutes: 180
+
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+
       - name: Test SDK cache helper
         timeout-minutes: 2
         shell: bash
         run: bash .github/scripts/test-flutter-cache.sh
+
       - uses: subosito/flutter-action@v2
         if: runner.environment != 'self-hosted'
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
+
       - name: Set up persistent Flutter cache
         if: runner.environment == 'self-hosted'
         timeout-minutes: 150
         shell: bash
         run: bash .github/scripts/setup-flutter-cache.sh
+
       - run: flutter pub get
         timeout-minutes: 10
+
       - name: Format check
         run: dart format --output=none --set-exit-if-changed .
+
       - name: Analyze
         timeout-minutes: 10
         run: flutter analyze
+
       - name: Test
         timeout-minutes: 20
         run: flutter test --coverage
+
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
           files: coverage/lcov.info
         continue-on-error: true
 
+
   build_desktop:
     needs: analyze_and_test
     timeout-minutes: 45
+
     strategy:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest]
+
     runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
+
       - run: flutter pub get
+
       - name: Enable desktop targets
         run: |
           flutter config --enable-macos-desktop
           flutter config --enable-windows-desktop
+
       - name: Build (macos)
         if: matrix.os == 'macos-latest'
         run: flutter build macos --release
+
       - name: Build (windows)
         if: matrix.os == 'windows-latest'
         run: flutter build windows --release
+
+
+  auto_merge:
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.draft == false
+
+    needs:
+      - analyze_and_test
+      - build_desktop
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Enable auto-merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge "$PR_URL" --auto --squash
