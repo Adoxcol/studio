@@ -304,9 +304,9 @@ abstract final class LibraryQuery {
       for (final artist
           in creditsOf?.call(track) ?? creditedArtists(track.artist)) {
         final key = artist.toLowerCase();
-        labels.putIfAbsent(key, () => artist);
+        labels[key] ??= artist;
         counts[key] = (counts[key] ?? 0) + 1;
-        albums.putIfAbsent(key, () => <String>{}).add(albumName(track));
+        (albums[key] ??= <String>{}).add(albumName(track));
       }
     }
     return [
@@ -328,8 +328,8 @@ abstract final class LibraryQuery {
     for (final track in tracks) {
       final artist = (artistOf ?? artistName)(track);
       final album = albumName(track);
-      final albums = byArtist.putIfAbsent(artist, () => <String, _AlbumAgg>{});
-      final agg = albums.putIfAbsent(album, _AlbumAgg.new);
+      final albums = byArtist[artist] ??= <String, _AlbumAgg>{};
+      final agg = albums[album] ??= _AlbumAgg();
       agg.trackCount++;
       agg.artworkPath ??= track.artworkPath;
       final year = track.year;
