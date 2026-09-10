@@ -17,6 +17,10 @@
 ## 2024-05-24 - Avoiding unmemoized list traversal inside widget getters
 **Learning:** In Flutter, it is important not to put expensive O(N log N) processing (like sorting or filtering all tracks) directly inside `build` method getters without some form of caching. For instance, the smart playlist editor recalculates `matches = definition.evaluate(...)` frequently.
 **Action:** When a method processes tens of thousands of items, add memoization inside the Stateful widget instance variables to ensure the values are cached and reused on subsequent builds if inputs are unchanged.
+
+## 2026-09-10 - Use Batching for Large ID Collections
+**Learning:** `isIn()` queries with thousands of IDs can hit `SQLITE_MAX_VARIABLE_NUMBER` limits and perform very poorly. Drift handles `batch` operations with `.deleteWhere` inside loops significantly faster for large collections without hitting those variable limits.
+**Action:** When performing operations on potentially large lists of database IDs, prefer iterating over the IDs inside a `batch()` rather than using `isIn()`.
 ## 2024-09-09 - Async File System Operations
 
 **Learning:** Using synchronous file operations like `existsSync()` inside async functions blocks the current thread, potentially causing UI stutters or jank.
