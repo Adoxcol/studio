@@ -66,9 +66,7 @@ final playlistsProvider = StreamProvider<List<Playlist>>((ref) {
 /// when switching tabs or viewing active playlists in the Library browser.
 final playlistsByIdProvider = Provider<Map<int, Playlist>>((ref) {
   final playlists = ref.watch(playlistsProvider).value ?? const [];
-  return {
-    for (final playlist in playlists) playlist.id: playlist,
-  };
+  return {for (final playlist in playlists) playlist.id: playlist};
 });
 
 final playlistTracksProvider = StreamProvider.autoDispose

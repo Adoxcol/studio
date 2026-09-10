@@ -396,7 +396,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     final view = _view!;
     final playlists = ref.watch(playlistsProvider).value ?? const [];
     final viewingPlaylist = _tab == LibraryTab.playlists && _playlistId != null;
-    final selectedPlaylist = _playlistId != null ? ref.watch(playlistsByIdProvider)[_playlistId!] : null;
+    final selectedPlaylist = _playlistId != null
+        ? ref.watch(playlistsByIdProvider)[_playlistId!]
+        : null;
     final smartPlaylist =
         viewingPlaylist && selectedPlaylist?.smartRules != null;
     final playlistTracks = viewingPlaylist
