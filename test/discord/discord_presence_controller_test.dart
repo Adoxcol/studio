@@ -179,8 +179,12 @@ void main() {
     );
     await controller.sync(enabled: true, playback: playing);
     expect(client.connectCount, 0);
+    final retried = Completer<void>();
+    client.onActivity = () {
+      if (!retried.isCompleted) retried.complete();
+    };
     client.connectError = null;
-    await Future<void>.delayed(const Duration(milliseconds: 30));
+    await retried.future.timeout(const Duration(seconds: 1));
     expect(client.connectCount, 1);
     expect(client.views, hasLength(1));
     await controller.dispose();
