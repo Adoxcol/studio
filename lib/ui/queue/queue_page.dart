@@ -61,13 +61,12 @@ class _QueuePageState extends ConsumerState<QueuePage> {
           queueIds: s.queueIds,
           historyIds: s.historyIds,
           trackId: s.trackId,
+          queueIndex: s.queueIndex,
         ),
       ),
     );
     final byId = ref.watch(libraryTracksByIdProvider);
-    final currentIndex = playback.trackId == null
-        ? -1
-        : playback.queueIds.indexOf(playback.trackId!);
+    final currentIndex = playback.trackId == null ? -1 : playback.queueIndex;
     final upcomingEntries = <({int id, int index})>[
       for (
         var index = currentIndex + 1;
