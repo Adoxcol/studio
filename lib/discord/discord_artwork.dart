@@ -141,7 +141,9 @@ class FreeImageArtworkUploader implements DiscordArtworkResolver {
     final disk = _disk;
     if (disk == null) return;
     cacheFile.parent.createSync(recursive: true);
-    cacheFile.writeAsStringSync(jsonEncode(disk));
+    final part = File('${cacheFile.path}.part');
+    part.writeAsStringSync(jsonEncode(disk), flush: true);
+    part.renameSync(cacheFile.path);
   }
 
   static String _cacheKey(File file) {

@@ -42,6 +42,8 @@ class FilePlaybackSessionStore implements PlaybackSessionStore {
   @override
   void save(PlaybackSession session) {
     file.parent.createSync(recursive: true);
-    file.writeAsStringSync(jsonEncode(session.toJson()));
+    final part = File('${file.path}.part');
+    part.writeAsStringSync(jsonEncode(session.toJson()), flush: true);
+    part.renameSync(file.path);
   }
 }
