@@ -36,24 +36,91 @@ jobs:
           name: studio-windows-x64
           path: studio-windows-x64.zip
 
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+          channel: 'stable'
+      - run: flutter pub get
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
+      - name: Build macOS
+        run: flutter build macos --release
+      - name: Zip macOS build
+        run: |
+          cd build/macos/Build/Products/Release
+          zip -r "$GITHUB_WORKSPACE/studio-macos.zip" studio.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: studio-macos
+          path: studio-macos.zip
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+          channel: 'stable'
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            libkeybinder-3.0-dev \
+            libayatana-appindicator3-dev \
+            libgtk-3-dev \
+            libblkid-dev \
+            liblzma-dev \
+            ninja-build \
+            cmake \
+            pkg-config
+      - run: flutter pub get
+      - name: Enable Linux desktop
+        run: flutter config --enable-linux-desktop
+      - name: Build Linux
+        run: flutter build linux --release
+      - name: Tar Linux build
+        run: |
+          cd build/linux/x64/release/bundle
+          tar -czf "$GITHUB_WORKSPACE/studio-linux-x64.tar.gz" .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: studio-linux-x64
+          path: studio-linux-x64.tar.gz
+
   release:
-    needs: windows
+    needs: [windows, macos, linux]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: studio-windows-x64
+      - uses: actions/download-artifact@v4
+        with:
+          name: studio-macos
+      - uses: actions/download-artifact@v4
+        with:
+          name: studio-linux-x64
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           draft: false
           prerelease: false
-          files: studio-windows-x64.zip
+          files: |
+            studio-windows-x64.zip
+            studio-macos.zip
+            studio-linux-x64.tar.gz
           body: |
-            Windows x64.
+            ## Downloads
 
-            Unzip `studio-windows-x64.zip` and run `studio.exe`. Keep the `data`
-            folder and DLLs next to the exe. Windows may warn because the
-            build is unsigned.
+            | Platform | File | Notes |
+            |----------|------|-------|
+            | Windows x64 | `studio-windows-x64.zip` | Unzip and run `studio.exe`. Keep `data/` and DLLs next to the exe. Windows may show an unsigned-app warning — click **More info → Run anyway**. |
+            | macOS | `studio-macos.zip` | Unzip and move `studio.app` to Applications. macOS may block the first launch — right-click → Open to bypass Gatekeeper. |
+            | Linux x64 | `studio-linux-x64.tar.gz` | Extract and run `./studio`. Requires `libkeybinder-3.0` and `libayatana-appindicator3` on the host. |
