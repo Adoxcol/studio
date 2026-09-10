@@ -15,6 +15,9 @@ class LibraryTrackTable extends ConsumerWidget {
     required this.tracks,
     required this.onPlay,
     this.onTrackMenu,
+    this.selectionMode = false,
+    this.selectedIds = const {},
+    this.onToggleSelection,
     this.bottomInset = 0,
   });
 
@@ -25,6 +28,9 @@ class LibraryTrackTable extends ConsumerWidget {
   final List<Track> tracks;
   final void Function(int index) onPlay;
   final void Function(Track track, Offset globalPosition)? onTrackMenu;
+  final bool selectionMode;
+  final Set<int> selectedIds;
+  final ValueChanged<Track>? onToggleSelection;
 
   /// Extra scrollable space so floating navigation never traps the final row.
   final double bottomInset;
@@ -43,6 +49,9 @@ class LibraryTrackTable extends ConsumerWidget {
         onPlay: onPlay,
         onTrackMenu: onTrackMenu,
         bottomInset: bottomInset,
+        selectionMode: selectionMode,
+        selectedIds: selectedIds,
+        onToggleSelection: onToggleSelection,
       );
     }
     return _TrackList(
@@ -52,6 +61,9 @@ class LibraryTrackTable extends ConsumerWidget {
       onPlay: onPlay,
       onTrackMenu: onTrackMenu,
       bottomInset: bottomInset,
+      selectionMode: selectionMode,
+      selectedIds: selectedIds,
+      onToggleSelection: onToggleSelection,
     );
   }
 }
@@ -64,6 +76,9 @@ class _TrackCardGrid extends StatelessWidget {
     required this.onPlay,
     required this.bottomInset,
     this.onTrackMenu,
+    required this.selectionMode,
+    required this.selectedIds,
+    this.onToggleSelection,
   });
 
   final List<Track> tracks;
@@ -72,6 +87,9 @@ class _TrackCardGrid extends StatelessWidget {
   final double bottomInset;
   final void Function(int index) onPlay;
   final void Function(Track track, Offset globalPosition)? onTrackMenu;
+  final bool selectionMode;
+  final Set<int> selectedIds;
+  final ValueChanged<Track>? onToggleSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -93,6 +111,9 @@ class _TrackCardGrid extends StatelessWidget {
           playing: track.id == playingId,
           showArtwork: showArtwork,
           onPlay: () => onPlay(index),
+          selectionMode: selectionMode,
+          selected: selectedIds.contains(track.id),
+          onToggleSelection: () => onToggleSelection?.call(track),
           onMenu: onTrackMenu == null
               ? null
               : (offset) => onTrackMenu!(track, offset),
@@ -110,6 +131,9 @@ class _TrackCard extends StatelessWidget {
     required this.showArtwork,
     required this.onPlay,
     this.onMenu,
+    required this.selectionMode,
+    required this.selected,
+    required this.onToggleSelection,
   });
 
   final Track track;
@@ -117,6 +141,9 @@ class _TrackCard extends StatelessWidget {
   final bool showArtwork;
   final VoidCallback onPlay;
   final ValueChanged<Offset>? onMenu;
+  final bool selectionMode;
+  final bool selected;
+  final VoidCallback onToggleSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -125,59 +152,83 @@ class _TrackCard extends StatelessWidget {
       context,
     ).textTheme.bodySmall?.copyWith(color: palette.inkMuted, height: 1.25);
     final caption = LibraryQuery.albumCaption(track);
-    return GestureDetector(
-      onTap: onPlay,
-      onSecondaryTapUp: onMenu == null
-          ? null
-          : (details) => onMenu!(details.globalPosition),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border.all(color: palette.hairline),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(7),
-            child: Row(
-              children: [
-                if (showArtwork) ...[
-                  CoverArt(
-                    path: track.artworkPath,
-                    size: LibraryTrackTable.coverSize,
-                  ),
-                  const SizedBox(width: 10),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        track.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: playing ? palette.accent : palette.ink,
+    final duration = formatDurationMs(track.durationMs);
+    final semanticLabel =
+        '${track.title}, '
+        '${track.artist ?? "Unknown artist"}'
+        '${duration.isEmpty ? "" : ", $duration"}';
+
+    return Semantics(
+      button: true,
+      selected: selected || playing,
+      label: semanticLabel,
+      child: GestureDetector(
+        onTap: selectionMode ? onToggleSelection : onPlay,
+        onSecondaryTapUp: onMenu == null
+            ? null
+            : (details) => onMenu!(details.globalPosition),
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: selected ? palette.accent : palette.hairline,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(7),
+              child: Row(
+                children: [
+                  if (showArtwork) ...[
+                    CoverArt(
+                      path: track.artworkPath,
+                      size: LibraryTrackTable.coverSize,
+                    ),
+                    const SizedBox(width: 10),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          track.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: playing ? palette.accent : palette.ink,
+                              ),
                         ),
+                        if (track.artist != null && track.artist!.isNotEmpty)
+                          Text(
+                            track.artist!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: muted,
+                          ),
+                        if (caption.isNotEmpty)
+                          Text(
+                            caption,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: muted,
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (onMenu != null) _TrackMenuButton(onMenu: onMenu!),
+                  if (selectionMode)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Icon(
+                        selected ? Icons.check : Icons.circle_outlined,
+                        size: 16,
+                        color: selected ? palette.accent : palette.inkMuted,
                       ),
-                      if (track.artist != null && track.artist!.isNotEmpty)
-                        Text(
-                          track.artist!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: muted,
-                        ),
-                      if (caption.isNotEmpty)
-                        Text(
-                          caption,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: muted,
-                        ),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -194,6 +245,9 @@ class _TrackList extends StatelessWidget {
     required this.onPlay,
     required this.bottomInset,
     this.onTrackMenu,
+    required this.selectionMode,
+    required this.selectedIds,
+    this.onToggleSelection,
   });
 
   final List<Track> tracks;
@@ -202,6 +256,9 @@ class _TrackList extends StatelessWidget {
   final double bottomInset;
   final void Function(int index) onPlay;
   final void Function(Track track, Offset globalPosition)? onTrackMenu;
+  final bool selectionMode;
+  final Set<int> selectedIds;
+  final ValueChanged<Track>? onToggleSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -232,6 +289,9 @@ class _TrackList extends StatelessWidget {
                   playing: track.id == playingId,
                   showArtwork: showArtwork,
                   onPlay: () => onPlay(index),
+                  selectionMode: selectionMode,
+                  selected: selectedIds.contains(track.id),
+                  onToggleSelection: () => onToggleSelection?.call(track),
                   onMenu: onTrackMenu == null
                       ? null
                       : (offset) => onTrackMenu!(track, offset),
@@ -281,6 +341,9 @@ class _TrackRow extends StatelessWidget {
     required this.showArtwork,
     required this.onPlay,
     this.onMenu,
+    required this.selectionMode,
+    required this.selected,
+    required this.onToggleSelection,
   });
 
   final Track track;
@@ -288,6 +351,9 @@ class _TrackRow extends StatelessWidget {
   final bool showArtwork;
   final VoidCallback onPlay;
   final ValueChanged<Offset>? onMenu;
+  final bool selectionMode;
+  final bool selected;
+  final VoidCallback onToggleSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -295,72 +361,118 @@ class _TrackRow extends StatelessWidget {
     final muted = Theme.of(
       context,
     ).textTheme.bodySmall?.copyWith(color: palette.inkMuted);
-    return GestureDetector(
-      onTap: onPlay,
-      onSecondaryTapUp: onMenu == null
-          ? null
-          : (details) => onMenu!(details.globalPosition),
-      behavior: HitTestBehavior.opaque,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: SizedBox(
-          height: LibraryTrackTable.rowExtent - 1,
-          child: Row(
-            children: [
-              if (showArtwork) ...[
-                CoverArt(path: track.artworkPath, size: 28),
-                const SizedBox(width: 8),
-              ],
-              SizedBox(
-                width: 28,
-                child: playing
-                    ? Icon(Icons.graphic_eq, size: 16, color: palette.accent)
-                    : Text(track.trackNumber?.toString() ?? '', style: muted),
-              ),
-              Expanded(
-                flex: 3,
-                child: Text(
-                  track.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: playing ? palette.accent : palette.ink,
+    final duration = formatDurationMs(track.durationMs);
+    final semanticLabel =
+        '${track.title}, '
+        '${track.artist ?? "Unknown artist"}'
+        '${duration.isEmpty ? "" : ", $duration"}';
+
+    return Semantics(
+      button: true,
+      selected: selected || playing,
+      label: semanticLabel,
+      child: GestureDetector(
+        onTap: selectionMode ? onToggleSelection : onPlay,
+        onSecondaryTapUp: onMenu == null
+            ? null
+            : (details) => onMenu!(details.globalPosition),
+        behavior: HitTestBehavior.opaque,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: SizedBox(
+            height: LibraryTrackTable.rowExtent - 1,
+            child: Row(
+              children: [
+                if (selectionMode)
+                  SizedBox(
+                    width: 28,
+                    child: Icon(
+                      selected ? Icons.check : Icons.circle_outlined,
+                      size: 15,
+                      color: selected ? palette.accent : palette.inkMuted,
+                    ),
+                  ),
+                if (showArtwork) ...[
+                  CoverArt(path: track.artworkPath, size: 28),
+                  const SizedBox(width: 8),
+                ],
+                SizedBox(
+                  width: 28,
+                  child: playing
+                      ? Icon(Icons.graphic_eq, size: 16, color: palette.accent)
+                      : Text(track.trackNumber?.toString() ?? '', style: muted),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    track.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: playing ? palette.accent : palette.ink,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  track.artist ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: muted,
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    track.artist ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: muted,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  track.album ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: muted,
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    track.album ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: muted,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              SizedBox(
-                width: 52,
-                child: Text(
-                  formatDurationMs(track.durationMs),
-                  maxLines: 1,
-                  textAlign: TextAlign.right,
-                  style: muted,
+                const SizedBox(width: 16),
+                SizedBox(
+                  width: 52,
+                  child: Text(
+                    formatDurationMs(track.durationMs),
+                    maxLines: 1,
+                    textAlign: TextAlign.right,
+                    style: muted,
+                  ),
                 ),
-              ),
-            ],
+                if (onMenu != null) _TrackMenuButton(onMenu: onMenu!),
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TrackMenuButton extends StatelessWidget {
+  const _TrackMenuButton({required this.onMenu});
+
+  final ValueChanged<Offset> onMenu;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StudioPalette.of(context);
+    return Builder(
+      builder: (buttonContext) => IconButton(
+        tooltip: 'Track actions',
+        visualDensity: VisualDensity.compact,
+        onPressed: () {
+          final box = buttonContext.findRenderObject()! as RenderBox;
+          final origin = box.localToGlobal(Offset.zero);
+          onMenu(
+            Offset(origin.dx + box.size.width, origin.dy + box.size.height),
+          );
+        },
+        icon: Icon(Icons.more_horiz, size: 18, color: palette.inkMuted),
       ),
     );
   }

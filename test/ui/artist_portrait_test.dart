@@ -12,6 +12,25 @@ import 'package:studio/features/artist_artwork/presentation/artist_picture_provi
 import 'package:studio/features/artist_artwork/presentation/artist_portrait.dart';
 import 'package:studio/theming/studio_theme.dart';
 
+class _PriorityLookup
+    implements ArtistPictureLookup, PrioritizedArtistPictureLookup {
+  final priority = <String>{};
+  @override
+  void setPriority(String artist, bool value) {
+    value
+        ? priority.add(artistKey(artist))
+        : priority.remove(artistKey(artist));
+  }
+
+  @override
+  Future<DownloadedArtistPicture?> fetch(ArtistImageRequest artist) async =>
+      null;
+  @override
+  void cancel() {}
+  @override
+  void close() {}
+}
+
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
   late ArtistPictureRepository repository;
@@ -54,6 +73,32 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Choose from computer…'), findsOneWidget);
     expect(find.text('Try online again'), findsOneWidget);
+  });
+
+  testWidgets('mounted portraits acquire and release lookup priority', (
+    tester,
+  ) async {
+    repository.dispose();
+    final lookup = _PriorityLookup();
+    repository = ArtistPictureRepository(
+      store: MemoryArtistPictureStore(),
+      lookup: lookup,
+    );
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+    expect(lookup.priority, {'aria'});
+    // The controls still observe the same artist after the portrait unmounts.
+    await tester.pumpWidget(
+      app(child: const ArtistImageControls(artist: 'Aria')),
+    );
+    await tester.pumpAndSettle();
+    expect(lookup.priority, {'aria'});
+    await tester.pumpWidget(app(child: const ArtistPortrait(artist: 'Hal')));
+    await tester.pumpAndSettle();
+    expect(lookup.priority, {'hal'});
+    await tester.pumpWidget(app(child: const SizedBox.shrink()));
+    await tester.pumpAndSettle();
+    expect(lookup.priority, isEmpty);
   });
 
   testWidgets(

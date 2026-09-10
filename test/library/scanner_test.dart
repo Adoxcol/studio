@@ -162,23 +162,21 @@ void main() {
     expect(await db.allFolders(), hasLength(1));
   });
 
-  test(
-    'rescan of a missing folder clears its tracks but keeps the folder',
-    () async {
-      final db = StudioDatabase.memory();
-      addTearDown(db.close);
-      final dir = Directory.systemTemp.createTempSync('studio-missing');
-      File(p.join(dir.path, 'Temp.flac')).writeAsStringSync('not audio');
-      final scanner = FolderScanner(db: db);
-      await scanner.scan(dir.path);
-      dir.deleteSync(recursive: true);
+  test('rescan of a missing folder preserves its tracks and folder', () async {
+    final db = StudioDatabase.memory();
+    addTearDown(db.close);
+    final dir = Directory.systemTemp.createTempSync('studio-missing');
+    File(p.join(dir.path, 'Temp.flac')).writeAsStringSync('not audio');
+    final scanner = FolderScanner(db: db);
+    await scanner.scan(dir.path);
+    dir.deleteSync(recursive: true);
 
-      await scanner.rescanKnown();
+    final result = await scanner.rescanKnown();
 
-      expect(await db.allTracks(), isEmpty);
-      expect(await db.allFolders(), hasLength(1));
-    },
-  );
+    expect(result.unavailableFolders, 1);
+    expect(await db.allTracks(), hasLength(1));
+    expect(await db.allFolders(), hasLength(1));
+  });
 
   test('second scan skips unchanged files', () async {
     final db = StudioDatabase.memory();

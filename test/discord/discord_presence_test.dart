@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studio/discord/discord_ids.dart';
 import 'package:studio/discord/discord_presence.dart';
+import 'package:studio/discord/discord_settings.dart';
 import 'package:studio/state/playback_provider.dart';
 
 void main() {
@@ -77,14 +78,13 @@ void main() {
     expect(view.name.length, 128);
   });
 
-  test('HTTPS cover URL becomes an mp:external large image', () {
+  test('HTTPS cover URL stays raw for Discord to proxy', () {
     final view = discordPresenceFor(
       const PlaybackUiState(trackId: 1, title: 'Headlines', playing: true),
       now: now,
       largeImage: 'https://iili.io/cover.jpg',
     );
-    expect(view!.largeImage, startsWith('mp:external/'));
-    expect(view.largeImage, endsWith('/https/iili.io/cover.jpg'));
+    expect(view!.largeImage, 'https://iili.io/cover.jpg');
   });
 
   test('compact name is the track when artist is missing', () {
@@ -95,5 +95,28 @@ void main() {
     expect(view!.state, isNull);
     expect(view.album, isNull);
     expect(view.name, 'Untitled');
+  });
+
+  test('custom templates can showcase audio quality', () {
+    final view = discordPresenceFor(
+      const PlaybackUiState(
+        trackId: 1,
+        title: 'So What',
+        artist: 'Miles Davis',
+        locator: '/music/so-what.flac',
+        fileSizeBytes: 33000000,
+        sampleRateHz: 96000,
+        duration: Duration(minutes: 9, seconds: 22),
+        playing: true,
+      ),
+      now: now,
+      settings: const DiscordSettings(
+        stateTemplate: '{artist}[ • {quality}]',
+        showProgress: false,
+      ),
+    );
+    expect(view!.state, 'Miles Davis • FLAC • Lossless • 470 kbps • 96 kHz');
+    expect(view.start, isNull);
+    expect(view.end, isNull);
   });
 }

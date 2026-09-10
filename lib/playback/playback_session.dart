@@ -4,6 +4,7 @@ import 'package:studio/playback/playback_queue.dart';
 class PlaybackSession {
   const PlaybackSession({
     this.queueIds = const [],
+    this.historyIds = const [],
     this.index = 0,
     this.position = Duration.zero,
     this.repeat = QueueRepeatMode.off,
@@ -13,6 +14,7 @@ class PlaybackSession {
   static const empty = PlaybackSession();
 
   final List<int> queueIds;
+  final List<int> historyIds;
   final int index;
   final Duration position;
   final QueueRepeatMode repeat;
@@ -32,12 +34,17 @@ class PlaybackSession {
       for (final id in queueIds)
         if (knownIds.contains(id)) id,
     ];
+    final keptHistory = [
+      for (final id in historyIds)
+        if (knownIds.contains(id)) id,
+    ];
     if (kept.isEmpty) return empty;
     final current = currentId;
     var nextIndex = current == null ? 0 : kept.indexOf(current);
     if (nextIndex < 0) nextIndex = 0;
     return PlaybackSession(
       queueIds: kept,
+      historyIds: keptHistory,
       index: nextIndex,
       position: current != null && kept.contains(current)
           ? position
@@ -49,6 +56,7 @@ class PlaybackSession {
 
   Map<String, Object?> toJson() => {
     'queueIds': queueIds,
+    'historyIds': historyIds,
     'index': index,
     'positionMs': position.inMilliseconds,
     'repeat': repeat.name,
@@ -61,11 +69,16 @@ class PlaybackSession {
         ? [for (final value in rawIds) (value as num).toInt()]
         : const <int>[];
     final rawIndex = json['index'];
+    final rawHistoryIds = json['historyIds'];
+    final historyIds = rawHistoryIds is List
+        ? [for (final value in rawHistoryIds) (value as num).toInt()]
+        : const <int>[];
     final index = rawIndex is num ? rawIndex.toInt() : 0;
     final rawMs = json['positionMs'];
     final ms = rawMs is num ? rawMs.toInt() : 0;
     return PlaybackSession(
       queueIds: ids,
+      historyIds: historyIds,
       index: ids.isEmpty ? 0 : index.clamp(0, ids.length - 1),
       position: Duration(milliseconds: ms < 0 ? 0 : ms),
       repeat: QueueRepeatMode.fromName(json['repeat'] as String?),

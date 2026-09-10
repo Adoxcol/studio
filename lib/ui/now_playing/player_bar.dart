@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/core/time_format.dart';
 import 'package:studio/playback/playback_queue.dart';
+import 'package:studio/state/library_providers.dart';
 import 'package:studio/state/playback_provider.dart';
+import 'package:studio/state/playback_mode_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/now_playing/cover_art.dart';
+import 'package:studio/ui/track_actions/track_actions_menu.dart';
 
 class PlayerBar extends StatelessWidget {
   const PlayerBar({super.key});
@@ -67,12 +70,30 @@ class _PlayerBarBody extends ConsumerWidget {
               children: [
                 _TrackInfo(),
                 Spacer(),
+                _PlaybackModeButton(),
+                SizedBox(width: 12),
                 SizedBox(width: 130, child: _VolumeCluster()),
               ],
             ),
             _Transport(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PlaybackModeButton extends ConsumerWidget {
+  const _PlaybackModeButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = StudioPalette.of(context);
+    return Tooltip(
+      message: 'Enter Playback Mode',
+      child: IconButton(
+        onPressed: ref.read(playbackModeProvider.notifier).enter,
+        icon: Icon(Icons.fullscreen, color: palette.inkMuted),
       ),
     );
   }
@@ -86,15 +107,37 @@ class _TrackInfo extends ConsumerWidget {
     final palette = StudioPalette.of(context);
     final track = ref.watch(
       playbackControllerProvider.select(
-        (s) => (title: s.title, artist: s.artist, artworkPath: s.artworkPath),
+        (s) => (
+          id: s.trackId,
+          title: s.title,
+          artist: s.artist,
+          artworkPath: s.artworkPath,
+        ),
       ),
     );
+    final trackRecord = track.id == null
+        ? null
+        : ref.watch(libraryTracksByIdProvider)[track.id];
 
     return SizedBox(
       width: 260,
       child: Row(
         children: [
-          CoverArt(path: track.artworkPath, size: 40),
+          Tooltip(
+            message: 'Open Playback Mode',
+            child: Semantics(
+              button: true,
+              label: 'Open Playback Mode',
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: ref.read(playbackModeProvider.notifier).enter,
+                  child: CoverArt(path: track.artworkPath, size: 40),
+                ),
+              ),
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -121,6 +164,7 @@ class _TrackInfo extends ConsumerWidget {
               ],
             ),
           ),
+          if (trackRecord != null) TrackActionsButton(track: trackRecord),
         ],
       ),
     );
@@ -379,16 +423,20 @@ class _Transport extends ConsumerWidget {
     }) {
       return Tooltip(
         message: tooltip,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onTap,
-            child: SizedBox(
-              height: PlayerBar.contentHeight,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Icon(icon, size: 20, color: color ?? palette.ink),
+        child: Semantics(
+          button: true,
+          label: tooltip,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onTap,
+              child: SizedBox(
+                height: PlayerBar.contentHeight,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Icon(icon, size: 20, color: color ?? palette.ink),
+                ),
               ),
             ),
           ),

@@ -271,6 +271,28 @@ class $TracksTable extends Tracks with TableInfo<$TracksTable, Track> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _fileSizeBytesMeta = const VerificationMeta(
+    'fileSizeBytes',
+  );
+  @override
+  late final GeneratedColumn<int> fileSizeBytes = GeneratedColumn<int>(
+    'file_size_bytes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sampleRateHzMeta = const VerificationMeta(
+    'sampleRateHz',
+  );
+  @override
+  late final GeneratedColumn<int> sampleRateHz = GeneratedColumn<int>(
+    'sample_rate_hz',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _trackNumberMeta = const VerificationMeta(
     'trackNumber',
   );
@@ -357,6 +379,8 @@ class $TracksTable extends Tracks with TableInfo<$TracksTable, Track> {
     artist,
     album,
     durationMs,
+    fileSizeBytes,
+    sampleRateHz,
     trackNumber,
     genre,
     indexedAt,
@@ -418,6 +442,24 @@ class $TracksTable extends Tracks with TableInfo<$TracksTable, Track> {
       context.handle(
         _durationMsMeta,
         durationMs.isAcceptableOrUnknown(data['duration_ms']!, _durationMsMeta),
+      );
+    }
+    if (data.containsKey('file_size_bytes')) {
+      context.handle(
+        _fileSizeBytesMeta,
+        fileSizeBytes.isAcceptableOrUnknown(
+          data['file_size_bytes']!,
+          _fileSizeBytesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sample_rate_hz')) {
+      context.handle(
+        _sampleRateHzMeta,
+        sampleRateHz.isAcceptableOrUnknown(
+          data['sample_rate_hz']!,
+          _sampleRateHzMeta,
+        ),
       );
     }
     if (data.containsKey('track_number')) {
@@ -508,6 +550,14 @@ class $TracksTable extends Tracks with TableInfo<$TracksTable, Track> {
         DriftSqlType.int,
         data['${effectivePrefix}duration_ms'],
       ),
+      fileSizeBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}file_size_bytes'],
+      ),
+      sampleRateHz: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sample_rate_hz'],
+      ),
       trackNumber: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}track_number'],
@@ -553,6 +603,8 @@ class Track extends DataClass implements Insertable<Track> {
   final String? artist;
   final String? album;
   final int? durationMs;
+  final int? fileSizeBytes;
+  final int? sampleRateHz;
   final int? trackNumber;
   final String? genre;
   final DateTime indexedAt;
@@ -568,6 +620,8 @@ class Track extends DataClass implements Insertable<Track> {
     this.artist,
     this.album,
     this.durationMs,
+    this.fileSizeBytes,
+    this.sampleRateHz,
     this.trackNumber,
     this.genre,
     required this.indexedAt,
@@ -591,6 +645,12 @@ class Track extends DataClass implements Insertable<Track> {
     }
     if (!nullToAbsent || durationMs != null) {
       map['duration_ms'] = Variable<int>(durationMs);
+    }
+    if (!nullToAbsent || fileSizeBytes != null) {
+      map['file_size_bytes'] = Variable<int>(fileSizeBytes);
+    }
+    if (!nullToAbsent || sampleRateHz != null) {
+      map['sample_rate_hz'] = Variable<int>(sampleRateHz);
     }
     if (!nullToAbsent || trackNumber != null) {
       map['track_number'] = Variable<int>(trackNumber);
@@ -629,6 +689,12 @@ class Track extends DataClass implements Insertable<Track> {
       durationMs: durationMs == null && nullToAbsent
           ? const Value.absent()
           : Value(durationMs),
+      fileSizeBytes: fileSizeBytes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fileSizeBytes),
+      sampleRateHz: sampleRateHz == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sampleRateHz),
       trackNumber: trackNumber == null && nullToAbsent
           ? const Value.absent()
           : Value(trackNumber),
@@ -662,6 +728,8 @@ class Track extends DataClass implements Insertable<Track> {
       artist: serializer.fromJson<String?>(json['artist']),
       album: serializer.fromJson<String?>(json['album']),
       durationMs: serializer.fromJson<int?>(json['durationMs']),
+      fileSizeBytes: serializer.fromJson<int?>(json['fileSizeBytes']),
+      sampleRateHz: serializer.fromJson<int?>(json['sampleRateHz']),
       trackNumber: serializer.fromJson<int?>(json['trackNumber']),
       genre: serializer.fromJson<String?>(json['genre']),
       indexedAt: serializer.fromJson<DateTime>(json['indexedAt']),
@@ -682,6 +750,8 @@ class Track extends DataClass implements Insertable<Track> {
       'artist': serializer.toJson<String?>(artist),
       'album': serializer.toJson<String?>(album),
       'durationMs': serializer.toJson<int?>(durationMs),
+      'fileSizeBytes': serializer.toJson<int?>(fileSizeBytes),
+      'sampleRateHz': serializer.toJson<int?>(sampleRateHz),
       'trackNumber': serializer.toJson<int?>(trackNumber),
       'genre': serializer.toJson<String?>(genre),
       'indexedAt': serializer.toJson<DateTime>(indexedAt),
@@ -700,6 +770,8 @@ class Track extends DataClass implements Insertable<Track> {
     Value<String?> artist = const Value.absent(),
     Value<String?> album = const Value.absent(),
     Value<int?> durationMs = const Value.absent(),
+    Value<int?> fileSizeBytes = const Value.absent(),
+    Value<int?> sampleRateHz = const Value.absent(),
     Value<int?> trackNumber = const Value.absent(),
     Value<String?> genre = const Value.absent(),
     DateTime? indexedAt,
@@ -715,6 +787,10 @@ class Track extends DataClass implements Insertable<Track> {
     artist: artist.present ? artist.value : this.artist,
     album: album.present ? album.value : this.album,
     durationMs: durationMs.present ? durationMs.value : this.durationMs,
+    fileSizeBytes: fileSizeBytes.present
+        ? fileSizeBytes.value
+        : this.fileSizeBytes,
+    sampleRateHz: sampleRateHz.present ? sampleRateHz.value : this.sampleRateHz,
     trackNumber: trackNumber.present ? trackNumber.value : this.trackNumber,
     genre: genre.present ? genre.value : this.genre,
     indexedAt: indexedAt ?? this.indexedAt,
@@ -736,6 +812,12 @@ class Track extends DataClass implements Insertable<Track> {
       durationMs: data.durationMs.present
           ? data.durationMs.value
           : this.durationMs,
+      fileSizeBytes: data.fileSizeBytes.present
+          ? data.fileSizeBytes.value
+          : this.fileSizeBytes,
+      sampleRateHz: data.sampleRateHz.present
+          ? data.sampleRateHz.value
+          : this.sampleRateHz,
       trackNumber: data.trackNumber.present
           ? data.trackNumber.value
           : this.trackNumber,
@@ -762,6 +844,8 @@ class Track extends DataClass implements Insertable<Track> {
           ..write('artist: $artist, ')
           ..write('album: $album, ')
           ..write('durationMs: $durationMs, ')
+          ..write('fileSizeBytes: $fileSizeBytes, ')
+          ..write('sampleRateHz: $sampleRateHz, ')
           ..write('trackNumber: $trackNumber, ')
           ..write('genre: $genre, ')
           ..write('indexedAt: $indexedAt, ')
@@ -782,6 +866,8 @@ class Track extends DataClass implements Insertable<Track> {
     artist,
     album,
     durationMs,
+    fileSizeBytes,
+    sampleRateHz,
     trackNumber,
     genre,
     indexedAt,
@@ -801,6 +887,8 @@ class Track extends DataClass implements Insertable<Track> {
           other.artist == this.artist &&
           other.album == this.album &&
           other.durationMs == this.durationMs &&
+          other.fileSizeBytes == this.fileSizeBytes &&
+          other.sampleRateHz == this.sampleRateHz &&
           other.trackNumber == this.trackNumber &&
           other.genre == this.genre &&
           other.indexedAt == this.indexedAt &&
@@ -818,6 +906,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
   final Value<String?> artist;
   final Value<String?> album;
   final Value<int?> durationMs;
+  final Value<int?> fileSizeBytes;
+  final Value<int?> sampleRateHz;
   final Value<int?> trackNumber;
   final Value<String?> genre;
   final Value<DateTime> indexedAt;
@@ -833,6 +923,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
     this.artist = const Value.absent(),
     this.album = const Value.absent(),
     this.durationMs = const Value.absent(),
+    this.fileSizeBytes = const Value.absent(),
+    this.sampleRateHz = const Value.absent(),
     this.trackNumber = const Value.absent(),
     this.genre = const Value.absent(),
     this.indexedAt = const Value.absent(),
@@ -849,6 +941,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
     this.artist = const Value.absent(),
     this.album = const Value.absent(),
     this.durationMs = const Value.absent(),
+    this.fileSizeBytes = const Value.absent(),
+    this.sampleRateHz = const Value.absent(),
     this.trackNumber = const Value.absent(),
     this.genre = const Value.absent(),
     this.indexedAt = const Value.absent(),
@@ -866,6 +960,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
     Expression<String>? artist,
     Expression<String>? album,
     Expression<int>? durationMs,
+    Expression<int>? fileSizeBytes,
+    Expression<int>? sampleRateHz,
     Expression<int>? trackNumber,
     Expression<String>? genre,
     Expression<DateTime>? indexedAt,
@@ -882,6 +978,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
       if (artist != null) 'artist': artist,
       if (album != null) 'album': album,
       if (durationMs != null) 'duration_ms': durationMs,
+      if (fileSizeBytes != null) 'file_size_bytes': fileSizeBytes,
+      if (sampleRateHz != null) 'sample_rate_hz': sampleRateHz,
       if (trackNumber != null) 'track_number': trackNumber,
       if (genre != null) 'genre': genre,
       if (indexedAt != null) 'indexed_at': indexedAt,
@@ -900,6 +998,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
     Value<String?>? artist,
     Value<String?>? album,
     Value<int?>? durationMs,
+    Value<int?>? fileSizeBytes,
+    Value<int?>? sampleRateHz,
     Value<int?>? trackNumber,
     Value<String?>? genre,
     Value<DateTime>? indexedAt,
@@ -916,6 +1016,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
       artist: artist ?? this.artist,
       album: album ?? this.album,
       durationMs: durationMs ?? this.durationMs,
+      fileSizeBytes: fileSizeBytes ?? this.fileSizeBytes,
+      sampleRateHz: sampleRateHz ?? this.sampleRateHz,
       trackNumber: trackNumber ?? this.trackNumber,
       genre: genre ?? this.genre,
       indexedAt: indexedAt ?? this.indexedAt,
@@ -949,6 +1051,12 @@ class TracksCompanion extends UpdateCompanion<Track> {
     }
     if (durationMs.present) {
       map['duration_ms'] = Variable<int>(durationMs.value);
+    }
+    if (fileSizeBytes.present) {
+      map['file_size_bytes'] = Variable<int>(fileSizeBytes.value);
+    }
+    if (sampleRateHz.present) {
+      map['sample_rate_hz'] = Variable<int>(sampleRateHz.value);
     }
     if (trackNumber.present) {
       map['track_number'] = Variable<int>(trackNumber.value);
@@ -984,6 +1092,8 @@ class TracksCompanion extends UpdateCompanion<Track> {
           ..write('artist: $artist, ')
           ..write('album: $album, ')
           ..write('durationMs: $durationMs, ')
+          ..write('fileSizeBytes: $fileSizeBytes, ')
+          ..write('sampleRateHz: $sampleRateHz, ')
           ..write('trackNumber: $trackNumber, ')
           ..write('genre: $genre, ')
           ..write('indexedAt: $indexedAt, ')
@@ -1024,6 +1134,17 @@ class $PlaylistsTable extends Playlists
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _smartRulesMeta = const VerificationMeta(
+    'smartRules',
+  );
+  @override
+  late final GeneratedColumn<String> smartRules = GeneratedColumn<String>(
+    'smart_rules',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1037,7 +1158,7 @@ class $PlaylistsTable extends Playlists
     defaultValue: currentDateAndTime,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, name, createdAt];
+  List<GeneratedColumn> get $columns => [id, name, smartRules, createdAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1060,6 +1181,12 @@ class $PlaylistsTable extends Playlists
       );
     } else if (isInserting) {
       context.missing(_nameMeta);
+    }
+    if (data.containsKey('smart_rules')) {
+      context.handle(
+        _smartRulesMeta,
+        smartRules.isAcceptableOrUnknown(data['smart_rules']!, _smartRulesMeta),
+      );
     }
     if (data.containsKey('created_at')) {
       context.handle(
@@ -1084,6 +1211,10 @@ class $PlaylistsTable extends Playlists
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      smartRules: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}smart_rules'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1100,10 +1231,12 @@ class $PlaylistsTable extends Playlists
 class Playlist extends DataClass implements Insertable<Playlist> {
   final int id;
   final String name;
+  final String? smartRules;
   final DateTime createdAt;
   const Playlist({
     required this.id,
     required this.name,
+    this.smartRules,
     required this.createdAt,
   });
   @override
@@ -1111,6 +1244,9 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
+    if (!nullToAbsent || smartRules != null) {
+      map['smart_rules'] = Variable<String>(smartRules);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -1119,6 +1255,9 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     return PlaylistsCompanion(
       id: Value(id),
       name: Value(name),
+      smartRules: smartRules == null && nullToAbsent
+          ? const Value.absent()
+          : Value(smartRules),
       createdAt: Value(createdAt),
     );
   }
@@ -1131,6 +1270,7 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     return Playlist(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
+      smartRules: serializer.fromJson<String?>(json['smartRules']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -1140,19 +1280,29 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
+      'smartRules': serializer.toJson<String?>(smartRules),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
-  Playlist copyWith({int? id, String? name, DateTime? createdAt}) => Playlist(
+  Playlist copyWith({
+    int? id,
+    String? name,
+    Value<String?> smartRules = const Value.absent(),
+    DateTime? createdAt,
+  }) => Playlist(
     id: id ?? this.id,
     name: name ?? this.name,
+    smartRules: smartRules.present ? smartRules.value : this.smartRules,
     createdAt: createdAt ?? this.createdAt,
   );
   Playlist copyWithCompanion(PlaylistsCompanion data) {
     return Playlist(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
+      smartRules: data.smartRules.present
+          ? data.smartRules.value
+          : this.smartRules,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -1162,44 +1312,51 @@ class Playlist extends DataClass implements Insertable<Playlist> {
     return (StringBuffer('Playlist(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('smartRules: $smartRules, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, createdAt);
+  int get hashCode => Object.hash(id, name, smartRules, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Playlist &&
           other.id == this.id &&
           other.name == this.name &&
+          other.smartRules == this.smartRules &&
           other.createdAt == this.createdAt);
 }
 
 class PlaylistsCompanion extends UpdateCompanion<Playlist> {
   final Value<int> id;
   final Value<String> name;
+  final Value<String?> smartRules;
   final Value<DateTime> createdAt;
   const PlaylistsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
+    this.smartRules = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   PlaylistsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
+    this.smartRules = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : name = Value(name);
   static Insertable<Playlist> custom({
     Expression<int>? id,
     Expression<String>? name,
+    Expression<String>? smartRules,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
+      if (smartRules != null) 'smart_rules': smartRules,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -1207,11 +1364,13 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
   PlaylistsCompanion copyWith({
     Value<int>? id,
     Value<String>? name,
+    Value<String?>? smartRules,
     Value<DateTime>? createdAt,
   }) {
     return PlaylistsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
+      smartRules: smartRules ?? this.smartRules,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -1225,6 +1384,9 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (smartRules.present) {
+      map['smart_rules'] = Variable<String>(smartRules.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1236,6 +1398,7 @@ class PlaylistsCompanion extends UpdateCompanion<Playlist> {
     return (StringBuffer('PlaylistsCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('smartRules: $smartRules, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -1829,6 +1992,8 @@ typedef $$TracksTableCreateCompanionBuilder =
       Value<String?> artist,
       Value<String?> album,
       Value<int?> durationMs,
+      Value<int?> fileSizeBytes,
+      Value<int?> sampleRateHz,
       Value<int?> trackNumber,
       Value<String?> genre,
       Value<DateTime> indexedAt,
@@ -1846,6 +2011,8 @@ typedef $$TracksTableUpdateCompanionBuilder =
       Value<String?> artist,
       Value<String?> album,
       Value<int?> durationMs,
+      Value<int?> fileSizeBytes,
+      Value<int?> sampleRateHz,
       Value<int?> trackNumber,
       Value<String?> genre,
       Value<DateTime> indexedAt,
@@ -1939,6 +2106,16 @@ class $$TracksTableFilterComposer
 
   ColumnFilters<int> get durationMs => $composableBuilder(
     column: $table.durationMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get fileSizeBytes => $composableBuilder(
+    column: $table.fileSizeBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sampleRateHz => $composableBuilder(
+    column: $table.sampleRateHz,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2065,6 +2242,16 @@ class $$TracksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get fileSizeBytes => $composableBuilder(
+    column: $table.fileSizeBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sampleRateHz => $composableBuilder(
+    column: $table.sampleRateHz,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get trackNumber => $composableBuilder(
     column: $table.trackNumber,
     builder: (column) => ColumnOrderings(column),
@@ -2148,6 +2335,16 @@ class $$TracksTableAnnotationComposer
 
   GeneratedColumn<int> get durationMs => $composableBuilder(
     column: $table.durationMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get fileSizeBytes => $composableBuilder(
+    column: $table.fileSizeBytes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sampleRateHz => $composableBuilder(
+    column: $table.sampleRateHz,
     builder: (column) => column,
   );
 
@@ -2259,6 +2456,8 @@ class $$TracksTableTableManager
                 Value<String?> artist = const Value.absent(),
                 Value<String?> album = const Value.absent(),
                 Value<int?> durationMs = const Value.absent(),
+                Value<int?> fileSizeBytes = const Value.absent(),
+                Value<int?> sampleRateHz = const Value.absent(),
                 Value<int?> trackNumber = const Value.absent(),
                 Value<String?> genre = const Value.absent(),
                 Value<DateTime> indexedAt = const Value.absent(),
@@ -2274,6 +2473,8 @@ class $$TracksTableTableManager
                 artist: artist,
                 album: album,
                 durationMs: durationMs,
+                fileSizeBytes: fileSizeBytes,
+                sampleRateHz: sampleRateHz,
                 trackNumber: trackNumber,
                 genre: genre,
                 indexedAt: indexedAt,
@@ -2291,6 +2492,8 @@ class $$TracksTableTableManager
                 Value<String?> artist = const Value.absent(),
                 Value<String?> album = const Value.absent(),
                 Value<int?> durationMs = const Value.absent(),
+                Value<int?> fileSizeBytes = const Value.absent(),
+                Value<int?> sampleRateHz = const Value.absent(),
                 Value<int?> trackNumber = const Value.absent(),
                 Value<String?> genre = const Value.absent(),
                 Value<DateTime> indexedAt = const Value.absent(),
@@ -2306,6 +2509,8 @@ class $$TracksTableTableManager
                 artist: artist,
                 album: album,
                 durationMs: durationMs,
+                fileSizeBytes: fileSizeBytes,
+                sampleRateHz: sampleRateHz,
                 trackNumber: trackNumber,
                 genre: genre,
                 indexedAt: indexedAt,
@@ -2408,12 +2613,14 @@ typedef $$PlaylistsTableCreateCompanionBuilder =
     PlaylistsCompanion Function({
       Value<int> id,
       required String name,
+      Value<String?> smartRules,
       Value<DateTime> createdAt,
     });
 typedef $$PlaylistsTableUpdateCompanionBuilder =
     PlaylistsCompanion Function({
       Value<int> id,
       Value<String> name,
+      Value<String?> smartRules,
       Value<DateTime> createdAt,
     });
 
@@ -2459,6 +2666,11 @@ class $$PlaylistsTableFilterComposer
 
   ColumnFilters<String> get name => $composableBuilder(
     column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get smartRules => $composableBuilder(
+    column: $table.smartRules,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2512,6 +2724,11 @@ class $$PlaylistsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get smartRules => $composableBuilder(
+    column: $table.smartRules,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -2532,6 +2749,11 @@ class $$PlaylistsTableAnnotationComposer
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get smartRules => $composableBuilder(
+    column: $table.smartRules,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -2592,17 +2814,24 @@ class $$PlaylistsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<String?> smartRules = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
-              }) =>
-                  PlaylistsCompanion(id: id, name: name, createdAt: createdAt),
+              }) => PlaylistsCompanion(
+                id: id,
+                name: name,
+                smartRules: smartRules,
+                createdAt: createdAt,
+              ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String name,
+                Value<String?> smartRules = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => PlaylistsCompanion.insert(
                 id: id,
                 name: name,
+                smartRules: smartRules,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0

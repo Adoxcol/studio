@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:studio/features/artist_artwork/data/audio_db_artist_picture_source.dart';
 import 'package:studio/features/artist_artwork/data/artist_service_exception.dart';
+import 'package:studio/features/artist_artwork/data/artist_request_scheduler.dart';
 import 'package:studio/features/artist_artwork/domain/artist_picture.dart';
 
 const _mbid = 'cc197bad-dc9c-440d-a5b5-d52ba2e14234';
@@ -18,7 +19,7 @@ Uint8List _json(Object? data) =>
 
 void main() {
   test('uses public-key MBID lookup and attributed HTTPS portrait', () async {
-    final source = AudioDbArtistPictureSource(requestSpacing: Duration.zero);
+    final source = AudioDbArtistPictureSource();
     final urls = <Uri>[];
     final result = await source.fetch(_artist, _mbid, (uri, maxBytes) async {
       urls.add(uri);
@@ -40,7 +41,7 @@ void main() {
   test(
     'no entry and no portrait are misses; wrong artist and malformed JSON are errors',
     () async {
-      final source = AudioDbArtistPictureSource(requestSpacing: Duration.zero);
+      final source = AudioDbArtistPictureSource();
       for (final data in [
         {'artists': null},
         {
@@ -59,6 +60,10 @@ void main() {
       }
       for (final data in [
         {},
+        [],
+        {
+          'artists': [null],
+        },
         {'artists': 'broken'},
         {
           'artists': [_entry(mbid: 'other-id')],
@@ -91,9 +96,7 @@ void main() {
         'https://r2.theaudiodb.com/private/a.jpg',
       ]) {
         var calls = 0;
-        final source = AudioDbArtistPictureSource(
-          requestSpacing: Duration.zero,
-        );
+        final source = AudioDbArtistPictureSource();
         final result = await source.fetch(_artist, _mbid, (_, _) async {
           calls++;
           return _json({
@@ -112,10 +115,12 @@ void main() {
       var clock = DateTime.utc(2026, 8, 31);
       final deadline = clock.add(const Duration(minutes: 3));
       var calls = 0;
-      final source = AudioDbArtistPictureSource(
-        requestSpacing: Duration.zero,
+      final source = AudioDbArtistPictureSource();
+      final scheduler = ArtistRequestScheduler(
+        audioDbSpacing: Duration.zero,
         clock: () => clock,
       );
+      addTearDown(scheduler.close);
       Future<Uint8List> get(Uri _, int _) async {
         calls++;
         if (calls == 1) {
@@ -130,7 +135,17 @@ void main() {
 
       for (var i = 0; i < 2; i++) {
         await expectLater(
-          source.fetch(_artist, _mbid, get, cancelled: () => false),
+          source.fetch(
+            _artist,
+            _mbid,
+            (uri, maxBytes) => scheduler.run(
+              uri,
+              () => get(uri, maxBytes),
+              artist: _artist.name,
+              cancelled: () => false,
+            ),
+            cancelled: () => false,
+          ),
           throwsA(
             isA<ArtistServiceException>().having(
               (e) => e.retryAfter,
@@ -143,7 +158,17 @@ void main() {
       expect(calls, 1);
       clock = deadline;
       expect(
-        await source.fetch(_artist, _mbid, get, cancelled: () => false),
+        await source.fetch(
+          _artist,
+          _mbid,
+          (uri, maxBytes) => scheduler.run(
+            uri,
+            () => get(uri, maxBytes),
+            artist: _artist.name,
+            cancelled: () => false,
+          ),
+          cancelled: () => false,
+        ),
         isNull,
       );
       expect(calls, 2);
@@ -152,7 +177,7 @@ void main() {
 
   test('cancellation never poisons the service cooldown', () async {
     var cancelled = false;
-    final source = AudioDbArtistPictureSource(requestSpacing: Duration.zero);
+    final source = AudioDbArtistPictureSource();
     await expectLater(
       source.fetch(_artist, _mbid, (_, _) async {
         cancelled = true;
@@ -175,15 +200,27 @@ void main() {
   test(
     'request pacing applies between artists and production defaults stay below 30/minute',
     () async {
-      final source = AudioDbArtistPictureSource(
-        requestSpacing: const Duration(milliseconds: 30),
+      final source = AudioDbArtistPictureSource();
+      final scheduler = ArtistRequestScheduler(
+        audioDbSpacing: const Duration(milliseconds: 30),
       );
+      addTearDown(scheduler.close);
       final times = <DateTime>[];
       for (var i = 0; i < 3; i++) {
-        await source.fetch(_artist, _mbid, (_, _) async {
-          times.add(DateTime.now());
-          return _json({'artists': null});
-        }, cancelled: () => false);
+        await source.fetch(
+          _artist,
+          _mbid,
+          (uri, _) => scheduler.run(
+            uri,
+            () async {
+              times.add(DateTime.now());
+              return _json({'artists': null});
+            },
+            artist: _artist.name,
+            cancelled: () => false,
+          ),
+          cancelled: () => false,
+        );
       }
       expect(
         times[1].difference(times[0]).inMilliseconds,
@@ -194,7 +231,7 @@ void main() {
         greaterThanOrEqualTo(29),
       );
       expect(
-        AudioDbArtistPictureSource().requestSpacing,
+        ArtistRequestScheduler().audioDbSpacing,
         greaterThan(const Duration(seconds: 2)),
       );
     },

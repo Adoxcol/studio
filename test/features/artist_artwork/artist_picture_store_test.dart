@@ -111,6 +111,90 @@ void main() {
   );
 
   test(
+    'stable lookup outcomes survive restart without inventing misses',
+    () async {
+      final until = DateTime.utc(2027);
+      for (final state in PictureLookupState.values) {
+        await store.save(
+          'aria',
+          ArtistPicture(lookupState: state, retryAfter: until),
+        );
+        final loaded = await FileArtistPictureStore(directory).load('aria');
+        expect(
+          loaded.lookupState,
+          state == PictureLookupState.searching
+              ? PictureLookupState.idle
+              : state,
+        );
+        expect(
+          loaded.retryAfter,
+          state == PictureLookupState.failed ||
+                  state == PictureLookupState.missing
+              ? until
+              : null,
+        );
+      }
+      final remote = await store.saveImage(Uint8List.fromList([1]));
+      await store.save('aria', ArtistPicture(remotePath: remote));
+      final loaded = await FileArtistPictureStore(directory).load('aria');
+      expect(loaded.lookupState, PictureLookupState.idle);
+      expect(loaded.needsLookup, isFalse);
+    },
+  );
+
+  test(
+    'v4 failures and confirmed misses retain their distinct deadlines',
+    () async {
+      final until = DateTime.utc(2027);
+      for (final failed in [false, true]) {
+        await store.save('aria', const ArtistPicture());
+        final file = directory.listSync().whereType<File>().single;
+        await file.writeAsString(
+          jsonEncode({
+            'version': 4,
+            'sourceRevision': 0,
+            'failed': failed,
+            'retryAfter': until.toIso8601String(),
+          }),
+        );
+        final loaded = await FileArtistPictureStore(directory).load('aria');
+        expect(
+          loaded.lookupState,
+          failed ? PictureLookupState.failed : PictureLookupState.missing,
+        );
+        expect(loaded.retryAfter, until);
+      }
+    },
+  );
+
+  test(
+    'malformed optional metadata cannot discard either saved image slot',
+    () async {
+      final custom = await store.saveImage(Uint8List.fromList([9]));
+      final remote = await store.saveImage(Uint8List.fromList([1]));
+      await store.save(
+        'aria',
+        ArtistPicture(customPath: custom, remotePath: remote),
+      );
+      final file = directory.listSync().whereType<File>().singleWhere(
+        (f) => f.path.endsWith('.json'),
+      );
+      final json =
+          jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+      json['credit'] = {'author': 42};
+      json['retryAfter'] = 123;
+      await file.writeAsString(jsonEncode(json));
+      final loaded = await FileArtistPictureStore(directory).load('aria');
+      expect(loaded.path, custom);
+      expect(loaded.remotePath, remote);
+      expect(loaded.credit, isNull);
+      expect(loaded.needsLookup, isFalse);
+      expect(await File(custom).readAsBytes(), [9]);
+      expect(await File(remote).readAsBytes(), [1]);
+    },
+  );
+
+  test(
     'unknown Commons credits survive saving and reopening the image cache',
     () async {
       final path = await store.saveImage(Uint8List.fromList([1, 2, 3]));

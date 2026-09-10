@@ -7,7 +7,10 @@ const String kDiscordLargeImageKey = 'studio';
 const String kDiscordPlayImageKey = 'play';
 const String kDiscordPauseImageKey = 'pause';
 
-/// Discord cannot read local files, so covers have to be an HTTPS URL —
-/// catbox.moe takes anonymous uploads and needs no API key.
-const String kCatboxUploadUrl = 'https://catbox.moe/user/api.php';
+/// Freeimage's documented API endpoint and public upload key. The service uses
+/// `iili.io` for direct image links, which Discord's media proxy can render.
+/// This is a site-wide public key (also published in Freeimage's uploader
+/// configuration), not a Studio credential or user secret.
+const String kFreeImageUploadUrl = 'https://freeimage.host/api/1/upload';
+const String kFreeImagePublicApiKey = '6d207e02198a847aa98d0a2a901485a5';
 const int kDiscordAssetLimit = 256;

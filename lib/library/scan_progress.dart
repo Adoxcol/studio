@@ -4,12 +4,14 @@ class ScanResult {
     this.written = 0,
     this.skipped = 0,
     this.cancelled = false,
+    this.unavailableFolders = 0,
   });
 
   final int seen;
   final int written;
   final int skipped;
   final bool cancelled;
+  final int unavailableFolders;
 }
 
 class ScanProgress {

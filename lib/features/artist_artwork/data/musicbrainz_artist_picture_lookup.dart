@@ -7,12 +7,14 @@ import 'package:studio/features/artist_artwork/data/artist_picture_log.dart';
 import 'package:studio/features/artist_artwork/data/audio_db_artist_picture_source.dart';
 import 'package:studio/features/artist_artwork/data/artist_identity_store.dart';
 import 'package:studio/features/artist_artwork/data/artist_service_exception.dart';
+import 'package:studio/features/artist_artwork/data/artist_request_scheduler.dart';
 import 'package:studio/features/artist_artwork/data/fanart_settings_store.dart';
 import 'package:studio/features/artist_artwork/domain/artist_picture.dart';
 
 /// Verified MusicBrainz identity -> fanart.tv -> TheAudioDB -> Wikidata / Commons.
 /// Deliberately does not scrape image search or guess by popularity.
-class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
+class MusicBrainzArtistPictureLookup
+    implements ArtistPictureLookup, PrioritizedArtistPictureLookup {
   MusicBrainzArtistPictureLookup({
     http.Client? client,
     bool enableAudioDb = false,
@@ -20,17 +22,26 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
     ArtistIdentityStore? identities,
     FanartSettings fanart = const FanartSettings(),
     this.requestSpacing = const Duration(milliseconds: 1100),
+    Duration audioDbSpacing = const Duration(milliseconds: 2100),
+    int maxImageDownloads = 3,
     this.requestTimeout = const Duration(seconds: 15),
     this.transferTimeout = const Duration(seconds: 90),
     this.log = const ArtistPictureLog(),
   }) : _client = client ?? http.Client(),
        _identities = identities ?? ArtistIdentityStore(),
        _fanart = fanart,
+       _scheduler = ArtistRequestScheduler(
+         metadataSpacing: requestSpacing,
+         audioDbSpacing: audioDbSpacing,
+         maxImageDownloads: maxImageDownloads,
+         log: log,
+       ),
        _audioDb =
            audioDb ??
            (enableAudioDb ? AudioDbArtistPictureSource(log: log) : null);
   final AudioDbArtistPictureSource? _audioDb;
   final ArtistIdentityStore _identities;
+  final ArtistRequestScheduler _scheduler;
   FanartSettings _fanart;
   bool _fanartRejected = false;
 
@@ -41,7 +52,7 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
     log(
       settings.enabled
           ? 'fanart.tv enabled; credentials omitted from logs.'
-          : 'fanart.tv disabled; using Wikimedia.',
+          : 'fanart.tv disabled; using available fallback sources.',
     );
   }
 
@@ -50,11 +61,14 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
   final Duration requestTimeout;
   final Duration transferTimeout;
   final ArtistPictureLog log;
-  DateTime? _lastRequest;
   final _aborts = <Completer<void>>{};
   int _generation = 0;
   bool _closed = false;
   static const _userAgent = 'Studio/0.1 (https://github.com/Adoxcol/studio)';
+
+  @override
+  void setPriority(String artist, bool prioritized) =>
+      _scheduler.setPriority(artist, prioritized);
 
   @override
   Future<DownloadedArtistPicture?> fetch(ArtistImageRequest artist) async {
@@ -82,33 +96,60 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
     if (_closed || generation != _generation) {
       throw StateError('Lookup cancelled');
     }
+    Object? sourceError;
+    Future<DownloadedArtistPicture?> attempt(
+      String source,
+      Future<DownloadedArtistPicture?> Function() fetch,
+    ) async {
+      try {
+        return await fetch();
+      } on Exception catch (error) {
+        if (_closed || generation != _generation) rethrow;
+        // Keep the earliest recoverable source deadline. A temporary failure
+        // must not turn into a seven-day miss when the other sources lack art.
+        final previous = sourceError;
+        if (previous == null ||
+            (error is ArtistServiceException &&
+                error.retryAfter != null &&
+                (previous is! ArtistServiceException ||
+                    previous.retryAfter == null ||
+                    error.retryAfter!.isBefore(previous.retryAfter!)))) {
+          sourceError = error;
+        }
+        log(
+          '$source unavailable; continuing fallback sources.',
+          artist: artist.name,
+        );
+        return null;
+      }
+    }
+
     if (_fanart.enabled && !_fanartRejected) {
-      final picture = await _fetchFanart(artist, id, generation);
+      final picture = await attempt(
+        'fanart.tv',
+        () => _fetchFanart(artist, id!, generation),
+      );
       if (picture != null) return picture;
     }
-    Object? sourceError;
     if (_audioDb != null) {
-      try {
-        final picture = await _audioDb.fetch(
+      final picture = await attempt(
+        'TheAudioDB',
+        () => _audioDb.fetch(
           artist,
-          id,
+          id!,
           (uri, maxBytes) =>
               _get(uri, generation, maxBytes, artist: artist.name),
           cancelled: () => _closed || generation != _generation,
-        );
-        if (picture != null) return picture;
-      } on Object catch (error) {
-        if (_closed || generation != _generation) rethrow;
-        sourceError = error;
-        log(
-          'TheAudioDB lookup unavailable; trying Wikimedia.',
-          artist: artist.name,
-        );
-      }
+        ),
+      );
+      if (picture != null) return picture;
     }
-    final picture = await _fetchWikimedia(artist, id, generation);
+    final picture = await attempt(
+      'Wikimedia',
+      () => _fetchWikimedia(artist, id!, generation),
+    );
     // An unavailable source is not a definitive no-image result.
-    if (picture == null && sourceError != null) throw sourceError;
+    if (picture == null && sourceError != null) throw sourceError!;
     return picture;
   }
 
@@ -116,13 +157,10 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
     Uri uri,
     int generation,
     String artist,
-  ) async =>
-      jsonDecode(
-            utf8.decode(
-              await _get(uri, generation, 2 * 1024 * 1024, artist: artist),
-            ),
-          )
-          as Map<String, dynamic>;
+  ) async => _metadata(
+    await _get(uri, generation, 2 * 1024 * 1024, artist: artist),
+    uri.host,
+  );
 
   Future<DownloadedArtistPicture?> _fetchWikimedia(
     ArtistImageRequest artist,
@@ -143,7 +181,10 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
       }),
     );
     String? entityId;
-    for (final relation in _maps(identity['relations'])) {
+    for (final relation in _requiredMaps(
+      identity['relations'],
+      'MusicBrainz relations',
+    )) {
       if (relation['type'] != 'wikidata') continue;
       final resource = (relation['url'] as Map?)?['resource'];
       final uri = resource is String ? Uri.tryParse(resource) : null;
@@ -172,10 +213,20 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
     if (entity['error'] != null) {
       throw const FormatException('Wikidata request failed.');
     }
-    final claims = (entity['entities'] as Map?)?[entityId] as Map?;
+    final entities = entity['entities'];
+    final claims = entities is Map ? entities[entityId] : null;
+    if (claims is! Map) {
+      throw const FormatException('Invalid Wikidata entity response');
+    }
+    if (claims.containsKey('missing')) {
+      return missing('Wikidata entity no longer exists.');
+    }
+    if (claims['claims'] is! Map) {
+      throw const FormatException('Invalid Wikidata claims response');
+    }
     final images =
         _maps(
-          (claims?['claims'] as Map?)?['P18'],
+          (claims['claims'] as Map)['P18'],
         ).where((e) => e['rank'] != 'deprecated').toList()..sort(
           (a, b) => (b['rank'] == 'preferred' ? 1 : 0).compareTo(
             a['rank'] == 'preferred' ? 1 : 0,
@@ -201,8 +252,12 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
     if (commons['error'] != null) {
       throw const FormatException('Commons request failed.');
     }
-    final pages = (commons['query'] as Map?)?['pages'] as Map?;
-    for (final page in pages?.values ?? const []) {
+    final query = commons['query'];
+    final pages = query is Map ? query['pages'] : null;
+    if (pages is! Map) {
+      throw const FormatException('Invalid Commons pages response');
+    }
+    for (final page in pages.values) {
       for (final info in _maps((page as Map)['imageinfo'])) {
         final uri = Uri.tryParse(
           info['thumburl'] as String? ?? info['url'] as String? ?? '',
@@ -285,13 +340,17 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
         'limit': '100',
       }),
     );
+    final results = _requiredMaps(search['artists'], 'MusicBrainz artists');
+    if (results.any((entry) => entry['name'] is! String)) {
+      throw const FormatException('Invalid MusicBrainz artist response');
+    }
     // Truncated results cannot prove an unambiguous identity.
     if ((search['count'] as num? ?? 0) > 100) {
       return missing(
         'Skipped: MusicBrainz results are truncated; identity is uncertain.',
       );
     }
-    final candidates = _maps(search['artists'])
+    final candidates = results
         .where(
           (entry) =>
               artistKey(entry['name'] as String? ?? '') == artist.key ||
@@ -322,7 +381,10 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
         );
         if ((releases['count'] as num? ?? 0) > 100) continue;
         final matching = <String>{};
-        for (final release in _maps(releases['release-groups'])) {
+        for (final release in _requiredMaps(
+          releases['release-groups'],
+          'MusicBrainz release groups',
+        )) {
           if (artistKey(release['title'] as String? ?? '') !=
               artistKey(album)) {
             continue;
@@ -358,41 +420,39 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
   ) async {
     Map<String, dynamic> data;
     try {
-      data =
-          jsonDecode(
-                utf8.decode(
-                  await _get(
-                    Uri.https('webservice.fanart.tv', '/v3.2/music/$id'),
-                    generation,
-                    2 * 1024 * 1024,
-                    artist: artist.name,
-                    headers: _fanart.headers,
-                  ),
-                ),
-              )
-              as Map<String, dynamic>;
+      data = _metadata(
+        await _get(
+          Uri.https('webservice.fanart.tv', '/v3.2/music/$id'),
+          generation,
+          2 * 1024 * 1024,
+          artist: artist.name,
+          headers: _fanart.headers,
+        ),
+        'fanart.tv',
+      );
     } on ArtistServiceException catch (error) {
       if (_closed || generation != _generation) rethrow;
       if (error.status == 401 || error.status == 403) {
         _fanartRejected = true;
         log(
-          'fanart.tv rejected the keys (HTTP ${error.status}); check Settings. Using Wikimedia until keys change.',
+          'fanart.tv rejected the keys (HTTP ${error.status}); check Settings. Using fallback sources until keys change.',
         );
         return null;
       }
       if (error.status != 404) rethrow;
-      log('No fanart.tv entry; trying Wikimedia.', artist: artist.name);
+      log('No fanart.tv entry; trying fallback sources.', artist: artist.name);
       return null;
     }
     if (data['mbid_id'] != id) {
       throw const FormatException('fanart.tv returned a different artist ID');
     }
-    final thumbnails = _maps(data['artistthumb']).toList()
-      ..sort((a, b) {
-        int likes(Map value) => int.tryParse('${value['likes']}') ?? 0;
-        final order = likes(b).compareTo(likes(a));
-        return order != 0 ? order : '${a['id']}'.compareTo('${b['id']}');
-      });
+    final thumbnails =
+        _requiredMaps(data['artistthumb'] ?? const [], 'fanart.tv portraits')
+          ..sort((a, b) {
+            int likes(Map value) => int.tryParse('${value['likes']}') ?? 0;
+            final order = likes(b).compareTo(likes(a));
+            return order != 0 ? order : '${a['id']}'.compareTo('${b['id']}');
+          });
     for (final thumbnail in thumbnails) {
       final value = thumbnail['url'];
       final uri = value is String ? Uri.tryParse(value) : null;
@@ -422,7 +482,10 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
         // A deleted thumbnail should not hide another available photo.
       }
     }
-    log('No usable fanart.tv portrait; trying Wikimedia.', artist: artist.name);
+    log(
+      'No usable fanart.tv portrait; trying fallback sources.',
+      artist: artist.name,
+    );
     return null;
   }
 
@@ -432,24 +495,33 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
     int maxBytes, {
     required String artist,
     Map<String, String> headers = const {},
+  }) => _scheduler.run(
+    uri,
+    () =>
+        _transfer(uri, generation, maxBytes, artist: artist, headers: headers),
+    artist: artist,
+    // The provider parsers request 2 MB metadata or 8 MB image bodies.
+    image: maxBytes > 2 * 1024 * 1024,
+    cancelled: () => _closed || generation != _generation,
+  );
+
+  Future<Uint8List> _transfer(
+    Uri uri,
+    int generation,
+    int maxBytes, {
+    required String artist,
+    required Map<String, String> headers,
   }) async {
-    // One worker uses this lookup. Space ALL metadata/image requests to also
-    // avoid bursts against Wikimedia, including after a fast failure.
-    final previous = _lastRequest;
-    if (previous != null) {
-      final remaining = requestSpacing - DateTime.now().difference(previous);
-      if (remaining > Duration.zero) await Future<void>.delayed(remaining);
-    }
     if (_closed || generation != _generation) {
       throw StateError('Lookup cancelled');
     }
-    _lastRequest = DateTime.now();
     final elapsed = Stopwatch()..start();
     log('GET ${uri.host}${uri.path}', artist: artist);
     final abort = Completer<void>();
     _aborts.add(abort);
     var received = 0;
     Timer? idleTimer;
+    Timer? deadline;
     void abortRequest(String reason) {
       log('$reason on ${uri.host} after $received bytes.', artist: artist);
       if (!abort.isCompleted) abort.complete();
@@ -468,12 +540,12 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
     // A large portrait can take more than 15 seconds on a slow connection.
     // Abort stalled requests, not progressing transfers; retain an absolute
     // deadline so a trickling endpoint cannot occupy the worker indefinitely.
-    resetIdleTimeout();
-    final deadline = Timer(
-      transferTimeout,
-      () => abortRequest('Transfer deadline reached'),
-    );
     try {
+      resetIdleTimeout();
+      deadline = Timer(
+        transferTimeout,
+        () => abortRequest('Transfer deadline reached'),
+      );
       final request =
           http.AbortableRequest('GET', uri, abortTrigger: abort.future)
             ..followRedirects = false
@@ -497,6 +569,7 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
         );
       }
       if ((response.contentLength ?? 0) > maxBytes) {
+        await response.stream.listen((_) {}).cancel();
         throw const FormatException('Image response too large');
       }
       final bytes = BytesBuilder(copy: false);
@@ -519,7 +592,7 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
       return bytes.takeBytes();
     } finally {
       idleTimer?.cancel();
-      deadline.cancel();
+      deadline?.cancel();
       _aborts.remove(abort);
       if (!abort.isCompleted) abort.complete();
     }
@@ -528,6 +601,7 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
   @override
   void cancel() {
     _generation++;
+    _scheduler.cancel();
     for (final abort in _aborts) {
       if (!abort.isCompleted) abort.complete();
     }
@@ -537,12 +611,34 @@ class MusicBrainzArtistPictureLookup implements ArtistPictureLookup {
   void close() {
     _closed = true;
     cancel();
+    _scheduler.close();
     _client.close();
   }
 }
 
 Iterable<Map> _maps(Object? value) =>
     value is List ? value.whereType<Map>() : const [];
+
+List<Map> _requiredMaps(Object? value, String source) {
+  if (value is! List || value.any((entry) => entry is! Map)) {
+    throw FormatException('Invalid $source response');
+  }
+  return value.cast<Map>().toList();
+}
+
+Map<String, dynamic> _metadata(Uint8List bytes, String source) {
+  final value = jsonDecode(utf8.decode(bytes));
+  if (value is! Map<String, dynamic> ||
+      value['error'] != null ||
+      (value['errors'] is List
+          ? (value['errors'] as List).isNotEmpty
+          : value['errors'] != null)) {
+    // Do not log remote bodies or interpret an API error as no matching artist.
+    throw FormatException('Invalid $source metadata response');
+  }
+  return value;
+}
+
 String _quote(String value) =>
     '"${value.replaceAllMapped(RegExp(r'([+\-!(){}\[\]^"~*?:\\/]|&&|\|\|)'), (m) => '\\${m[0]}')}"';
 String _plainText(String value) => value

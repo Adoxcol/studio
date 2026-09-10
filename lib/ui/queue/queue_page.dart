@@ -4,21 +4,83 @@ import 'package:studio/state/library_providers.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/queue/queue_track_row.dart';
+import 'package:studio/ui/track_actions/track_actions_menu.dart';
 
-class QueuePage extends ConsumerWidget {
+class QueuePage extends ConsumerStatefulWidget {
   const QueuePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<QueuePage> createState() => _QueuePageState();
+}
+
+class _QueuePageState extends ConsumerState<QueuePage> {
+  bool _historyExpanded = true;
+  bool _selecting = false;
+  final Set<int> _selectedIds = {};
+
+  void _removeWithUndo(List<({int id, int index})> entries) {
+    if (entries.isEmpty) return;
+    final controller = ref.read(playbackControllerProvider.notifier);
+    final removed = controller.removeUpcomingIds({
+      for (final entry in entries) entry.id,
+    });
+    if (removed == 0) return;
+    final noUpcoming =
+        ref.read(playbackControllerProvider).queueIds.length <= 1;
+    setState(() {
+      _selectedIds.removeAll(entries.map((entry) => entry.id));
+      if (noUpcoming) _selecting = false;
+    });
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            removed == 1 ? 'Removed from queue' : 'Removed $removed tracks',
+          ),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () {
+              for (final entry
+                  in entries..sort((a, b) => a.index.compareTo(b.index))) {
+                controller.insertUpcomingAt(entry.index, entry.id);
+              }
+            },
+          ),
+        ),
+      );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
     final playback = ref.watch(
       playbackControllerProvider.select(
-        (s) => (queueIds: s.queueIds, trackId: s.trackId),
+        (s) => (
+          queueIds: s.queueIds,
+          historyIds: s.historyIds,
+          trackId: s.trackId,
+        ),
       ),
     );
     final byId = ref.watch(libraryTracksByIdProvider);
+    final currentIndex = playback.trackId == null
+        ? -1
+        : playback.queueIds.indexOf(playback.trackId!);
+    final upcomingEntries = <({int id, int index})>[
+      for (
+        var index = currentIndex + 1;
+        index < playback.queueIds.length;
+        index++
+      )
+        (id: playback.queueIds[index], index: index),
+    ];
+    final selectedIds = _selectedIds.intersection({
+      for (final entry in upcomingEntries) entry.id,
+    });
 
-    if (playback.queueIds.isEmpty) {
+    if (playback.queueIds.isEmpty && playback.historyIds.isEmpty) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(32, 24, 32, 24),
         child: Text(
@@ -30,28 +92,254 @@ class QueuePage extends ConsumerWidget {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(32, 24, 32, 16),
-      itemExtent: QueueTrackRow.height + 1,
-      addAutomaticKeepAlives: false,
-      itemCount: playback.queueIds.length,
-      itemBuilder: (context, index) {
-        final id = playback.queueIds[index];
-        final track = byId[id];
-        final current = id == playback.trackId;
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: palette.hairlineSoft)),
+    final controller = ref.read(playbackControllerProvider.notifier);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 18, 24, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SectionHeader(
+            label: 'QUEUE',
+            action: playback.queueIds.length > 1 ? 'Clear upcoming' : null,
+            onAction: () => _removeWithUndo(upcomingEntries),
+            extra: upcomingEntries.isEmpty && !_selecting
+                ? null
+                : TextButton(
+                    onPressed: () => setState(() {
+                      _selecting = !_selecting;
+                      if (!_selecting) _selectedIds.clear();
+                    }),
+                    child: Text(_selecting ? 'Done' : 'Select'),
+                  ),
           ),
-          child: QueueTrackRow(
-            track: track,
-            current: current,
-            onTap: () => ref
-                .read(playbackControllerProvider.notifier)
-                .playQueueIndex(index),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+            child: _selecting
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      children: [
+                        TextButton(
+                          onPressed: () => setState(() {
+                            if (selectedIds.length == upcomingEntries.length) {
+                              _selectedIds.clear();
+                            } else {
+                              _selectedIds
+                                ..clear()
+                                ..addAll(
+                                  upcomingEntries.map((entry) => entry.id),
+                                );
+                            }
+                          }),
+                          child: Text(
+                            selectedIds.length == upcomingEntries.length
+                                ? 'Select none'
+                                : 'Select all',
+                          ),
+                        ),
+                        Text(
+                          '${selectedIds.length} selected',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: palette.inkMuted),
+                        ),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: selectedIds.isEmpty
+                              ? null
+                              : () => _removeWithUndo([
+                                  for (final entry in upcomingEntries)
+                                    if (selectedIds.contains(entry.id)) entry,
+                                ]),
+                          child: const Text('Remove selected'),
+                        ),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
           ),
-        );
-      },
+          const SizedBox(height: 8),
+          Expanded(
+            child: ReorderableListView.builder(
+              buildDefaultDragHandles: false,
+              proxyDecorator: (child, _, animation) => AnimatedBuilder(
+                animation: animation,
+                child: child,
+                builder: (context, child) => Transform.scale(
+                  scale:
+                      1 + (0.018 * Curves.easeOut.transform(animation.value)),
+                  child: Material(
+                    color: palette.bg,
+                    elevation: 8 * animation.value,
+                    shadowColor: Colors.black38,
+                    child: child,
+                  ),
+                ),
+              ),
+              itemExtent: QueueTrackRow.height + 1,
+              itemCount: playback.queueIds.length,
+              // Flutter 3.47 deprecates this in favor of onReorderItem, which
+              // is not available on the project's currently supported SDK.
+              // ignore: deprecated_member_use
+              onReorder: controller.moveUpcoming,
+              itemBuilder: (context, index) {
+                final id = playback.queueIds[index];
+                final track = byId[id];
+                final current = id == playback.trackId;
+                final upcoming = index > currentIndex;
+                return DecoratedBox(
+                  key: ValueKey('queue-$index-$id'),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: palette.hairlineSoft),
+                    ),
+                  ),
+                  child: QueueTrackRow(
+                    track: track,
+                    current: current,
+                    selected: selectedIds.contains(id),
+                    onSelected: _selecting && upcoming
+                        ? (selected) => setState(() {
+                            if (selected) {
+                              _selectedIds.add(id);
+                            } else {
+                              _selectedIds.remove(id);
+                            }
+                          })
+                        : null,
+                    onTap: current
+                        ? null
+                        : () => controller.playQueueIndex(index),
+                    onRemove: upcoming
+                        ? () => _removeWithUndo([(id: id, index: index)])
+                        : null,
+                    onMenu: track == null
+                        ? null
+                        : (position) => showTrackActions(
+                            context: context,
+                            ref: ref,
+                            track: track,
+                            position: position,
+                            onPlayNow: () => controller.playQueueIndex(index),
+                            onRemove: !upcoming
+                                ? null
+                                : () =>
+                                      _removeWithUndo([(id: id, index: index)]),
+                            removeLabel: 'Remove from queue',
+                          ),
+                    dragHandle: !upcoming || _selecting
+                        ? null
+                        : ReorderableDragStartListener(
+                            index: index,
+                            child: Tooltip(
+                              message: 'Reorder',
+                              child: Icon(
+                                Icons.drag_handle,
+                                size: 19,
+                                color: palette.inkMuted,
+                              ),
+                            ),
+                          ),
+                  ),
+                );
+              },
+            ),
+          ),
+          if (playback.historyIds.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            _SectionHeader(
+              label: 'HISTORY',
+              action: 'Clear',
+              expanded: _historyExpanded,
+              onToggle: () =>
+                  setState(() => _historyExpanded = !_historyExpanded),
+              onAction: controller.clearHistory,
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              child: _historyExpanded
+                  ? ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 210),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemExtent: QueueTrackRow.height,
+                        itemCount: playback.historyIds.length,
+                        itemBuilder: (context, index) {
+                          final id = playback.historyIds[index];
+                          final track = byId[id];
+                          return QueueTrackRow(
+                            key: ValueKey('history-$index-$id'),
+                            track: track,
+                            onTap: () => controller.playHistoryIndex(index),
+                            onMenu: track == null
+                                ? null
+                                : (position) => showTrackActions(
+                                    context: context,
+                                    ref: ref,
+                                    track: track,
+                                    position: position,
+                                    onPlayNow: () =>
+                                        controller.playHistoryIndex(index),
+                                  ),
+                          );
+                        },
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.label,
+    required this.onAction,
+    this.action,
+    this.expanded,
+    this.onToggle,
+    this.extra,
+  });
+
+  final String label;
+  final String? action;
+  final VoidCallback onAction;
+  final bool? expanded;
+  final VoidCallback? onToggle;
+  final Widget? extra;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StudioPalette.of(context);
+    return Row(
+      children: [
+        if (expanded != null)
+          IconButton(
+            tooltip: expanded! ? 'Collapse history' : 'Expand history',
+            onPressed: onToggle,
+            visualDensity: VisualDensity.compact,
+            icon: Icon(
+              expanded! ? Icons.expand_more : Icons.chevron_right,
+              size: 18,
+              color: palette.inkMuted,
+            ),
+          ),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: palette.inkMuted,
+            letterSpacing: 1.4,
+          ),
+        ),
+        const Spacer(),
+        ?extra,
+        if (action != null)
+          TextButton(onPressed: onAction, child: Text(action!)),
+      ],
     );
   }
 }

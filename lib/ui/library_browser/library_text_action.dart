@@ -25,24 +25,29 @@ class LibraryTextAction extends StatelessWidget {
         : muted
         ? palette.inkMuted
         : palette.ink;
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      child: MouseRegion(
-        cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: color),
-            ),
-            if (showChevron) ...[
-              const SizedBox(width: 2),
-              Icon(Icons.keyboard_arrow_down, size: 16, color: color),
+    return Semantics(
+      button: true,
+      label: label,
+      enabled: enabled,
+      child: GestureDetector(
+        onTap: enabled ? onTap : null,
+        child: MouseRegion(
+          cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: color),
+              ),
+              if (showChevron) ...[
+                const SizedBox(width: 2),
+                Icon(Icons.keyboard_arrow_down, size: 16, color: color),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

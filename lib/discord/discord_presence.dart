@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:studio/core/app_info.dart';
 import 'package:studio/discord/discord_artwork.dart';
 import 'package:studio/discord/discord_ids.dart';
+import 'package:studio/discord/discord_settings.dart';
+import 'package:studio/discord/discord_template.dart';
 import 'package:studio/state/playback_provider.dart';
 
 const int kDiscordTextLimit = 128;
@@ -33,8 +35,8 @@ class DiscordPresenceView {
   /// Third line / cover hover: album.
   final String? album;
 
-  /// Cover: an `mp:external/...` media-proxy address (see
-  /// [discordExternalAsset]), or a portal asset key (`studio`).
+  /// Cover: a raw HTTPS URL that Discord proxies, or the portal asset key
+  /// (`studio`). Applications must not synthesize Discord's returned `mp:` ID.
   final String largeImage;
 
   final bool playing;
@@ -87,24 +89,37 @@ DiscordPresenceView? discordPresenceFor(
   PlaybackUiState playback, {
   DateTime? now,
   String? largeImage,
+  DiscordSettings settings = DiscordSettings.defaults,
 }) {
   if (playback.trackId == null) return null;
-  final details = clipDiscordText(playback.title);
+  var details = clipDiscordText(
+    renderDiscordTemplate(settings.detailsTemplate, playback),
+  );
+  if (details.isEmpty) details = clipDiscordText(playback.title);
   if (details.isEmpty) return null;
-  final artist = _optionalText(playback.artist);
-  final album = _optionalText(playback.album);
+  final state = _optionalText(
+    renderDiscordTemplate(settings.stateTemplate, playback),
+  );
+  final artworkText = _optionalText(
+    renderDiscordTemplate(settings.artworkTextTemplate, playback),
+  );
+  final name = clipDiscordText(
+    renderDiscordTemplate(settings.nameTemplate, playback),
+  );
   DateTime? start;
   DateTime? end;
-  if (playback.playing && playback.duration > Duration.zero) {
+  if (settings.showProgress &&
+      playback.playing &&
+      playback.duration > Duration.zero) {
     final clock = now ?? DateTime.now();
     start = clock.subtract(playback.position);
     end = start.add(playback.duration);
   }
   return DiscordPresenceView(
-    name: discordCompactName(title: details, artist: artist),
+    name: name.isEmpty ? details : name,
     details: details,
-    state: artist,
-    album: album,
+    state: state,
+    album: artworkText,
     largeImage: discordLargeImage(largeImage),
     playing: playback.playing,
     start: start,

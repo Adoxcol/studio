@@ -241,8 +241,10 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
 
   Future<void> _syncDiscord() async {
     try {
+      final discordSettings = ref.read(discordSettingsProvider);
       await _discord.sync(
-        enabled: ref.read(discordSettingsProvider).enabled,
+        enabled: discordSettings.enabled,
+        settings: discordSettings,
         playback: ref.read(playbackControllerProvider),
       );
     } on Object catch (error, stack) {
@@ -388,7 +390,7 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
         unawaited(_syncDiscord());
       },
     );
-    ref.listen(discordSettingsProvider.select((s) => s.enabled), (_, _) {
+    ref.listen(discordSettingsProvider, (_, _) {
       unawaited(_syncDiscord());
     });
     ref.listen(appearanceProvider.select((s) => s.themeMode), (_, _) {

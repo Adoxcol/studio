@@ -13,6 +13,8 @@ class Tracks extends Table {
   TextColumn get artist => text().nullable()();
   TextColumn get album => text().nullable()();
   IntColumn get durationMs => integer().nullable()();
+  IntColumn get fileSizeBytes => integer().nullable()();
+  IntColumn get sampleRateHz => integer().nullable()();
   IntColumn get trackNumber => integer().nullable()();
   TextColumn get genre => text().nullable()();
   DateTimeColumn get indexedAt => dateTime().withDefault(currentDateAndTime)();
@@ -26,6 +28,7 @@ class Tracks extends Table {
 class Playlists extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
+  TextColumn get smartRules => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 

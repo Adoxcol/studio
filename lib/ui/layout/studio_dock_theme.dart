@@ -20,7 +20,7 @@ class StudioDockChrome extends StatelessWidget {
       data: MultiSplitViewThemeData(
         dividerThickness: 6,
         dividerPainter: DividerPainters.background(
-          animationEnabled: false,
+          animationEnabled: !MediaQuery.disableAnimationsOf(context),
           color: palette.hairline,
           highlightedColor: palette.hairlineStrong,
         ),
@@ -36,6 +36,7 @@ class StudioDockChrome extends StatelessWidget {
         color: palette.bg,
         border: Border(bottom: hairline),
         equalHeights: EqualHeights.all,
+        dropColor: palette.accent,
         normalButtonColor: palette.inkMuted,
         hoverButtonColor: palette.ink,
         disabledButtonColor: palette.hairlineStrong,

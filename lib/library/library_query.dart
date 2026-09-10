@@ -6,6 +6,63 @@ enum LibrarySort { title, artist, album, track, time }
 
 enum LibraryOrder { ascending, descending }
 
+class LibraryTrackFilters {
+  const LibraryTrackFilters({
+    this.losslessOnly = false,
+    this.minimumSampleRateHz,
+    this.minimumBitrateKbps,
+    this.genre,
+    this.year,
+    this.folderId,
+  });
+
+  final bool losslessOnly;
+  final int? minimumSampleRateHz;
+  final int? minimumBitrateKbps;
+  final String? genre;
+  final int? year;
+  final int? folderId;
+
+  bool get isActive =>
+      losslessOnly ||
+      minimumSampleRateHz != null ||
+      minimumBitrateKbps != null ||
+      genre != null ||
+      year != null ||
+      folderId != null;
+
+  int get activeCount => [
+    losslessOnly,
+    minimumSampleRateHz != null,
+    minimumBitrateKbps != null,
+    genre != null,
+    year != null,
+    folderId != null,
+  ].where((active) => active).length;
+
+  bool matches(Track track) {
+    if (losslessOnly && !LibraryQuery.isLossless(track)) return false;
+    if (minimumSampleRateHz case final minimum?) {
+      if ((track.sampleRateHz ?? 0) < minimum) return false;
+    }
+    if (minimumBitrateKbps case final minimum?) {
+      if ((LibraryQuery.estimatedBitrateKbps(track) ?? 0) < minimum) {
+        return false;
+      }
+    }
+    if (genre case final selected?) {
+      if (LibraryQuery.genreName(track) != selected) return false;
+    }
+    if (year case final selected?) {
+      if (track.year != selected) return false;
+    }
+    if (folderId case final selected?) {
+      if (track.folderId != selected) return false;
+    }
+    return true;
+  }
+}
+
 class LibraryGroup {
   const LibraryGroup({
     required this.name,
@@ -139,6 +196,24 @@ abstract final class LibraryQuery {
 
   static String genreName(Track track) => _label(track.genre, unknownGenre);
 
+  static const _losslessExtensions = {'flac', 'alac', 'wav', 'aiff', 'aif'};
+
+  static bool isLossless(Track track) {
+    final path = track.locator.split('?').first;
+    final dot = path.lastIndexOf('.');
+    if (dot < 0) return false;
+    return _losslessExtensions.contains(path.substring(dot + 1).toLowerCase());
+  }
+
+  static int? estimatedBitrateKbps(Track track) {
+    final bytes = track.fileSizeBytes;
+    final durationMs = track.durationMs;
+    if (bytes == null || bytes <= 0 || durationMs == null || durationMs <= 0) {
+      return null;
+    }
+    return (bytes * 8 / durationMs).round();
+  }
+
   static bool matchesQuery(Track track, String query) {
     final needle = query.trim().toLowerCase();
     if (needle.isEmpty) return true;
@@ -170,15 +245,29 @@ abstract final class LibraryQuery {
     required LibrarySort sort,
     required LibraryOrder order,
     bool byIndexedAt = false,
+    String Function(Track)? artistOf,
   }) {
     final copy = [...tracks];
+    // Normalize once per row, not on every O(n log n) comparison.
+    final textKeys = <int, String>{
+      if (!byIndexedAt &&
+          (sort == LibrarySort.title ||
+              sort == LibrarySort.artist ||
+              sort == LibrarySort.album))
+        for (final track in tracks)
+          track.id: (switch (sort) {
+            LibrarySort.artist => (artistOf ?? artistName)(track),
+            LibrarySort.album => albumName(track),
+            _ => track.title,
+          }).toLowerCase(),
+    };
     copy.sort((a, b) {
       final cmp = byIndexedAt
           ? a.indexedAt.compareTo(b.indexedAt)
           : switch (sort) {
-              LibrarySort.title => compareText(a.title, b.title),
-              LibrarySort.artist => compareText(artistName(a), artistName(b)),
-              LibrarySort.album => compareText(albumName(a), albumName(b)),
+              LibrarySort.title ||
+              LibrarySort.artist ||
+              LibrarySort.album => textKeys[a.id]!.compareTo(textKeys[b.id]!),
               LibrarySort.track => _compareNullableInt(
                 a.trackNumber,
                 b.trackNumber,
@@ -206,12 +295,14 @@ abstract final class LibraryQuery {
   static List<LibraryGroup> groupArtists(
     List<Track> tracks, {
     LibraryOrder order = LibraryOrder.ascending,
+    List<String> Function(Track)? creditsOf,
   }) {
     final albums = <String, Set<String>>{};
     final counts = <String, int>{};
     final labels = <String, String>{};
     for (final track in tracks) {
-      for (final artist in creditedArtists(track.artist)) {
+      for (final artist
+          in creditsOf?.call(track) ?? creditedArtists(track.artist)) {
         final key = artist.toLowerCase();
         labels.putIfAbsent(key, () => artist);
         counts[key] = (counts[key] ?? 0) + 1;
@@ -231,10 +322,11 @@ abstract final class LibraryQuery {
   static List<AlbumSection> albumSections(
     List<Track> tracks, {
     LibraryOrder order = LibraryOrder.ascending,
+    String Function(Track)? artistOf,
   }) {
     final byArtist = <String, Map<String, _AlbumAgg>>{};
     for (final track in tracks) {
-      final artist = artistName(track);
+      final artist = (artistOf ?? artistName)(track);
       final album = albumName(track);
       final albums = byArtist.putIfAbsent(artist, () => <String, _AlbumAgg>{});
       final agg = albums.putIfAbsent(album, _AlbumAgg.new);

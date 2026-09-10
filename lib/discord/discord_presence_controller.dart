@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:studio/discord/discord_artwork.dart';
 import 'package:studio/discord/discord_presence.dart';
 import 'package:studio/discord/discord_rpc_client.dart';
+import 'package:studio/discord/discord_settings.dart';
 import 'package:studio/state/playback_provider.dart';
 
 /// Pushes playback onto Discord and reconnects if the client was not running.
@@ -37,6 +38,7 @@ class DiscordPresenceController {
   Completer<void>? _debounced;
   var _enabled = false;
   PlaybackUiState _latest = const PlaybackUiState();
+  DiscordSettings _settings = DiscordSettings.defaults;
   var _flushing = false;
   var _dirty = false;
 
@@ -49,9 +51,11 @@ class DiscordPresenceController {
   Future<void> sync({
     required bool enabled,
     required PlaybackUiState playback,
+    DiscordSettings settings = DiscordSettings.defaults,
   }) async {
     _enabled = enabled;
     _latest = playback;
+    _settings = settings;
     _debounce?.cancel();
     final previous = _debounced;
     if (previous != null && !previous.isCompleted) {
@@ -119,7 +123,12 @@ class DiscordPresenceController {
       _last = null;
     }
     final cover = _artwork?.cachedUrl(playback.artworkPath);
-    final view = discordPresenceFor(playback, now: _now(), largeImage: cover);
+    final view = discordPresenceFor(
+      playback,
+      now: _now(),
+      largeImage: cover,
+      settings: _settings,
+    );
     if (view == null) {
       _retry?.cancel();
       _retry = null;

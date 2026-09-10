@@ -259,10 +259,9 @@ packages:
   docking:
     dependency: "direct main"
     description:
-      name: docking
-      sha256: cdb5cd08dd675a5709ce7a5af83108492fd35f7231a414b1e7b4157a40b6950b
-      url: "https://pub.dev"
-    source: hosted
+      path: "third_party/docking"
+      relative: true
+    source: path
     version: "1.16.2"
   drift:
     dependency: "direct main"
@@ -1076,12 +1075,11 @@ packages:
     source: hosted
     version: "3.4.0+1"
   tabbed_view:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: tabbed_view
-      sha256: "67720d28c556b7db7336d2d9b12c68e4336dd2c00e2ecfa8b3fe4945a247200b"
-      url: "https://pub.dev"
-    source: hosted
+      path: "third_party/tabbed_view"
+      relative: true
+    source: path
     version: "1.18.1"
   term_glyph:
     dependency: transitive

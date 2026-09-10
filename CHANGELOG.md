@@ -7,8 +7,80 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Playlist management supports renaming, independent duplicates, and confirmed
+  deletion without removing music. Regular playlists have a drag-to-reorder
+  editor with keyboard-accessible move controls and Save/Cancel; smart playlist
+  copies retain their rules. Repeated tracks and saved ordering are preserved.
+
+- Smart playlists support all/any rules for artist, album, genre, year, file
+  format, estimated bitrate, sample rate, and lossless format, with sorting and
+  a live preview. Save the current library search and filters as a smart playlist;
+  membership updates automatically as the library changes.
+
+- A Studio-native metadata editor previews changes before safely writing title,
+  artist, album, genre, year, and track number into supported local audio files.
+- Embedded cover art can be replaced with a JPEG/PNG or removed from the same
+  metadata editor, with the selected image cached for immediate use in Studio.
+- Library selection mode supports applying shared artist, album, genre, year,
+  and cover-art changes across multiple writable tracks with progress and
+  per-track failure reporting.
+
+## [0.2.0] - 2026-09-03
+
+### Added
+
+- Global keyboard shortcuts cover transport, seeking, volume, shuffle, repeat,
+  Playback Mode, and primary navigation, with an in-app shortcut reference.
+- Library filters for lossless formats, minimum sample rate, estimated bitrate,
+  genre, year, and source folder, applied consistently to tracks and catalogues.
+- Full-screen Playback Mode now offers persistent Studio gradient, album
+  artwork, artist image, and solid-color backgrounds, with responsive layouts
+  for narrow, ultrawide, and low-height windows and subtle content transitions.
+- Queue history keeps played tracks discoverable after they leave the upcoming
+  list. Tracks can be reordered, removed, cleared, restored from history, played
+  next, or added to the end from library actions.
+- A unified track-actions menu now exposes playback, queue, playlist, artist,
+  album, and details actions across library views, queue/history, Up Next,
+  detail panels, Now Playing, Playback Mode, and the player bar.
+
 ### Changed
 
+- Player-bar artwork exposes its Playback Mode action to screen readers as a
+  labeled button.
+- Queue rows gain clearer lifted drag feedback, an upcoming-track selection
+  mode for batch removal, and Undo after removing or clearing tracks.
+
+## [0.1.2] - 2026-09-02
+
+### Changed
+
+- The left navigation rail now exposes every workspace widget directly:
+  Library, Now Playing, Playback Mode, Queue, Artist, Album, and Track.
+- Lower artwork memory use with size-bounded cover decoding and 64px palette
+  sampling; rapid track skips coalesce colour extraction and reuse a bounded hue
+  cache instead of decoding every skipped cover.
+- Album catalogues and artist/album details build rows lazily. Unopened dock
+  panels defer initialization; hidden panels pause animations and UI subscriptions
+  while keeping navigation and scroll state.
+- Library browsing reuses a snapshot index and cached view results, computes only
+  the active catalogue, and debounces search by 150ms. Track details use indexed
+  artist/album membership and inactive playlist queries are released.
+- Scans reuse a background worker for tag reads, artwork hashing and file writes,
+  retaining only one embedded image at a time. Full-library database refreshes
+  coalesce invalidations before querying and never overlap expensive reads.
+- Dock tabs move with short eased animations and a pointer-anchored preview;
+  split targets fade and slide without rebuilding panel content. Cancelled drags
+  clear docking feedback, and reduced-motion settings disable these animations.
+- Artist-image caches explicitly retain successful, missing, and failed outcomes
+  across restarts. Temporary service errors and malformed responses never become
+  seven-day misses; invalid credit metadata cannot discard a saved custom image.
+- Artist fetching prioritizes visible portraits, reserves foreground lookup
+  capacity, and downloads up to three images in parallel. Metadata requests are
+  paced per service (including MusicBrainz and TheAudioDB's free tier); an outage
+  now defers only affected work and tries healthy fallback sources. Cached and
+  custom images remain untouched, with per-artist retry deadlines and clearer logs.
 - Wikimedia artist portraits now download even with incomplete credit metadata.
   Available credits are retained, missing details are marked as unknown, and old
   misses are retried without replacing saved or custom images.
@@ -25,6 +97,30 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Playback Mode is a dedicated immersive full-screen presentation, separate
+  from the classic Now Playing widget. It uses artwork as the stage, places
+  metadata and transport controls along the bottom, and offers optional album
+  and artist art, synchronized lyrics, file/quality information, ReplayGain,
+  crossfade, and equalizer controls. A persistent tune menu can hide each
+  module independently for a minimal layout. Its permanent warm-charcoal
+  backdrop keeps the presentation cohesive, while large high-contrast lyrics
+  with soft edge fades remain readable over any album artwork without a visible
+  panel behind them. The same presentation is also available as a dockable
+  Playback Mode widget, and clicking the player-bar artwork opens its fullscreen
+  presentation directly.
+- Artist credits in Now Playing are individually clickable. Collaborative and
+  featured artists open their own Library catalogue with matching albums and
+  tracks, while preserving Library back-navigation history.
+- Albums in the Artist widget open their Library catalogue, and tracks in the
+  Album widget start playback from the selected position in the album queue.
+- Discord Rich Presence text can be customized with templates for track tags,
+  filenames, format, average bitrate, sample rate, lossless status, and a combined
+  quality label. Includes optional text groups, a quality-showcase preset, and a
+  progress-bar preference.
+- Right-click any workspace tab strip (including empty space) to add/reopen or
+  move Library, Now Playing, Queue, Artist, Album, and Track widgets into that
+  pane, hide the selected widget, or reset the layout. Open widgets are reused;
+  the navigation rail also reopens hidden panels.
 - Floating library Back button restores the previous artist, album, genre,
   playlist, or folder catalogue with its scroll position, search, and sorting.
   Selecting the original tab also returns to the saved catalogue position.
@@ -51,13 +147,34 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Discord Rich Presence. Settings → Discord can show the current track
   as Listening while the Discord desktop app is running. Off by default.
   The card lists track, artist, and album; the compact 🎵 line is
-  `artist - track`. Cover art is uploaded to catbox.moe so Discord
+  `artist - track`. Cover art is uploaded to Freeimage's `iili.io` CDN so Discord
   can display it. Play/Pause follows playback (Discord buttons are
   links, they cannot control the player). Playing tracks show a
   progress bar.
 
 ### Fixed
 
+- Playback Mode's visibility menu now shows explicit checked and unchecked
+  controls. Advancing or jumping forward in Queue discards consumed history so
+  the selected track and its remaining successors form the new queue.
+- Discord Rich Presence now sends raw HTTPS cover URLs and lets Discord create
+  its own media-proxy asset. Studio no longer fabricates invalid `mp:` IDs that
+  render as broken artwork.
+- Discord cover uploads now use Freeimage's Discord-compatible `iili.io` links.
+  Persisted Catbox URLs are discarded and replaced automatically because Discord
+  rendered Catbox-hosted covers as unknown assets.
+- Play/pause intent now survives slow track opening and session restoration,
+  including decoder startup; delayed pause commands cannot override a newer
+  resume. End-of-queue and failed opens settle to stopped state and can be retried
+  with Play. Automatic playback failures are handled without uncaught errors.
+- Offline or unreadable library folders retain tracks and playlist membership;
+  scans continue with available folders and only prune successfully checked roots.
+- Album artwork sharing uses artist and album identity, and each changed file's
+  own embedded picture takes priority. Mixed folders and same-named albums no
+  longer reuse unrelated covers. Changed-file tag/art reads run off the UI isolate.
+- Failed tag reads preserve saved metadata and remain retryable on subsequent
+  scans, even if the file timestamp is unchanged. A one-time background recheck
+  repairs legacy scan results without replacing track IDs or playlist links.
 - Keep folder hover and tap highlights visible above the library background,
   resolving folder-widget assertions on newer Flutter versions.
 - Resolve the Now Playing build failure after integrating the shared track map;
@@ -81,8 +198,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   default logo.
 - Restoring the last session no longer plays a burst of audio before
   pausing.
-- Discord cover uploads go to catbox.moe. Presence is sent
-  immediately; the cover is filled in when the upload lands.
+- Discord presence is sent immediately; cover art is filled in when its upload
+  completes.
 - The playhead no longer sticks at 0:00 when a track is playing:
   tagged length is used until mpv reports, and a later 0 duration
   does not wipe it.
