@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-11
+
 ### Fixed
 
 - Windows launches from `flutter run` no longer open behind the IDE at the
