@@ -14,3 +14,6 @@
 ## 2024-05-24 - Avoiding unmemoized list traversal inside widget getters
 **Learning:** In Flutter, it is important not to put expensive O(N log N) processing (like sorting or filtering all tracks) directly inside `build` method getters without some form of caching. For instance, the smart playlist editor recalculates `matches = definition.evaluate(...)` frequently.
 **Action:** When a method processes tens of thousands of items, add memoization inside the Stateful widget instance variables to ensure the values are cached and reused on subsequent builds if inputs are unchanged.
+## 2026-09-10 - [Optimization] O(1) Lookups for LibraryView Artist/Album
+**Learning:** When filtering tracks by artist or album in `LibraryView`, scanning the entire `searched` list and using string comparisons like `index.creditsOf(track).any(...)` creates an O(N) performance bottleneck during UI rebuilds.
+**Action:** Use the pre-computed `O(1)` indexing methods `index.forArtist()` and `index.forAlbum()` to instantly fetch the relevant tracks, reducing the filtered array size drastically before applying other filters.
