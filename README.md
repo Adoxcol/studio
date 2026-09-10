@@ -17,25 +17,23 @@
 
 ## Screenshots
 
-<!-- Library view -->
-<!-- ![Library](docs/screenshots/library.png) -->
-> 📸 **Library** — _screenshot coming soon_ (`docs/screenshots/library.png`)
+![Dark mode](docs/screenshots/darkmode.png)
 
-<!-- Full-screen Playback Mode -->
-<!-- ![Playback Mode](docs/screenshots/playback-mode.png) -->
-> 📸 **Playback Mode** — _screenshot coming soon_ (`docs/screenshots/playback-mode.png`)
+![Library](docs/screenshots/library.png)
 
-<!-- Now Playing panel with spectrum visualizer -->
-<!-- ![Now Playing](docs/screenshots/now-playing.png) -->
-> 📸 **Now Playing** — _screenshot coming soon_ (`docs/screenshots/now-playing.png`)
+![Playback Mode](docs/screenshots/playback-mode.png)
 
-<!-- Metadata editor -->
-<!-- ![Metadata Editor](docs/screenshots/metadata-editor.png) -->
-> 📸 **Metadata editor** — _screenshot coming soon_ (`docs/screenshots/metadata-editor.png`)
+![Now Playing](docs/screenshots/now-playing.png)
 
-<!-- Smart playlist rule builder -->
-<!-- ![Smart Playlists](docs/screenshots/smart-playlist.png) -->
-> 📸 **Smart playlists** — _screenshot coming soon_ (`docs/screenshots/smart-playlist.png`)
+![Metadata Editor](docs/screenshots/metadata-editor.png)
+
+![Smart Playlists](docs/screenshots/smart-playlist.png)
+
+![Equalizer](docs/screenshots/equalizer.png)
+
+![Queue](docs/screenshots/queue.png)
+
+![Settings](docs/screenshots/settings.png)
 
 ---
 
