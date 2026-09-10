@@ -65,15 +65,22 @@ jobs:
 
 
   build_desktop:
+    if: github.event_name == 'push'
     needs: analyze_and_test
     timeout-minutes: 45
 
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        include:
+          - target: linux
+            runner: '["self-hosted", "Linux", "X64", "homelab"]'
+          - target: macos
+            runner: '["macos-latest"]'
+          - target: windows
+            runner: '["windows-latest"]'
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ fromJSON(matrix.runner) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -81,24 +88,24 @@ jobs:
           persist-credentials: false
 
       - uses: subosito/flutter-action@v2
+        if: runner.environment != 'self-hosted'
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
 
+      - name: Set up persistent Flutter cache
+        if: runner.environment == 'self-hosted'
+        timeout-minutes: 15
+        shell: bash
+        run: bash .github/scripts/setup-flutter-cache.sh
+
       - run: flutter pub get
 
-      - name: Enable desktop targets
-        run: |
-          flutter config --enable-macos-desktop
-          flutter config --enable-windows-desktop
+      - name: Enable ${{ matrix.target }} desktop
+        run: flutter config --enable-${{ matrix.target }}-desktop
 
-      - name: Build (macos)
-        if: matrix.os == 'macos-latest'
-        run: flutter build macos --release
-
-      - name: Build (windows)
-        if: matrix.os == 'windows-latest'
-        run: flutter build windows --release
+      - name: Build (${{ matrix.target }})
+        run: flutter build ${{ matrix.target }} --release
 
 
   auto_merge:
@@ -109,7 +116,6 @@ jobs:
 
     needs:
       - analyze_and_test
-      - build_desktop
 
     runs-on: ubuntu-latest
 
@@ -118,8 +124,8 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Enable auto-merge
+      - name: Squash-merge after required validation
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge "$PR_URL" --auto --squash
+        run: gh pr merge "$PR_URL" --auto --squash --delete-branch
