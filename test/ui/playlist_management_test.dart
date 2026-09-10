@@ -180,9 +180,11 @@ void main() {
       await tester.tap(find.text('Open'));
       await settleDatabase(tester);
       expect(find.text('A'), findsNWidgets(2));
-      await tester.drag(
-        find.byType(ReorderableDragStartListener).first,
+      final firstHandle = find.byType(ReorderableDragStartListener).first;
+      await tester.timedDrag(
+        firstHandle,
         const Offset(0, 150),
+        const Duration(milliseconds: 600),
       );
       await tester.pumpAndSettle();
       final moved = tester.widget<ReorderableListView>(

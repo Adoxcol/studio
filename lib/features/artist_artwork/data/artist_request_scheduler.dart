@@ -16,13 +16,15 @@ class ArtistRequestScheduler {
     this.log = const ArtistPictureLog(),
     DateTime Function()? clock,
   }) : assert(maxImageDownloads > 0),
-       _clock = clock ?? DateTime.now;
+       _clock = clock ?? DateTime.now,
+       _spacingClock = Stopwatch()..start();
 
   final Duration metadataSpacing;
   final Duration audioDbSpacing;
   final int maxImageDownloads;
   final ArtistPictureLog log;
   final DateTime Function() _clock;
+  final Stopwatch _spacingClock;
   final _lanes = <String, _Lane>{};
   final _cooldowns = <String, ArtistServiceException>{};
   final _failures = <String, int>{};
@@ -153,7 +155,7 @@ class ArtistRequestScheduler {
     while (lane.queue.isNotEmpty && lane.active < lane.limit) {
       final wait = lane.lastStart == null
           ? Duration.zero
-          : lane.spacing - _clock().difference(lane.lastStart!);
+          : lane.spacing - (_spacingClock.elapsed - lane.lastStart!);
       if (wait > Duration.zero) {
         lane.timer = Timer(wait, () => _pump(lane));
         return;
@@ -162,7 +164,7 @@ class ArtistRequestScheduler {
       if (index < 0) index = 0;
       final request = lane.queue.removeAt(index);
       lane.active++;
-      lane.lastStart = _clock();
+      lane.lastStart = _spacingClock.elapsed;
       unawaited(request.start());
     }
   }
@@ -191,7 +193,7 @@ class _Lane {
   final Duration spacing;
   final queue = <_Request>[];
   int active = 0;
-  DateTime? lastStart;
+  Duration? lastStart;
   Timer? timer;
 }
 

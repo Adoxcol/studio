@@ -32,10 +32,11 @@ class _Fixture {
   bool includeMetadata = true;
   List<Map<String, Object>> releases = [];
   final requests = <http.Request>[];
-  final times = <DateTime>[];
+  final stopwatch = Stopwatch()..start();
+  final times = <Duration>[];
   Future<http.Response> call(http.Request request) async {
     requests.add(request);
-    times.add(DateTime.now());
+    times.add(stopwatch.elapsed);
     final uri = request.url;
     if (uri.host == 'musicbrainz.org' && uri.path == '/ws/2/artist/') {
       return _json({'count': count ?? artists.length, 'artists': artists});
@@ -717,8 +718,8 @@ void main() {
     ];
     for (var i = 1; i < times.length; i++) {
       expect(
-        times[i].difference(times[i - 1]).inMilliseconds,
-        greaterThanOrEqualTo(requestSpacing.inMilliseconds - 5),
+        (times[i] - times[i - 1]).inMilliseconds,
+        greaterThanOrEqualTo(requestSpacing.inMilliseconds - 1),
       );
     }
     expect(
