@@ -14,3 +14,6 @@
 ## 2024-05-24 - Avoiding unmemoized list traversal inside widget getters
 **Learning:** In Flutter, it is important not to put expensive O(N log N) processing (like sorting or filtering all tracks) directly inside `build` method getters without some form of caching. For instance, the smart playlist editor recalculates `matches = definition.evaluate(...)` frequently.
 **Action:** When a method processes tens of thousands of items, add memoization inside the Stateful widget instance variables to ensure the values are cached and reused on subsequent builds if inputs are unchanged.
+## 2026-08-30 - Avoiding O(N) list traversal inside widget rebuilds for playlists
+**Learning:** In Flutter, it is important not to put O(N) processing (like looping over lists to find items by ID) directly inside `build` methods or frequently rebuilt widgets.
+**Action:** When a method needs to lookup an item by ID, add a Riverpod provider to expose an O(1) map of items by ID and use that provider in the widget instead.
