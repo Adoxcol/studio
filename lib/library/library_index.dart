@@ -13,12 +13,8 @@ class LibraryIndex {
   });
   late final _search = [
     for (final track in tracks)
-      [
-        track.title,
-        track.artist ?? '',
-        track.album ?? '',
-        track.genre ?? '',
-      ].map((text) => text.toLowerCase()).toList(growable: false),
+      '${track.title}\u0000${track.artist ?? ''}\u0000${track.album ?? ''}\u0000${track.genre ?? ''}'
+          .toLowerCase(),
   ];
   late final Map<String, List<Track>> _byArtist = _artistIndex();
   late final Map<(String, String), List<Track>> _byAlbum = _albumIndex();
@@ -63,7 +59,7 @@ class LibraryIndex {
     if (needle.isEmpty) return tracks;
     return [
       for (var i = 0; i < tracks.length; i++)
-        if (_search[i].any((field) => field.contains(needle))) tracks[i],
+        if (_search[i].contains(needle)) tracks[i],
     ];
   }
 }

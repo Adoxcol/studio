@@ -1,3 +1,5 @@
+final _durationMsCache = <int, String>{};
+
 String formatDuration(Duration duration) {
   final negative = duration.isNegative;
   final abs = duration.abs();
@@ -12,5 +14,17 @@ String formatDuration(Duration duration) {
 
 String formatDurationMs(int? durationMs) {
   if (durationMs == null || durationMs < 0) return '';
-  return formatDuration(Duration(milliseconds: durationMs));
+
+  final cached = _durationMsCache[durationMs];
+  if (cached != null) return cached;
+
+  final result = formatDuration(Duration(milliseconds: durationMs));
+  // Cap the cache size just to be safe, though duration Ms are highly reused
+  // across same tracks or repeated searches, if it gets too large we can clear it.
+  if (_durationMsCache.length > 20000) {
+    _durationMsCache.clear();
+  }
+  _durationMsCache[durationMs] = result;
+
+  return result;
 }
