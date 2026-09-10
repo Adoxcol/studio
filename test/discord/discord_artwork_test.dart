@@ -138,7 +138,7 @@ void main() {
       },
     );
 
-    expect(uploader.cachedUrl(cover.path), isNull);
+    expect(await uploader.cachedUrl(cover.path), isNull);
     expect(
       await uploader.urlFor(cover.path),
       'https://iili.io/replacement.jpg',

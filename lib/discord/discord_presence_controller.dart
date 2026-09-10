@@ -122,7 +122,7 @@ class DiscordPresenceController {
       _connected = false;
       _last = null;
     }
-    final cover = _artwork?.cachedUrl(playback.artworkPath);
+    final cover = await _artwork?.cachedUrl(playback.artworkPath);
     final view = discordPresenceFor(
       playback,
       now: _now(),
