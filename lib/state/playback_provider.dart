@@ -34,7 +34,6 @@ class PlaybackUiState {
     this.shuffle = false,
     this.queueIds = const [],
     this.historyIds = const [],
-    this.queueIndex = 0,
   });
 
   final int? trackId;
@@ -55,13 +54,13 @@ class PlaybackUiState {
   final bool shuffle;
   final List<int> queueIds;
   final List<int> historyIds;
-  final int queueIndex;
 
   List<int> get upcomingIds {
     final id = trackId;
     if (id == null || queueIds.isEmpty) return const [];
-    if (queueIndex < 0 || queueIndex >= queueIds.length - 1) return const [];
-    return queueIds.sublist(queueIndex + 1);
+    final index = queueIds.indexOf(id);
+    if (index < 0 || index >= queueIds.length - 1) return const [];
+    return queueIds.sublist(index + 1);
   }
 
   double get progress {
@@ -89,7 +88,6 @@ class PlaybackUiState {
     bool? shuffle,
     List<int>? queueIds,
     List<int>? historyIds,
-    int? queueIndex,
     bool clearArtist = false,
     bool clearAlbum = false,
     bool clearGenre = false,
@@ -117,7 +115,6 @@ class PlaybackUiState {
       shuffle: shuffle ?? this.shuffle,
       queueIds: queueIds ?? this.queueIds,
       historyIds: historyIds ?? this.historyIds,
-      queueIndex: queueIndex ?? this.queueIndex,
     );
   }
 }
@@ -393,7 +390,6 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     state = state.copyWith(
       queueIds: List<int>.of(queue.ids),
       historyIds: List<int>.of(queue.historyIds),
-      queueIndex: queue.index,
     );
   }
 
@@ -452,11 +448,6 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     unawaited(
       operation.catchError((Object error, StackTrace stack) {
         debugPrint('Playback failed while $action: $error');
-        if (action == 'advancing the queue' && !_disposed) {
-          _wantPlaying = false;
-          _needsOpen = true;
-          state = state.copyWith(playing: false);
-        }
       }),
     );
   }
@@ -577,7 +568,6 @@ class PlaybackController extends Notifier<PlaybackUiState> {
             clearArtwork: track.artworkPath == null,
             queueIds: List<int>.of(queue.ids),
             historyIds: List<int>.of(queue.historyIds),
-            queueIndex: queue.index,
             repeat: queue.repeat,
             shuffle: queue.shuffle,
             playing: _wantPlaying,
@@ -665,7 +655,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
 
   Future<void> _restoreSession() async {
     if (queue.ids.isNotEmpty) return;
-    final loaded = await _sessionStore.load();
+    final loaded = _sessionStore.load();
     if (loaded.isEmpty) return;
     _restoring = true;
     try {

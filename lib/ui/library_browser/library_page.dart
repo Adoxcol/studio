@@ -396,9 +396,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     final view = _view!;
     final playlists = ref.watch(playlistsProvider).value ?? const [];
     final viewingPlaylist = _tab == LibraryTab.playlists && _playlistId != null;
-    final selectedPlaylist = _playlistId != null
-        ? ref.watch(playlistsByIdProvider)[_playlistId!]
-        : null;
+    final selectedPlaylist = playlists
+        .where((playlist) => playlist.id == _playlistId)
+        .firstOrNull;
     final smartPlaylist =
         viewingPlaylist && selectedPlaylist?.smartRules != null;
     final playlistTracks = viewingPlaylist
@@ -872,24 +872,17 @@ class _Tabs extends StatelessWidget {
             for (final tab in LibraryTab.values)
               Padding(
                 padding: const EdgeInsets.only(right: 20),
-                child: Semantics(
-                  button: true,
-                  selected: tab == selected,
-                  label: tab.label,
-                  child: GestureDetector(
-                    onTap: () => onSelect(tab),
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: Text(
-                        tab.label,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: tab == selected
-                              ? palette.ink
-                              : palette.inkMuted,
-                          fontWeight: tab == selected
-                              ? FontWeight.w500
-                              : FontWeight.w400,
-                        ),
+                child: GestureDetector(
+                  onTap: () => onSelect(tab),
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Text(
+                      tab.label,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: tab == selected ? palette.ink : palette.inkMuted,
+                        fontWeight: tab == selected
+                            ? FontWeight.w500
+                            : FontWeight.w400,
                       ),
                     ),
                   ),

@@ -14,7 +14,6 @@ class FakeDiscordRpcClient implements DiscordRpcClient {
   final views = <DiscordPresenceView>[];
   Object? connectError;
   Object? activityError;
-  void Function()? onActivity;
   var _live = false;
 
   @override
@@ -31,7 +30,6 @@ class FakeDiscordRpcClient implements DiscordRpcClient {
   Future<void> setActivity(DiscordPresenceView view) async {
     if (activityError != null) throw activityError!;
     views.add(view);
-    onActivity?.call();
   }
 
   @override
@@ -145,12 +143,8 @@ void main() {
     await controller.sync(enabled: true, playback: playing);
     expect(controller.isConnected, isFalse);
     expect(client.views, isEmpty);
-    final retried = Completer<void>();
-    client.onActivity = () {
-      if (!retried.isCompleted) retried.complete();
-    };
     client.activityError = null;
-    await retried.future.timeout(const Duration(seconds: 1));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
     expect(client.connectCount, 2);
     expect(client.views, hasLength(1));
     await controller.dispose();
@@ -179,12 +173,8 @@ void main() {
     );
     await controller.sync(enabled: true, playback: playing);
     expect(client.connectCount, 0);
-    final retried = Completer<void>();
-    client.onActivity = () {
-      if (!retried.isCompleted) retried.complete();
-    };
     client.connectError = null;
-    await retried.future.timeout(const Duration(seconds: 1));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
     expect(client.connectCount, 1);
     expect(client.views, hasLength(1));
     await controller.dispose();
@@ -255,7 +245,7 @@ class _FakeArtworkResolver implements DiscordArtworkResolver {
   var calls = 0;
 
   @override
-  Future<String?> cachedUrl(String? path) async => urls[path];
+  String? cachedUrl(String? path) => urls[path];
 
   @override
   Future<String?> urlFor(String? path) async {

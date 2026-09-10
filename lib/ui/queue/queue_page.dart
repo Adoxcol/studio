@@ -61,12 +61,13 @@ class _QueuePageState extends ConsumerState<QueuePage> {
           queueIds: s.queueIds,
           historyIds: s.historyIds,
           trackId: s.trackId,
-          queueIndex: s.queueIndex,
         ),
       ),
     );
     final byId = ref.watch(libraryTracksByIdProvider);
-    final currentIndex = playback.trackId == null ? -1 : playback.queueIndex;
+    final currentIndex = playback.trackId == null
+        ? -1
+        : playback.queueIds.indexOf(playback.trackId!);
     final upcomingEntries = <({int id, int index})>[
       for (
         var index = currentIndex + 1;
@@ -177,7 +178,10 @@ class _QueuePageState extends ConsumerState<QueuePage> {
               ),
               itemExtent: QueueTrackRow.height + 1,
               itemCount: playback.queueIds.length,
-              onReorderItem: controller.moveUpcoming,
+              // Flutter 3.47 deprecates this in favor of onReorderItem, which
+              // is not available on the project's currently supported SDK.
+              // ignore: deprecated_member_use
+              onReorder: controller.moveUpcoming,
               itemBuilder: (context, index) {
                 final id = playback.queueIds[index];
                 final track = byId[id];

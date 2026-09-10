@@ -63,32 +63,6 @@ class _SmartPlaylistEditorState extends ConsumerState<_SmartPlaylistEditor> {
   bool _saving = false;
   String? _error;
 
-  String _lastEncoded = '';
-  List<Track>? _lastLibrary;
-  List<Track> _lastMatches = const [];
-
-  /// ⚡ Bolt Optimization:
-  /// Memoizes the evaluation of smart playlist rules against the entire library.
-  /// `definition.evaluate` performs O(N log N) filtering and sorting. Caching this
-  /// prevents significant UI lag during widget rebuilds when text fields change.
-  List<Track> _getMatches(
-    SmartPlaylistDefinition definition,
-    List<Track>? library,
-  ) {
-    if (library == null) return const [];
-    if (definition.validate() != null) return const [];
-
-    final encoded = definition.encode();
-    if (_lastEncoded == encoded && identical(_lastLibrary, library)) {
-      return _lastMatches;
-    }
-
-    _lastEncoded = encoded;
-    _lastLibrary = library;
-    _lastMatches = definition.evaluate(library);
-    return _lastMatches;
-  }
-
   SmartPlaylistDefinition get _definition => SmartPlaylistDefinition(
     rules: _rules.map((rule) => rule.rule).toList(),
     matchAll: _matchAll,
@@ -141,7 +115,7 @@ class _SmartPlaylistEditorState extends ConsumerState<_SmartPlaylistEditor> {
     final definition = _definition;
     final invalid = definition.validate();
     final library = ref.watch(libraryTracksProvider);
-    final matches = _getMatches(definition, library.value);
+    final matches = definition.evaluate(library.value ?? const []);
     return PopScope(
       canPop: !_saving,
       child: AlertDialog(
@@ -170,7 +144,6 @@ class _SmartPlaylistEditorState extends ConsumerState<_SmartPlaylistEditor> {
                   controller: _name,
                   enabled: !_saving,
                   autofocus: true,
-                  onChanged: (_) => setState(() {}),
                   decoration: _input(context, 'Name'),
                 ),
                 const SizedBox(height: 18),
@@ -296,12 +269,18 @@ class _SmartPlaylistEditorState extends ConsumerState<_SmartPlaylistEditor> {
             onPressed: _saving ? null : () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          TextButton(
-            key: const ValueKey('save-smart-playlist'),
-            onPressed: _saving || invalid != null || _name.text.trim().isEmpty
-                ? null
-                : _save,
-            child: Text(_saving ? 'Saving…' : 'Save playlist'),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _name,
+            builder: (context, value, child) {
+              return TextButton(
+                key: const ValueKey('save-smart-playlist'),
+                onPressed:
+                    _saving || invalid != null || value.text.trim().isEmpty
+                    ? null
+                    : _save,
+                child: Text(_saving ? 'Saving…' : 'Save playlist'),
+              );
+            },
           ),
         ],
       ),

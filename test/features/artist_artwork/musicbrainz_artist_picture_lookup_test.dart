@@ -32,11 +32,10 @@ class _Fixture {
   bool includeMetadata = true;
   List<Map<String, Object>> releases = [];
   final requests = <http.Request>[];
-  final stopwatch = Stopwatch()..start();
-  final times = <Duration>[];
+  final times = <DateTime>[];
   Future<http.Response> call(http.Request request) async {
     requests.add(request);
-    times.add(stopwatch.elapsed);
+    times.add(DateTime.now());
     final uri = request.url;
     if (uri.host == 'musicbrainz.org' && uri.path == '/ws/2/artist/') {
       return _json({'count': count ?? artists.length, 'artists': artists});
@@ -705,10 +704,9 @@ void main() {
 
   test('rate spacing applies per metadata host across artists', () async {
     lookup.close();
-    const requestSpacing = Duration(milliseconds: 25);
     lookup = MusicBrainzArtistPictureLookup(
       client: MockClient(fixture.call),
-      requestSpacing: requestSpacing,
+      requestSpacing: const Duration(milliseconds: 25),
     );
     await lookup.fetch(const ArtistImageRequest('Aria'));
     await lookup.fetch(const ArtistImageRequest('No match'));
@@ -718,8 +716,8 @@ void main() {
     ];
     for (var i = 1; i < times.length; i++) {
       expect(
-        (times[i] - times[i - 1]).inMilliseconds,
-        greaterThanOrEqualTo(requestSpacing.inMilliseconds - 1),
+        times[i].difference(times[i - 1]).inMilliseconds,
+        greaterThanOrEqualTo(24),
       );
     }
     expect(

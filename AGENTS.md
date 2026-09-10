@@ -48,10 +48,8 @@ chore: bootstrap CI and PR templates
 ## Pull requests
 
 - Every PR uses `.github/PULL_REQUEST_TEMPLATE.md` and stays scoped to one concern.
-- Pull-request CI (`.github/workflows/ci.yml`) must be green before merge: format check,
-  analyze, and tests. Trusted same-repository PRs auto-merge after this required job.
-- Windows, macOS, and Linux desktop release builds run only after changes land on `main`.
-  A failed post-merge build is repaired through a follow-up PR; never bypass PR validation.
+- CI (`.github/workflows/ci.yml`) must be green before merge: format check, analyze, tests,
+  desktop build matrix.
 - Self-review is mandatory even solo: re-read the whole diff before merging, as if reviewing
   someone else's code.
 - Link the issue with `Closes #N` when one exists.

@@ -13,8 +13,12 @@ class LibraryIndex {
   });
   late final _search = [
     for (final track in tracks)
-      '${track.title}\u0000${track.artist ?? ''}\u0000${track.album ?? ''}\u0000${track.genre ?? ''}'
-          .toLowerCase(),
+      [
+        track.title,
+        track.artist ?? '',
+        track.album ?? '',
+        track.genre ?? '',
+      ].map((text) => text.toLowerCase()).toList(growable: false),
   ];
   late final Map<String, List<Track>> _byArtist = _artistIndex();
   late final Map<(String, String), List<Track>> _byAlbum = _albumIndex();
@@ -59,7 +63,7 @@ class LibraryIndex {
     if (needle.isEmpty) return tracks;
     return [
       for (var i = 0; i < tracks.length; i++)
-        if (_search[i].contains(needle)) tracks[i],
+        if (_search[i].any((field) => field.contains(needle))) tracks[i],
     ];
   }
 }
@@ -90,31 +94,20 @@ class LibraryView {
   final LibraryOrder order;
 
   late final searched = index.search(query);
-  late final filtered = () {
-    Iterable<Track> base = searched;
-
-    // ⚡ Bolt Optimization:
-    // When viewing an artist, use the pre-computed O(1) LibraryIndex map.
-    // This avoids an O(N) linear scan over tens of thousands of tracks with expensive
-    // string manipulations on every track credit during UI rebuilds.
-    if (artist != null) {
-      base = index.forArtist(artist!);
-      if (query.trim().isNotEmpty) {
-        final searchedSet = searched.toSet();
-        base = base.where(searchedSet.contains);
-      }
-    }
-
-    return [
-      for (final track in base)
-        if ((folderId == null || track.folderId == folderId) &&
-            filters.matches(track) &&
-            (album == null || LibraryQuery.albumName(track) == album) &&
-            (genre == null || LibraryQuery.genreName(track) == genre))
-          track,
-    ];
-  }();
-
+  late final filtered = [
+    for (final track in searched)
+      if ((folderId == null || track.folderId == folderId) &&
+          filters.matches(track) &&
+          (artist == null ||
+              index
+                  .creditsOf(track)
+                  .any(
+                    (credit) => LibraryQuery.compareText(credit, artist!) == 0,
+                  )) &&
+          (album == null || LibraryQuery.albumName(track) == album) &&
+          (genre == null || LibraryQuery.genreName(track) == genre))
+        track,
+  ];
   late final sorted = LibraryQuery.sorted(
     tracks: filtered,
     sort: sort,

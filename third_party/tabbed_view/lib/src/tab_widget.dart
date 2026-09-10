@@ -92,12 +92,8 @@ class TabWidget extends StatelessWidget {
         onEnter: (event) => updateHighlightedIndex(index),
         onExit: (event) => updateHighlightedIndex(null),
         child: provider.draggingTabIndex == null
-            ? Semantics(
-                button: true,
-                selected: status == TabStatus.selected,
-                label: tab.text,
-                child: GestureDetector(
-                    onTap: () => _onSelect(context, index), child: tabWidget))
+            ? GestureDetector(
+                onTap: () => _onSelect(context, index), child: tabWidget)
             : tabWidget);
 
     if (tab.draggable) {
