@@ -129,14 +129,15 @@ jobs:
       - name: Squash-merge after required validation
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
-          gh pr merge "$PR_URL" --auto --squash --delete-branch
+          gh pr merge "$PR_URL" --repo "$GH_REPO" --auto --squash --delete-branch
           for attempt in {1..30}; do
-            if [[ "$(gh pr view "$PR_URL" --json state --jq .state)" == "MERGED" ]]; then
+            if [[ "$(gh pr view "$PR_URL" --repo "$GH_REPO" --json state --jq .state)" == "MERGED" ]]; then
               break
             fi
             sleep 2
           done
-          [[ "$(gh pr view "$PR_URL" --json state --jq .state)" == "MERGED" ]]
-          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref main
+          [[ "$(gh pr view "$PR_URL" --repo "$GH_REPO" --json state --jq .state)" == "MERGED" ]]
+          gh workflow run ci.yml --repo "$GH_REPO" --ref main
