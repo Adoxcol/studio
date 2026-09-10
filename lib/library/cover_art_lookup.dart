@@ -128,12 +128,7 @@ class ITunesCoverArtLookup implements CoverArtLookup {
     if (file == null) return;
     try {
       file.parent.createSync(recursive: true);
-      final part = File('${file.path}.part');
-      part.writeAsStringSync(
-        jsonEncode(_misses!.toList()..sort()),
-        flush: true,
-      );
-      part.renameSync(file.path);
+      file.writeAsStringSync(jsonEncode(_misses!.toList()..sort()));
     } on Object {
       // Artwork cache is best-effort.
     }

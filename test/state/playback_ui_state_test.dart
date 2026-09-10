@@ -10,7 +10,6 @@ void main() {
       trackId: 2,
       title: 'Current',
       queueIds: [1, 2, 3, 4],
-      queueIndex: 1,
     );
     expect(playing.upcomingIds, [3, 4]);
 
@@ -18,7 +17,6 @@ void main() {
       trackId: 4,
       title: 'Last',
       queueIds: [1, 2, 3, 4],
-      queueIndex: 3,
     );
     expect(last.upcomingIds, isEmpty);
   });

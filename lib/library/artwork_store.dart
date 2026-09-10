@@ -14,10 +14,8 @@ class ArtworkStore {
     await directory.create(recursive: true);
     final name = '${_fingerprint(bytes)}${_extension(bytes, mime)}';
     final file = File(p.join(directory.path, name));
-    if (!await file.exists()) {
-      final part = File('${file.path}.part');
-      await part.writeAsBytes(bytes, flush: true);
-      await part.rename(file.path);
+    if (!file.existsSync()) {
+      await file.writeAsBytes(bytes, flush: true);
     }
     return file.path;
   }
