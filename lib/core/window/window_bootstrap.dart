@@ -13,22 +13,25 @@ Future<void> bootstrapWindow({Color? backgroundColor}) async {
   final options = WindowOptions(
     size: const Size(1280, 800),
     minimumSize: const Size(900, 600),
+    center: true,
+    skipTaskbar: false,
     title: 'Studio',
     titleBarStyle: TitleBarStyle.hidden,
     backgroundColor: backgroundColor ?? StudioPalette.light().bg,
   );
 
-  await windowManager.waitUntilReadyToShow(options, () async {
-    try {
-      await windowManager.setIcon(
-        Platform.isWindows
-            ? 'assets/tray/app_icon.ico'
-            : 'assets/tray/app_icon.png',
-      );
-    } on Object catch (error, stack) {
-      debugPrint('Window icon update failed: $error\n$stack');
-    }
-    await windowManager.show();
-    await windowManager.focus();
-  });
+  // Apply size/title-bar options first. The show callback is not awaited
+  // by window_manager, so raise the window after this returns.
+  await windowManager.waitUntilReadyToShow(options);
+  try {
+    await windowManager.setIcon(
+      Platform.isWindows
+          ? 'assets/tray/app_icon.ico'
+          : 'assets/tray/app_icon.png',
+    );
+  } on Object catch (error, stack) {
+    debugPrint('Window icon update failed: $error\n$stack');
+  }
+  await windowManager.show();
+  await windowManager.focus();
 }

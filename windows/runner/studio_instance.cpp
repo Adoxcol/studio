@@ -1,5 +1,9 @@
 #include "studio_instance.h"
 
+#include <stdio.h>
+
+#include "utils.h"
+
 namespace {
 
 struct FindData {
@@ -43,15 +47,14 @@ bool ActivateExistingStudioInstance() {
     Sleep(50);
   }
   if (hwnd == nullptr) {
+    fprintf(stderr,
+            "Studio is already running but its window was not found.\n");
     return true;
   }
 
+  fprintf(stderr, "Studio is already running; focusing the existing window.\n");
   AllowSetForegroundWindow(ASFW_ANY);
   PostMessageW(hwnd, StudioShowMessage(), 0, 0);
-  ShowWindow(hwnd, SW_SHOW);
-  if (IsIconic(hwnd)) {
-    ShowWindow(hwnd, SW_RESTORE);
-  }
-  SetForegroundWindow(hwnd);
+  RaiseWindowToForeground(hwnd);
   return true;
 }

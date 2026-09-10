@@ -7,6 +7,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Windows launches from `flutter run` no longer open behind the IDE at the
+  top-left corner. The window is centered and raised after the first frame.
+
 ### Added
 
 - Playlist management supports renaming, independent duplicates, and confirmed

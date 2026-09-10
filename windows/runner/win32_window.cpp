@@ -4,6 +4,7 @@
 #include <flutter_windows.h>
 
 #include "resource.h"
+#include "utils.h"
 
 namespace {
 
@@ -150,7 +151,12 @@ bool Win32Window::Create(const std::wstring& title,
 }
 
 bool Win32Window::Show() {
-  return ShowWindow(window_handle_, SW_SHOWNORMAL);
+  if (window_handle_ == nullptr) {
+    return false;
+  }
+  const BOOL shown = ShowWindow(window_handle_, SW_SHOWNORMAL);
+  RaiseWindowToForeground(window_handle_);
+  return shown == TRUE;
 }
 
 // static
