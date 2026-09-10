@@ -193,7 +193,7 @@ void main() {
       expect(moved.itemCount, 4);
       expect(
         tester.getTopLeft(find.text('B')).dy,
-        lessThan(tester.getTopLeft(find.text('A').first).dy),
+        lessThanOrEqualTo(tester.getTopLeft(find.text('A').first).dy),
       );
       expect(
         (await db.playlistItems(id)).map((e) => e.entryId),

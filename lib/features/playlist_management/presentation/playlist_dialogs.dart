@@ -243,9 +243,7 @@ class _OrderDialogState extends State<_OrderDialog> {
                     ? const Center(child: Text('This playlist is empty.'))
                     : ReorderableListView.builder(
                         buildDefaultDragHandles: false,
-                        // Supported Flutter SDK predates onReorderItem.
-                        // ignore: deprecated_member_use
-                        onReorder: _move,
+                        onReorderItem: _move,
                         proxyDecorator: (child, _, _) =>
                             Material(color: palette.bg, child: child),
                         itemExtent: 64,
