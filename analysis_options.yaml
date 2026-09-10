@@ -14,6 +14,10 @@ analyzer:
     # Vendored third-party package (see pubspec.yaml dependency_overrides) —
     # not ours to lint.
     - third_party/**
+    - build/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   # The lint rules applied to this project can be customized in the
