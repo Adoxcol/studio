@@ -704,10 +704,9 @@ void main() {
 
   test('rate spacing applies per metadata host across artists', () async {
     lookup.close();
-    const requestSpacing = Duration(milliseconds: 25);
     lookup = MusicBrainzArtistPictureLookup(
       client: MockClient(fixture.call),
-      requestSpacing: requestSpacing,
+      requestSpacing: const Duration(milliseconds: 25),
     );
     await lookup.fetch(const ArtistImageRequest('Aria'));
     await lookup.fetch(const ArtistImageRequest('No match'));
@@ -718,7 +717,7 @@ void main() {
     for (var i = 1; i < times.length; i++) {
       expect(
         times[i].difference(times[i - 1]).inMilliseconds,
-        greaterThanOrEqualTo(requestSpacing.inMilliseconds - 5),
+        greaterThanOrEqualTo(24),
       );
     }
     expect(

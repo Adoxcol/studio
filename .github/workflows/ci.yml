@@ -1,7 +1,6 @@
 name: CI
 
 on:
-  workflow_dispatch:
   pull_request:
     branches: [main]
   push:
@@ -19,125 +18,69 @@ concurrency:
 
 jobs:
   analyze_and_test:
+    # Forks and Dependabot stay hosted. Review all external workflow changes
+    # before approval: PR YAML can change this routing (see docs/ci-runners.md).
     runs-on: ${{ fromJSON((github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) && '["self-hosted", "Linux", "X64", "homelab"]' || '["ubuntu-latest"]') }}
+    # Cold SDK downloads on the homelab are slow; subsequent runs reuse disk cache.
     timeout-minutes: 180
-
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-
       - name: Test SDK cache helper
         timeout-minutes: 2
         shell: bash
         run: bash .github/scripts/test-flutter-cache.sh
-
       - uses: subosito/flutter-action@v2
         if: runner.environment != 'self-hosted'
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
-
       - name: Set up persistent Flutter cache
         if: runner.environment == 'self-hosted'
         timeout-minutes: 150
         shell: bash
         run: bash .github/scripts/setup-flutter-cache.sh
-
       - run: flutter pub get
         timeout-minutes: 10
-
       - name: Format check
         run: dart format --output=none --set-exit-if-changed .
-
       - name: Analyze
         timeout-minutes: 10
         run: flutter analyze
-
       - name: Test
         timeout-minutes: 20
         run: flutter test --coverage
-
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
           files: coverage/lcov.info
         continue-on-error: true
 
-
   build_desktop:
-    if: github.event_name != 'pull_request'
     needs: analyze_and_test
     timeout-minutes: 45
-
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - target: linux
-            runner: '["self-hosted", "Linux", "X64", "homelab"]'
-          - target: macos
-            runner: '["macos-latest"]'
-          - target: windows
-            runner: '["windows-latest"]'
-
-    runs-on: ${{ fromJSON(matrix.runner) }}
-
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-
       - uses: subosito/flutter-action@v2
-        if: runner.environment != 'self-hosted'
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
-
-      - name: Set up persistent Flutter cache
-        if: runner.environment == 'self-hosted'
-        timeout-minutes: 15
-        shell: bash
-        run: bash .github/scripts/setup-flutter-cache.sh
-
       - run: flutter pub get
-
-      - name: Enable ${{ matrix.target }} desktop
-        run: flutter config --enable-${{ matrix.target }}-desktop
-
-      - name: Build (${{ matrix.target }})
-        run: flutter build ${{ matrix.target }} --release
-
-
-  auto_merge:
-    if: >
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.event.pull_request.draft == false
-
-    needs:
-      - analyze_and_test
-
-    runs-on: ubuntu-latest
-
-    permissions:
-      actions: write
-      contents: write
-      pull-requests: write
-
-    steps:
-      - name: Squash-merge after required validation
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
+      - name: Enable desktop targets
         run: |
-          gh pr merge "$PR_URL" --repo "$GH_REPO" --auto --squash --delete-branch
-          for attempt in {1..30}; do
-            if [[ "$(gh pr view "$PR_URL" --repo "$GH_REPO" --json state --jq .state)" == "MERGED" ]]; then
-              break
-            fi
-            sleep 2
-          done
-          [[ "$(gh pr view "$PR_URL" --repo "$GH_REPO" --json state --jq .state)" == "MERGED" ]]
-          gh workflow run ci.yml --repo "$GH_REPO" --ref main
+          flutter config --enable-macos-desktop
+          flutter config --enable-windows-desktop
+      - name: Build (macos)
+        if: matrix.os == 'macos-latest'
+        run: flutter build macos --release
+      - name: Build (windows)
+        if: matrix.os == 'windows-latest'
+        run: flutter build windows --release

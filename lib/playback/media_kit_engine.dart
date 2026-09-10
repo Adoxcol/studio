@@ -815,16 +815,13 @@ class MediaKitAudioEngine implements AudioEngine {
     return operation;
   }
 
-  Future<void> _ensureConfigured(Player player) =>
-      _configuration.putIfAbsent(player, () {
-        final platform = player.platform;
-        if (platform is NativePlayer) {
-          return _configureNative(platform);
-        }
-        return Future.value();
-      });
+  Future<void> _ensureConfigured(Player player) => _configuration.putIfAbsent(
+    player,
+    () => _configureNative(player.platform),
+  );
 
-  static Future<void> _configureNative(NativePlayer platform) async {
+  static Future<void> _configureNative(Object? platform) async {
+    if (platform is! NativePlayer) return;
     if (Platform.isWindows) {
       await _setNativeProperty(platform, 'ao', 'wasapi');
     }

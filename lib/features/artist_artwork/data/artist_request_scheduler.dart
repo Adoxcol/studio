@@ -100,7 +100,7 @@ class ArtistRequestScheduler {
               }
               failure = _cooldowns[service] = ArtistServiceException(
                 uri.host,
-                (error is ArtistServiceException) ? error.status : 503,
+                error is ArtistServiceException ? error.status : 503,
                 retryAfter: deadline,
               );
               log(

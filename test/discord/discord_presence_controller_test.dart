@@ -245,7 +245,7 @@ class _FakeArtworkResolver implements DiscordArtworkResolver {
   var calls = 0;
 
   @override
-  Future<String?> cachedUrl(String? path) async => urls[path];
+  String? cachedUrl(String? path) => urls[path];
 
   @override
   Future<String?> urlFor(String? path) async {

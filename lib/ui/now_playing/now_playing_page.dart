@@ -620,13 +620,11 @@ class _ImmersiveTransport extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(
-          tooltip: 'Shuffle',
           onPressed: controller.toggleShuffle,
           color: state.shuffle ? Colors.white : Colors.white54,
           icon: const Icon(Icons.shuffle),
         ),
         IconButton(
-          tooltip: 'Previous',
           onPressed: controller.skipPrevious,
           color: Colors.white,
           iconSize: compact ? 24 : 30,
@@ -645,14 +643,12 @@ class _ImmersiveTransport extends ConsumerWidget {
         ),
         SizedBox(width: compact ? 2 : 8),
         IconButton(
-          tooltip: 'Next',
           onPressed: controller.skipNext,
           color: Colors.white,
           iconSize: compact ? 24 : 30,
           icon: const Icon(Icons.skip_next),
         ),
         IconButton(
-          tooltip: 'Repeat',
           onPressed: controller.cycleRepeat,
           color: state.repeat == QueueRepeatMode.off
               ? Colors.white54

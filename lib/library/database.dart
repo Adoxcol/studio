@@ -276,12 +276,7 @@ class StudioDatabase extends _$StudioDatabase {
         if (!keepLocators.contains(row.locator)) row.id,
     ];
     if (ids.isEmpty) return 0;
-    await batch((b) {
-      for (final id in ids) {
-        b.deleteWhere(tracks, (t) => t.id.equals(id));
-      }
-    });
-    return ids.length;
+    return (delete(tracks)..where((t) => t.id.isIn(ids))).go();
   }
 
   Future<void> deleteFolder(int folderId) async {

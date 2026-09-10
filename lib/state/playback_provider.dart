@@ -448,11 +448,6 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     unawaited(
       operation.catchError((Object error, StackTrace stack) {
         debugPrint('Playback failed while $action: $error');
-        if (action == 'advancing the queue' && !_disposed) {
-          _wantPlaying = false;
-          _needsOpen = true;
-          state = state.copyWith(playing: false);
-        }
       }),
     );
   }
@@ -660,7 +655,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
 
   Future<void> _restoreSession() async {
     if (queue.ids.isNotEmpty) return;
-    final loaded = await _sessionStore.load();
+    final loaded = _sessionStore.load();
     if (loaded.isEmpty) return;
     _restoring = true;
     try {
