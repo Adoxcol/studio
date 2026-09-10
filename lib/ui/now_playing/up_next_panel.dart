@@ -16,15 +16,17 @@ class UpNextPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final playback = ref.watch(
       playbackControllerProvider.select(
-        (state) => (trackId: state.trackId, queueIds: state.queueIds),
+        (state) => (
+          trackId: state.trackId,
+          queueIds: state.queueIds,
+          queueIndex: state.queueIndex,
+        ),
       ),
     );
     // ⚡ Bolt: Use pre-computed O(1) map for ID lookups instead of rebuilding
     // a Map of potentially tens of thousands of tracks on every playback change.
     final byId = ref.watch(libraryTracksByIdProvider);
-    final currentIndex = playback.trackId == null
-        ? -1
-        : playback.queueIds.indexOf(playback.trackId!);
+    final currentIndex = playback.trackId == null ? -1 : playback.queueIndex;
     final upcoming = [
       if (currentIndex >= 0)
         for (
