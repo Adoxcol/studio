@@ -102,6 +102,9 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
       await _registerMediaKeys();
     }
     await _syncDiscord();
+    // Launch from an IDE/terminal often loses Windows foreground rights
+    // before the first frame. Raise again now that Flutter is up.
+    await _showWindow();
   }
 
   Future<void> _registerMediaKeys() async {
@@ -267,7 +270,12 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
     try {
       await windowManager.setSkipTaskbar(false);
       await windowManager.show();
-      await windowManager.focus();
+      try {
+        await windowManager.setAlwaysOnTop(true);
+        await windowManager.focus();
+      } finally {
+        await windowManager.setAlwaysOnTop(false);
+      }
     } on Object catch (error, stack) {
       debugPrint('Show window failed: $error\n$stack');
     }

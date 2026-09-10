@@ -1,6 +1,8 @@
 #ifndef RUNNER_UTILS_H_
 #define RUNNER_UTILS_H_
 
+#include <windows.h>
+
 #include <string>
 #include <vector>
 
@@ -15,5 +17,10 @@ std::string Utf8FromUtf16(const wchar_t* utf16_string);
 // Gets the command line arguments passed in as a std::vector<std::string>,
 // encoded in UTF-8. Returns an empty std::vector<std::string> on failure.
 std::vector<std::string> GetCommandLineArguments();
+
+// Bring |hwnd| in front of the IDE/terminal that launched Studio. A delayed
+// first-frame Show() loses Windows startup foreground rights, so a normal
+// SetForegroundWindow is ignored and the window stays buried.
+void RaiseWindowToForeground(HWND hwnd);
 
 #endif  // RUNNER_UTILS_H_
