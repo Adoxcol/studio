@@ -300,7 +300,8 @@ class _SmartPlaylistEditorState extends ConsumerState<_SmartPlaylistEditor> {
             builder: (context, value, child) {
               return TextButton(
                 key: const ValueKey('save-smart-playlist'),
-                onPressed: _saving || invalid != null || value.text.trim().isEmpty
+                onPressed:
+                    _saving || invalid != null || value.text.trim().isEmpty
                     ? null
                     : _save,
                 child: Text(_saving ? 'Saving…' : 'Save playlist'),
