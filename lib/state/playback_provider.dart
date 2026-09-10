@@ -448,6 +448,11 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     unawaited(
       operation.catchError((Object error, StackTrace stack) {
         debugPrint('Playback failed while $action: $error');
+        if (action == 'advancing the queue' && !_disposed) {
+          _wantPlaying = false;
+          _needsOpen = true;
+          state = state.copyWith(playing: false);
+        }
       }),
     );
   }
