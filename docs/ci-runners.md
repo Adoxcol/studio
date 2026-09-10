@@ -7,14 +7,24 @@ with all four labels: `self-hosted`, `Linux`, `X64`, `homelab`.
 | --- | --- |
 | CI analysis/tests for main and same-repository PRs | Homelab Linux x64 |
 | CI analysis/tests for fork PRs or Dependabot PR runs | GitHub-hosted Ubuntu |
-| CI Windows / macOS desktop builds | GitHub-hosted Windows / macOS |
+| Post-merge Windows / macOS desktop builds | GitHub-hosted Windows / macOS |
+| Post-merge Linux desktop build | Homelab Linux x64 |
 | Release Windows build and packaging | GitHub-hosted Windows |
 | Publishing the Windows release artifact | Homelab Linux x64 |
 
 Flutter desktop builds need the corresponding operating system; the Linux
 runner cannot replace Windows or macOS hosts. To migrate those build jobs too,
-register suitable Windows and macOS runners first. Job names and the desktop
-matrix remain unchanged so required checks keep working.
+register suitable Windows and macOS runners first.
+
+Pull requests run formatting, analysis, and tests, then trusted, non-draft,
+same-repository PRs are squash-merged automatically. Forks never auto-merge.
+The desktop matrix is intentionally skipped for pull requests and runs Linux,
+Windows, and macOS only after the validated change lands on `main`. The merge
+job explicitly dispatches that post-merge run because workflow-token merges do
+not create another workflow run automatically. The only
+required branch-protection check is `analyze_and_test`; keep that check name
+stable. GitHub is configured to delete merged branches automatically, and the
+merge job also requests branch deletion.
 
 ## Public-repository safety
 

@@ -60,7 +60,8 @@ class FileAppearanceStore implements AppearanceStore {
   @override
   void save(AppearanceState state) {
     file.parent.createSync(recursive: true);
-    file.writeAsStringSync(
+    final part = File('${file.path}.part');
+    part.writeAsStringSync(
       jsonEncode({
         'mode': state.mode.name,
         'customHue': state.customHue,
@@ -76,6 +77,8 @@ class FileAppearanceStore implements AppearanceStore {
         'fullPlayerAudioSettings': state.fullPlayerAudioSettings,
         'fullPlayerBackground': state.fullPlayerBackground.name,
       }),
+      flush: true,
     );
+    part.renameSync(file.path);
   }
 }

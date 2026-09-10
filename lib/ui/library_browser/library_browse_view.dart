@@ -149,11 +149,15 @@ class _ArtistGrid extends StatelessWidget {
                 builder: (context, constraints) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    GestureDetector(
-                      onTap: () => onSelect(group.name),
-                      child: ArtistPortrait(
-                        artist: group.name,
-                        size: constraints.maxWidth.clamp(0.0, 136.0),
+                    Semantics(
+                      button: true,
+                      label: 'Artist ${group.name}',
+                      child: GestureDetector(
+                        onTap: () => onSelect(group.name),
+                        child: ArtistPortrait(
+                          artist: group.name,
+                          size: constraints.maxWidth.clamp(0.0, 136.0),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -269,27 +273,31 @@ class _AlbumSections extends StatelessWidget {
             if (row.start < 0) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: GestureDetector(
-                  onTap: () => onSelectArtist(section.artist),
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            section.artist,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.headlineMedium,
+                child: Semantics(
+                  button: true,
+                  label: 'View artist ${section.artist}',
+                  child: GestureDetector(
+                    onTap: () => onSelectArtist(section.artist),
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              section.artist,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.chevron_right,
-                          size: 20,
-                          color: palette.inkMuted,
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 20,
+                            color: palette.inkMuted,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -341,31 +349,38 @@ class _AlbumCard extends StatelessWidget {
     final palette = StudioPalette.of(context);
     final year = album.year;
     final detail = year == null ? artist : '$artist · $year';
-    return GestureDetector(
-      onTap: onTap,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CoverArt(path: album.artworkPath, size: _AlbumSections._cardWidth),
-            const SizedBox(height: 8),
-            Text(
-              album.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              detail,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-            ),
-          ],
+    return Semantics(
+      button: true,
+      label: 'Album ${album.name} by $artist',
+      child: GestureDetector(
+        onTap: onTap,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CoverArt(
+                path: album.artworkPath,
+                size: _AlbumSections._cardWidth,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                album.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                detail,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -388,32 +403,36 @@ class _NameTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
-    return GestureDetector(
-      onTap: onTap,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: compact
-                  ? Theme.of(context).textTheme.bodyMedium
-                  : Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              detail,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-            ),
-          ],
+    return Semantics(
+      button: true,
+      label: '$name, $detail',
+      child: GestureDetector(
+        onTap: onTap,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: compact
+                    ? Theme.of(context).textTheme.bodyMedium
+                    : Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                detail,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
+              ),
+            ],
+          ),
         ),
       ),
     );

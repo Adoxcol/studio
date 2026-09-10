@@ -64,7 +64,8 @@ class FilePlaybackSettingsStore implements PlaybackSettingsStore {
   @override
   void save(PlaybackSettings settings) {
     file.parent.createSync(recursive: true);
-    file.writeAsStringSync(
+    final part = File('${file.path}.part');
+    part.writeAsStringSync(
       jsonEncode({
         'replayGain': settings.replayGain.name,
         'equalizerPreset': settings.equalizerPreset.name,
@@ -72,6 +73,8 @@ class FilePlaybackSettingsStore implements PlaybackSettingsStore {
         'equalizerPreamp': settings.equalizerPreamp,
         'crossfadeMs': settings.crossfade.inMilliseconds,
       }),
+      flush: true,
     );
+    part.renameSync(file.path);
   }
 }
