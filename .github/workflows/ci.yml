@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main]
   push:
@@ -65,7 +66,7 @@ jobs:
 
 
   build_desktop:
-    if: github.event_name == 'push'
+    if: github.event_name != 'pull_request'
     needs: analyze_and_test
     timeout-minutes: 45
 
@@ -120,6 +121,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
+      actions: write
       contents: write
       pull-requests: write
 
@@ -128,4 +130,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge "$PR_URL" --auto --squash --delete-branch
+        run: |
+          gh pr merge "$PR_URL" --auto --squash --delete-branch
+          for attempt in {1..30}; do
+            if [[ "$(gh pr view "$PR_URL" --json state --jq .state)" == "MERGED" ]]; then
+              break
+            fi
+            sleep 2
+          done
+          [[ "$(gh pr view "$PR_URL" --json state --jq .state)" == "MERGED" ]]
+          gh workflow run ci.yml --ref main

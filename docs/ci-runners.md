@@ -19,7 +19,9 @@ register suitable Windows and macOS runners first.
 Pull requests run formatting, analysis, and tests, then trusted, non-draft,
 same-repository PRs are squash-merged automatically. Forks never auto-merge.
 The desktop matrix is intentionally skipped for pull requests and runs Linux,
-Windows, and macOS only after the validated change lands on `main`. The only
+Windows, and macOS only after the validated change lands on `main`. The merge
+job explicitly dispatches that post-merge run because workflow-token merges do
+not create another workflow run automatically. The only
 required branch-protection check is `analyze_and_test`; keep that check name
 stable. GitHub is configured to delete merged branches automatically, and the
 merge job also requests branch deletion.
