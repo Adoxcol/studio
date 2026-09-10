@@ -56,7 +56,8 @@ class FileDiscordSettingsStore implements DiscordSettingsStore {
   @override
   void save(DiscordSettings settings) {
     file.parent.createSync(recursive: true);
-    file.writeAsStringSync(
+    final part = File('${file.path}.part');
+    part.writeAsStringSync(
       jsonEncode({
         'enabled': settings.enabled,
         'nameTemplate': settings.nameTemplate,
@@ -65,6 +66,8 @@ class FileDiscordSettingsStore implements DiscordSettingsStore {
         'artworkTextTemplate': settings.artworkTextTemplate,
         'showProgress': settings.showProgress,
       }),
+      flush: true,
     );
+    part.renameSync(file.path);
   }
 }

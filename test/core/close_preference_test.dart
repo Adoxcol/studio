@@ -73,6 +73,8 @@ void main() {
     final file = File(
       '${dir.path}/studio-close-pref-test.json',
     );
+    final dir = Directory.systemTemp.createTempSync('close_pref');
+    final file = File('${dir.path}/studio-close-pref-test.json');
     addTearDown(() {
       if (dir.existsSync()) dir.deleteSync(recursive: true);
     });
