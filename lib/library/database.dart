@@ -121,6 +121,9 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   Future<Set<String>> _columnNames(String table) async {
+    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(table)) {
+      throw ArgumentError.value(table, 'table', 'Invalid table name format');
+    }
     final rows = await customSelect('PRAGMA table_info($table)').get();
     return {for (final row in rows) row.read<String>('name')};
   }
