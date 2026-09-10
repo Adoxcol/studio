@@ -356,9 +356,13 @@ class _PlaybackSection extends ConsumerWidget {
     final path = file?.path;
     if (path == null) return;
     try {
+      final target = File(path);
+      if (await target.length() > 1024 * 1024) {
+        throw const FormatException('Choose a file smaller than 1 MB.');
+      }
       ref
           .read(playbackSettingsProvider.notifier)
-          .importEqualizerText(await File(path).readAsString());
+          .importEqualizerText(await target.readAsString());
     } on Object catch (error) {
       debugPrint('Equalizer import failed: $error');
     }
