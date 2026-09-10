@@ -15,9 +15,20 @@ sealed class _TrackAction {
   const _TrackAction();
 }
 
+enum _NamedActionType {
+  playNow,
+  playNext,
+  addToQueue,
+  viewAlbum,
+  editMetadata,
+  details,
+  newPlaylist,
+  remove,
+}
+
 class _NamedAction extends _TrackAction {
-  const _NamedAction(this.name);
-  final String name;
+  const _NamedAction(this.action);
+  final _NamedActionType action;
 }
 
 class _ArtistAction extends _TrackAction {
@@ -67,15 +78,15 @@ Future<void> showTrackActions({
     ),
     items: [
       const PopupMenuItem(
-        value: _NamedAction('play-now'),
+        value: _NamedAction(_NamedActionType.playNow),
         child: Text('Play now'),
       ),
       const PopupMenuItem(
-        value: _NamedAction('play-next'),
+        value: _NamedAction(_NamedActionType.playNext),
         child: Text('Play next'),
       ),
       const PopupMenuItem(
-        value: _NamedAction('add-to-queue'),
+        value: _NamedAction(_NamedActionType.addToQueue),
         child: Text('Add to queue'),
       ),
       const PopupMenuDivider(),
@@ -88,15 +99,15 @@ Future<void> showTrackActions({
         ),
       if (hasAlbum)
         const PopupMenuItem(
-          value: _NamedAction('view-album'),
+          value: _NamedAction(_NamedActionType.viewAlbum),
           child: Text('View album'),
         ),
       const PopupMenuItem(
-        value: _NamedAction('edit-metadata'),
+        value: _NamedAction(_NamedActionType.editMetadata),
         child: Text('Edit metadata'),
       ),
       const PopupMenuItem(
-        value: _NamedAction('details'),
+        value: _NamedAction(_NamedActionType.details),
         child: Text('Track details'),
       ),
       const PopupMenuDivider(),
@@ -106,13 +117,13 @@ Future<void> showTrackActions({
           child: Text('Add to ${playlist.name}'),
         ),
       PopupMenuItem(
-        value: const _NamedAction('new-playlist'),
+        value: const _NamedAction(_NamedActionType.newPlaylist),
         child: Text(playlists.isEmpty ? 'New playlist' : 'New playlist…'),
       ),
       if (onRemove != null) ...[
         const PopupMenuDivider(),
         PopupMenuItem(
-          value: const _NamedAction('remove'),
+          value: const _NamedAction(_NamedActionType.remove),
           child: Text(removeLabel),
         ),
       ],
@@ -121,30 +132,30 @@ Future<void> showTrackActions({
   if (selected == null || !context.mounted) return;
   final playback = ref.read(playbackControllerProvider.notifier);
   switch (selected) {
-    case _NamedAction(name: 'play-now'):
+    case _NamedAction(action: _NamedActionType.playNow):
       onPlayNow?.call();
       if (onPlayNow == null) await playback.playTracks([track.id]);
-    case _NamedAction(name: 'play-next'):
+    case _NamedAction(action: _NamedActionType.playNext):
       playback.playNext(track.id);
-    case _NamedAction(name: 'add-to-queue'):
+    case _NamedAction(action: _NamedActionType.addToQueue):
       playback.addToQueue(track.id);
-    case _NamedAction(name: 'view-album'):
+    case _NamedAction(action: _NamedActionType.viewAlbum):
       ref
           .read(libraryNavigationProvider.notifier)
           .openAlbum(artist: leadArtist, album: album);
       ref.read(studioNavProvider.notifier).select(StudioDestination.library);
-    case _NamedAction(name: 'details'):
+    case _NamedAction(action: _NamedActionType.details):
       ref.read(detailSelectionProvider.notifier).inspect(track.id);
       ref.read(studioNavProvider.notifier).select(StudioDestination.track);
-    case _NamedAction(name: 'edit-metadata'):
+    case _NamedAction(action: _NamedActionType.editMetadata):
       await showMetadataEditor(context: context, track: track);
-    case _NamedAction(name: 'new-playlist'):
+    case _NamedAction(action: _NamedActionType.newPlaylist):
       final name = await _promptPlaylistName(context);
       if (name == null || !context.mounted) return;
       final db = ref.read(studioDatabaseProvider);
       final id = await db.createPlaylist(name);
       await db.addTrackToPlaylist(playlistId: id, trackId: track.id);
-    case _NamedAction(name: 'remove'):
+    case _NamedAction(action: _NamedActionType.remove):
       onRemove?.call();
     case _ArtistAction(:final artist):
       ref.read(libraryNavigationProvider.notifier).openArtist(artist);
@@ -153,8 +164,6 @@ Future<void> showTrackActions({
       await ref
           .read(studioDatabaseProvider)
           .addTrackToPlaylist(playlistId: id, trackId: track.id);
-    case _NamedAction():
-      break;
   }
 }
 
