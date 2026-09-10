@@ -655,7 +655,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
 
   Future<void> _restoreSession() async {
     if (queue.ids.isNotEmpty) return;
-    final loaded = _sessionStore.load();
+    final loaded = await _sessionStore.load();
     if (loaded.isEmpty) return;
     _restoring = true;
     try {

@@ -54,7 +54,7 @@ class FreeImageArtworkUploader implements DiscordArtworkResolver {
   Future<String?> urlFor(String? path) async {
     if (path == null || path.isEmpty) return null;
     final file = File(path);
-    if (!file.existsSync()) return null;
+    if (!await file.exists()) return null;
     final key = _cacheKey(file);
     final cached = _mem[key] ?? _loadDisk()[key];
     if (cached != null) {
