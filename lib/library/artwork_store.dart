@@ -15,7 +15,9 @@ class ArtworkStore {
     final name = '${_fingerprint(bytes)}${_extension(bytes, mime)}';
     final file = File(p.join(directory.path, name));
     if (!await file.exists()) {
-      await file.writeAsBytes(bytes, flush: true);
+      final part = File('${file.path}.part');
+      await part.writeAsBytes(bytes, flush: true);
+      await part.rename(file.path);
     }
     return file.path;
   }
