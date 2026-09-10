@@ -26,3 +26,6 @@
 **Learning:** Using synchronous file operations like `existsSync()` inside async functions blocks the current thread, potentially causing UI stutters or jank.
 
 **Action:** Always prefer asynchronous file I/O operations (e.g., `await file.exists()`) inside `async` methods to keep the event loop unblocked.
+## 2024-06-25 - Prevent blocking main thread with sync file operations
+**Learning:** Using synchronous I/O methods like `statSync()` or `existsSync()` on the main isolate can block the thread and cause UI jank, even if raw execution time is slightly lower than the async equivalents due to isolate crossing overhead.
+**Action:** Always prefer asynchronous file system operations (`stat()`, `exists()`) in Flutter/Dart applications, propagating `async`/`await` up the call stack as necessary, to keep the UI thread responsive.

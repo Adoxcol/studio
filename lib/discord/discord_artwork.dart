@@ -9,7 +9,7 @@ import 'package:studio/discord/discord_ids.dart';
 /// Turns a local cover path into a Discord `large_image` value.
 abstract class DiscordArtworkResolver {
   /// Cache hit only. Does not hit the network.
-  String? cachedUrl(String? path) => null;
+  Future<String?> cachedUrl(String? path) async => null;
 
   /// Upload if needed. Returns the HTTPS URL when done.
   Future<String?> urlFor(String? path);
@@ -40,11 +40,11 @@ class FreeImageArtworkUploader implements DiscordArtworkResolver {
   final _failedAt = <String, DateTime>{};
 
   @override
-  String? cachedUrl(String? path) {
+  Future<String?> cachedUrl(String? path) async {
     if (path == null || path.isEmpty) return null;
     final file = File(path);
-    if (!file.existsSync()) return null;
-    final key = _cacheKey(file);
+    if (!await file.exists()) return null;
+    final key = await _cacheKey(file);
     final cached = _mem[key] ?? _loadDisk()[key];
     if (cached != null) _mem[key] = cached;
     return cached;
@@ -55,7 +55,7 @@ class FreeImageArtworkUploader implements DiscordArtworkResolver {
     if (path == null || path.isEmpty) return null;
     final file = File(path);
     if (!await file.exists()) return null;
-    final key = _cacheKey(file);
+    final key = await _cacheKey(file);
     final cached = _mem[key] ?? _loadDisk()[key];
     if (cached != null) {
       _mem[key] = cached;
@@ -146,8 +146,8 @@ class FreeImageArtworkUploader implements DiscordArtworkResolver {
     part.renameSync(cacheFile.path);
   }
 
-  static String _cacheKey(File file) {
-    final stat = file.statSync();
+  static Future<String> _cacheKey(File file) async {
+    final stat = await file.stat();
     return '${file.path}|${stat.size}|${stat.modified.millisecondsSinceEpoch}';
   }
 
