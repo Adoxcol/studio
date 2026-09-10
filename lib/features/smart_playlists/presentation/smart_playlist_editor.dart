@@ -170,7 +170,6 @@ class _SmartPlaylistEditorState extends ConsumerState<_SmartPlaylistEditor> {
                   controller: _name,
                   enabled: !_saving,
                   autofocus: true,
-                  onChanged: (_) => setState(() {}),
                   decoration: _input(context, 'Name'),
                 ),
                 const SizedBox(height: 18),
@@ -296,12 +295,17 @@ class _SmartPlaylistEditorState extends ConsumerState<_SmartPlaylistEditor> {
             onPressed: _saving ? null : () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          TextButton(
-            key: const ValueKey('save-smart-playlist'),
-            onPressed: _saving || invalid != null || _name.text.trim().isEmpty
-                ? null
-                : _save,
-            child: Text(_saving ? 'Saving…' : 'Save playlist'),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _name,
+            builder: (context, value, child) {
+              return TextButton(
+                key: const ValueKey('save-smart-playlist'),
+                onPressed: _saving || invalid != null || value.text.trim().isEmpty
+                    ? null
+                    : _save,
+                child: Text(_saving ? 'Saving…' : 'Save playlist'),
+              );
+            },
           ),
         ],
       ),
