@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/state/nav_provider.dart';
@@ -13,9 +14,20 @@ class StudioKeyboardShortcuts extends ConsumerWidget {
   final Widget child;
 
   bool _editingText() {
-    final context = FocusManager.instance.primaryFocus?.context;
-    return context?.findAncestorWidgetOfExactType<EditableText>() != null ||
-        context?.widget is EditableText;
+    final focus = FocusManager.instance.primaryFocus;
+    if (focus == null) return false;
+    final context = focus.context;
+    if (context == null) return false;
+    if (context.widget is EditableText) return true;
+    if (context.findAncestorWidgetOfExactType<EditableText>() != null) {
+      return true;
+    }
+    if (context.findAncestorStateOfType<EditableTextState>() != null) {
+      return true;
+    }
+    final renderObject = context.findRenderObject();
+    if (renderObject is RenderEditable) return true;
+    return false;
   }
 
   @override
@@ -76,6 +88,11 @@ class StudioKeyboardShortcuts extends ConsumerWidget {
           final notifier = ref.read(playbackModeProvider.notifier);
           mode ? notifier.exit() : notifier.enter();
         }),
+        const SingleActivator(LogicalKeyboardKey.escape): () {
+          if (ref.read(playbackModeProvider)) {
+            ref.read(playbackModeProvider.notifier).exit();
+          }
+        },
         const SingleActivator(LogicalKeyboardKey.digit1, control: true): () =>
             navigate(StudioDestination.library),
         const SingleActivator(LogicalKeyboardKey.digit2, control: true): () =>

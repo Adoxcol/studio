@@ -7,6 +7,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Editorial Audio Environment fullscreen playback mode featuring split-stage layout,
+  realistic vinyl sleeve rendering with turntable groove sheen, audiophile specs badges,
+  typography-driven synchronized lyrics with live line-following and interactive seeking,
+  and dedicated Audio Engine & DSP modal sheet.
+- Live hover timestamp chip and indicator on the playback scrubber bar.
+- Extended volume adjuster slider in the transport bar for precision desktop audio adjustments.
+- Synchronized lyrics font color options with dynamic album cover-art accent following (`Default Ink`, `Follow Cover Accent`, `Muted Minimal`, `High Contrast`).
+- True edge-to-edge full-bleed cover mode across Split Stage and Visual Art environments.
+- Distraction-free immersive playback with collapsible top stage controls and quick floating restore button.
+
+### Fixed
+
+- Instant desktop app closing in release builds: the window hides immediately while
+  background teardown completes with a strict timeout, preventing close-latency freezes.
+- Text input fields (such as library search, playlist creation, and metadata editing)
+  no longer have Space and navigation keys intercepted by global keyboard shortcuts.
+- Fullscreen Playback Mode cleanly exits back to windowed mode upon pressing the Escape key.
+
 ## [0.3.0] - 2026-09-11
 
 ### Fixed

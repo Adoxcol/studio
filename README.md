@@ -61,9 +61,12 @@ Local library first — Spotify-style streaming is planned for a later phase.
 ### 🎨 Now Playing & Playback Mode
 
 - 32-band FFT spectrum visualizer tapped from a silent PCM stream
-- Full-screen **Playback Mode**: artwork, artist image, or Studio-gradient backdrop  
+- Full-screen **Playback Mode**: Split Stage, Visual Art, Pure Lyrics, and Editorial Focus environments  
   — responsive for narrow, ultrawide, and low-height windows
-- Time-synced lyrics with click-to-seek
+- Interactive grooved vinyl record, album jacket, and full-bleed cover modes
+- Time-synced lyrics with click-to-seek, font scaling, and dynamic album accent-following color styling
+- Edge-to-edge playback scrubber with live hover timestamp and precision volume control
+- Immersive distraction-free mode with one-click collapsible stage controls
 - Individually clickable artist credits that open their library catalogue
 
 ![Now Playing](docs/screenshots/now-playing.png)

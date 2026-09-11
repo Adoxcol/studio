@@ -294,14 +294,23 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
     if (_quitting) return;
     _quitting = true;
     try {
+      // Instantly hide window from screen and taskbar so app closing is immediate.
+      unawaited(windowManager.hide());
+      unawaited(windowManager.setSkipTaskbar(true));
+
       ref.read(playbackControllerProvider.notifier).saveSession();
-      await _discord.dispose();
-      await hotKeyManager.unregisterAll();
-      if (_useWindowsTray) {
-        await StudioDesktopHost.windowsChannel.invokeMethod('destroy');
-      } else {
-        await trayManager.destroy();
-      }
+
+      // Enforce a strict timeout on async teardown (Discord RPC flush, hotkeys, etc.)
+      // so closing never hangs or delays process termination.
+      await Future.wait([
+        _discord.dispose(),
+        hotKeyManager.unregisterAll(),
+        if (_useWindowsTray)
+          StudioDesktopHost.windowsChannel.invokeMethod('destroy')
+        else
+          trayManager.destroy(),
+      ]).timeout(const Duration(milliseconds: 250), onTimeout: () => []);
+
       await windowManager.setPreventClose(false);
       await windowManager.destroy();
     } on Object catch (error, stack) {
