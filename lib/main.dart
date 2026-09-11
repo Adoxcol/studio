@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
@@ -18,6 +19,7 @@ import 'package:studio/core/desktop/close_preference_provider.dart';
 import 'package:studio/core/desktop/close_preference_store.dart';
 import 'package:studio/features/subsonic/data/subsonic_settings_store.dart';
 import 'package:studio/features/subsonic/presentation/subsonic_providers.dart';
+import 'package:studio/features/updates/update_provider.dart';
 import 'package:studio/discord/discord_artwork.dart';
 import 'package:studio/discord/discord_settings_provider.dart';
 import 'package:studio/discord/discord_settings_store.dart';
@@ -39,8 +41,18 @@ import 'package:studio/playback/playback_session_store.dart';
 import 'package:studio/playback/playback_settings_provider.dart';
 import 'package:studio/playback/playback_settings_store.dart';
 
-Future<void> main() async {
+Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (args.any(
+    (arg) => const {
+      '--veloapp-install',
+      '--veloapp-updated',
+      '--veloapp-obsolete',
+      '--veloapp-uninstall',
+    }.contains(arg),
+  )) {
+    exit(0);
+  }
   final support = await getApplicationSupportDirectory();
   final appearance = FileAppearanceStore(
     File(p.join(support.path, 'appearance.json')),
@@ -141,7 +153,28 @@ Future<void> main() async {
           FileLyricsCache(Directory(p.join(support.path, 'lyrics'))),
         ),
       ],
-      child: const StudioDesktopHost(child: StudioApp()),
+      child: const StudioDesktopHost(
+        child: _UpdateBootstrap(child: StudioApp()),
+      ),
     ),
   );
+}
+
+class _UpdateBootstrap extends ConsumerStatefulWidget {
+  const _UpdateBootstrap({required this.child});
+  final Widget child;
+
+  @override
+  ConsumerState<_UpdateBootstrap> createState() => _UpdateBootstrapState();
+}
+
+class _UpdateBootstrapState extends ConsumerState<_UpdateBootstrap> {
+  @override
+  void initState() {
+    super.initState();
+    unawaited(ref.read(updateServiceProvider).initialize());
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

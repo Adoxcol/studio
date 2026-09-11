@@ -14,6 +14,7 @@ import 'package:studio/ui/layout/title_bar.dart';
 import 'package:studio/ui/keyboard_shortcuts/studio_keyboard_shortcuts.dart';
 import 'package:studio/ui/library_browser/scan_notice.dart';
 import 'package:studio/features/subsonic/presentation/subsonic_page.dart';
+import 'package:studio/features/updates/update_notice.dart';
 import 'package:studio/ui/now_playing/player_bar.dart';
 import 'package:studio/ui/now_playing/now_playing_page.dart';
 import 'package:studio/ui/settings/settings_page.dart';
@@ -80,7 +81,7 @@ class StudioShell extends ConsumerWidget {
               ],
             ),
           );
-    return StudioKeyboardShortcuts(child: content);
+    return StudioKeyboardShortcuts(child: UpdateNotice(child: content));
   }
 
   Future<void> _setNativeFullscreen(bool enabled) async {

@@ -15,6 +15,7 @@ jobs:
         with:
           flutter-version: '3.x'
           channel: 'stable'
+      - uses: dtolnay/rust-toolchain@stable
       - run: flutter pub get
       - name: Format check
         run: dart format --output=none --set-exit-if-changed .
@@ -42,6 +43,7 @@ jobs:
         with:
           flutter-version: '3.x'
           channel: 'stable'
+      - uses: dtolnay/rust-toolchain@stable
       - run: flutter pub get
       - name: Enable desktop targets
         run: |
