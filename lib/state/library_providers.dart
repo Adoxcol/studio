@@ -62,9 +62,13 @@ final libraryIndexProvider = Provider<LibraryIndex>((ref) {
   return LibraryIndex(tracks);
 });
 
-final libraryTracksByIdProvider = Provider<Map<int, Track>>(
-  (ref) => ref.watch(libraryIndexProvider).byId,
-);
+final libraryTracksByIdProvider = Provider<Map<int, Track>>((ref) {
+  final local = ref.watch(libraryTracksProvider).value ?? const <Track>[];
+  final remote = ref.watch(subsonicTracksProvider).value ?? const <Track>[];
+  return {
+    for (final track in [...local, ...remote]) track.id: track,
+  };
+});
 
 final playlistsProvider = StreamProvider<List<Playlist>>((ref) {
   return ref.watch(studioDatabaseProvider).watchPlaylists();

@@ -1,9 +1,104 @@
+// The former remote browser helpers remain available for future server tools.
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/features/subsonic/domain/subsonic_models.dart';
 import 'package:studio/features/subsonic/presentation/subsonic_providers.dart';
 import 'package:studio/theming/studio_palette.dart';
+
+class _ServerCard extends StatelessWidget {
+  const _ServerCard({
+    required this.config,
+    required this.connection,
+    required this.trackCount,
+    required this.scanState,
+    required this.palette,
+    required this.onScan,
+    required this.onCancelScan,
+    required this.onDisconnect,
+    required this.onClearCache,
+  });
+
+  final SubsonicServerConfig config;
+  final SubsonicConnectionInfo connection;
+  final int trackCount;
+  final SubsonicScanState scanState;
+  final StudioPalette palette;
+  final VoidCallback onScan;
+  final VoidCallback onCancelScan;
+  final VoidCallback onDisconnect;
+  final Future<void> Function() onClearCache;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        border: Border.all(color: palette.hairline),
+        color: palette.hairlineSoft.withAlpha(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.cloud_done_outlined, color: palette.accent),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  config.serverName,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              IconButton(
+                tooltip: 'Disconnect server',
+                onPressed: onDisconnect,
+                icon: const Icon(Icons.power_settings_new),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(config.normalizedUrl, style: TextStyle(color: palette.inkMuted)),
+          const SizedBox(height: 4),
+          Text(
+            '${connection.serverType} ${connection.serverVersion} · $trackCount tracks cached',
+            style: TextStyle(fontSize: 12, color: palette.inkMuted),
+          ),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              FilledButton.icon(
+                onPressed: scanState.isScanning ? onCancelScan : onScan,
+                icon: Icon(scanState.isScanning ? Icons.close : Icons.sync),
+                label: Text(
+                  scanState.isScanning ? 'Cancel scan' : 'Scan library',
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: trackCount == 0 ? null : onClearCache,
+                icon: const Icon(Icons.delete_sweep_outlined),
+                label: const Text('Clear cached tracks'),
+              ),
+            ],
+          ),
+          if (scanState.isScanning) ...[
+            const SizedBox(height: 16),
+            LinearProgressIndicator(value: scanState.progress),
+            const SizedBox(height: 6),
+            Text(
+              'Scanning album ${scanState.currentAlbum} of ${scanState.totalAlbums}',
+              style: TextStyle(fontSize: 12, color: palette.inkMuted),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 class SubsonicPage extends ConsumerStatefulWidget {
   const SubsonicPage({super.key});
@@ -359,108 +454,46 @@ class _SubsonicPageState extends ConsumerState<SubsonicPage> {
     SubsonicConnectionInfo connection,
   ) {
     final scanState = ref.watch(subsonicScanProvider);
+    final tracks = ref.watch(subsonicTracksProvider).value ?? const [];
+    final config = ref.watch(subsonicConfigProvider);
 
-    return Column(
-      children: [
-        // Top Server Bar
-        Container(
-          height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: palette.hairline)),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'CONNECTED SERVERS',
+            style: GoogleFonts.workSans(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.2,
+              color: palette.inkMuted,
+            ),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: palette.accent,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: palette.accent.withAlpha(120),
-                      blurRadius: 6,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '${connection.serverType} ${connection.serverVersion}'
-                    .toUpperCase(),
-                style: GoogleFonts.workSans(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: palette.ink,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(width: 24),
-              // Sub tabs
-              _buildTabButton('albums', 'Albums', palette),
-              _buildTabButton('artists', 'Artists', palette),
-              _buildTabButton('tracks', 'Tracks', palette),
-              const Spacer(),
-              // Scan server library button
-              _buildScanButton(palette),
-              const SizedBox(width: 12),
-              // Search field
-              SizedBox(
-                width: 220,
-                height: 34,
-                child: TextField(
-                  controller: _searchController,
-                  style: TextStyle(fontSize: 12, color: palette.ink),
-                  onSubmitted: _performSearch,
-                  decoration: InputDecoration(
-                    hintText: 'Search remote server...',
-                    hintStyle: TextStyle(fontSize: 12, color: palette.inkDim),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      size: 16,
-                      color: palette.inkMuted,
-                    ),
-                    contentPadding: EdgeInsets.zero,
-                    filled: true,
-                    fillColor: palette.hairlineSoft.withAlpha(40),
-                    border: OutlineInputBorder(
-                      borderSide: BorderSide(color: palette.hairline),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              IconButton(
-                icon: const Icon(Icons.power_settings_new, size: 18),
-                tooltip: 'Disconnect Server',
-                color: palette.inkMuted,
-                onPressed: _disconnect,
-              ),
-            ],
+          const SizedBox(height: 12),
+          if (config != null)
+            _ServerCard(
+              config: config,
+              connection: connection,
+              trackCount: tracks.length,
+              scanState: scanState,
+              palette: palette,
+              onScan: () => ref.read(subsonicScanProvider.notifier).startScan(),
+              onCancelScan: () =>
+                  ref.read(subsonicScanProvider.notifier).cancelScan(),
+              onDisconnect: _disconnect,
+              onClearCache: () => ref
+                  .read(subsonicPlaybackServiceProvider)
+                  .clearSubsonicCache(),
+            ),
+          const SizedBox(height: 24),
+          Text(
+            'This server is available as a folder in the main Library. Open Library > Folders to browse it with the same search, sorting, filters, and playback controls as local folders.',
+            style: TextStyle(color: palette.inkMuted, height: 1.5),
           ),
-        ),
-
-        // Live Scanning Progress Bar
-        if (scanState.isScanning) _buildScanProgressBar(palette, scanState),
-
-        // Main Content Area
-        Expanded(
-          child: _selectedAlbum != null
-              ? _buildAlbumDetailView(palette)
-              : _selectedArtist != null
-              ? _buildArtistDetailView(palette)
-              : _searchController.text.trim().isNotEmpty &&
-                    _searchResults != null
-              ? _buildSearchResultsView(palette)
-              : _currentTab == 'artists'
-              ? _buildArtistsGrid(palette)
-              : _currentTab == 'tracks'
-              ? _buildTracksView(palette)
-              : _buildAlbumsGrid(palette),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

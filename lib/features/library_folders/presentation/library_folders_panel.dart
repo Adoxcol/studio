@@ -14,10 +14,12 @@ class LibraryFoldersPanel extends ConsumerWidget {
     this.embedded = false,
     this.query = '',
     this.onOpen,
+    this.additionalFolders = const [],
   });
   final bool embedded;
   final String query;
   final ValueChanged<LibraryFolder>? onOpen;
+  final List<LibraryFolder> additionalFolders;
 
   Future<void> _add(BuildContext context, WidgetRef ref) async {
     final actions = ref.read(libraryFolderActionsProvider.notifier);
@@ -101,12 +103,13 @@ class LibraryFoldersPanel extends ConsumerWidget {
         ],
       ),
       data: (all) {
-        final visible = all
+        final folders = [...all, ...additionalFolders];
+        final visible = folders
             .where((f) => f.path.toLowerCase().contains(needle))
             .toList();
         if (visible.isEmpty) {
           return Text(
-            all.isEmpty
+            folders.isEmpty
                 ? 'No music folders yet. Add a folder to start your library.'
                 : 'No matching folders.',
             style: Theme.of(
@@ -146,11 +149,15 @@ class LibraryFoldersPanel extends ConsumerWidget {
                 ),
               ),
               onTap: onOpen == null ? null : () => onOpen!(folder),
-              trailing: IconButton(
-                tooltip: 'Remove folder',
-                onPressed: busy ? null : () => _remove(context, ref, folder),
-                icon: const Icon(Icons.close, size: 18),
-              ),
+              trailing: additionalFolders.contains(folder)
+                  ? null
+                  : IconButton(
+                      tooltip: 'Remove folder',
+                      onPressed: busy
+                          ? null
+                          : () => _remove(context, ref, folder),
+                      icon: const Icon(Icons.close, size: 18),
+                    ),
             );
           },
         );

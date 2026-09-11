@@ -456,7 +456,11 @@ class _VinylCenterLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final file = artworkPath == null ? null : File(artworkPath!);
+    final artwork = artworkPath;
+    final uri = artwork == null ? null : Uri.tryParse(artwork);
+    final isNetwork =
+        uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
+    final file = artwork == null || isNetwork ? null : File(artwork);
 
     return Container(
       width: size,
@@ -481,7 +485,14 @@ class _VinylCenterLabel extends StatelessWidget {
           alignment: Alignment.center,
           fit: StackFit.expand,
           children: [
-            if (file != null && file.existsSync())
+            if (isNetwork)
+              Image.network(
+                artwork!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) =>
+                    const ColoredBox(color: Color(0xFF2E2A27)),
+              )
+            else if (file != null && file.existsSync())
               Image.file(
                 file,
                 fit: BoxFit.cover,
