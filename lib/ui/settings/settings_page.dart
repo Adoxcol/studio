@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:studio/features/artist_artwork/presentation/fanart_settings.dart';
 import 'package:studio/features/library_folders/presentation/library_folders_panel.dart';
+import 'package:studio/features/updates/update_provider.dart';
+import 'package:studio/core/app_info.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/core/desktop/close_preference.dart';
 import 'package:studio/core/desktop/close_preference_provider.dart';
@@ -31,6 +33,8 @@ class SettingsPage extends StatelessWidget {
         children: [
           Text('Settings', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 28),
+          const _UpdatesSection(),
+          const SizedBox(height: 32),
           const _AppearanceSection(),
           const SizedBox(height: 32),
           const _PreviewSection(),
@@ -44,6 +48,67 @@ class SettingsPage extends StatelessWidget {
           const _WindowSection(),
         ],
       ),
+    );
+  }
+}
+
+class _UpdatesSection extends ConsumerWidget {
+  const _UpdatesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = StudioPalette.of(context);
+    final service = ref.read(updateServiceProvider);
+    return ListenableBuilder(
+      listenable: service,
+      builder: (context, _) {
+        final state = service.state;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SectionLabel(text: 'UPDATES'),
+            const SizedBox(height: 16),
+            Text('$kAppName $kAppVersion'),
+            const SizedBox(height: 6),
+            Text(
+              state.ready
+                  ? 'An update to ${state.version} is ready.'
+                  : 'Updates are checked in the background when available.',
+              style: TextStyle(color: palette.inkMuted),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              children: [
+                OutlinedButton(
+                  onPressed: state.checking || state.downloading
+                      ? null
+                      : () => service.check(),
+                  child: Text(
+                    state.checking
+                        ? 'Checking...'
+                        : state.downloading
+                        ? 'Downloading...'
+                        : 'Check for updates',
+                  ),
+                ),
+                if (state.ready)
+                  FilledButton(
+                    onPressed: service.restartAndUpdate,
+                    child: const Text('Restart and Update'),
+                  ),
+              ],
+            ),
+            if (state.error != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Unable to check for updates right now.',
+                style: TextStyle(color: palette.inkMuted, fontSize: 12),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }

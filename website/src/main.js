@@ -208,7 +208,7 @@ class StudioApp {
     const heroPlatformLabel = document.getElementById('hero-platform-label');
 
     let os = 'Windows';
-    let file = 'studio-windows-x64.zip';
+    let file = 'studio-windows-setup.exe';
 
     if (userAgent.includes('mac')) {
       os = 'macOS';

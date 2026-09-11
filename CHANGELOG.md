@@ -5,7 +5,7 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.7] - 2026-09-12
 
 ### Fixed
 
@@ -15,6 +15,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   playback background, and vinyl presentation.
 - The Navidrome screen now manages connected servers and cache scanning; the
   server library is browsed from the main Library as a separate folder.
+- Windows releases now use a signed Velopack installer with background update
+  checks, and the website points to the latest installer automatically.
+
+## [Unreleased]
 
 ## [0.4.6] - 2026-09-11
 
