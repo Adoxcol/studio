@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Muted Bone Arc -->
+  <path d="M 50 10 A 40 40 0 0 0 20 74" stroke="#D1CDC7" stroke-width="6.5" stroke-linecap="round"/>
+  <!-- Accent Arc -->
+  <path d="M 20 74 A 40 40 0 1 0 50 10" stroke="var(--accent, #B85344)" stroke-width="6.5" stroke-linecap="round"/>
+  <!-- Accent Dot / Node -->
+  <circle cx="21.5" cy="73.5" r="9" fill="var(--accent, #B85344)"/>
+</svg>

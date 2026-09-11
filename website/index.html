@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Studio — A Fast, Responsive, Highly Customizable Desktop Music Player</title>
+  <meta name="description" content="Local-first desktop music player built for audiophiles. Bit-perfect playback, modular dockable panels, ISO 10-band graphic EQ, and dynamic album-driven OKLCH aesthetics.">
+  <link rel="icon" type="image/png" href="assets/studio-icon.png">
+  <link rel="apple-touch-icon" href="assets/studio-icon.png">
+  <meta property="og:title" content="Studio — Desktop Music Player">
+  <meta property="og:description" content="Local-first desktop music player built for audiophiles. Bit-perfect libmpv engine, modular dockable panels, and dynamic OKLCH aesthetics.">
+  <meta property="og:image" content="assets/studio-icon.png">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="styles/main.css">
+
+  <!-- Three.js (WebGL 3D Engine) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+  <!-- Ambient Dynamic Glow -->
+  <div class="ambient-glow" aria-hidden="true"></div>
+
+  <!-- =========================================================================
+       NAVIGATION BAR
+       ========================================================================= -->
+  <header class="site-header">
+    <div class="nav-container">
+      <a href="#" class="brand-wrap">
+        <div class="brand-icon">
+          <img src="assets/studio-icon.png" alt="Studio Icon" class="brand-icon-img">
+        </div>
+        <span class="brand-title">Studio</span>
+      </a>
+
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="#stage" class="nav-link">3D Stage</a></li>
+          <li><a href="#docking" class="nav-link">Docking</a></li>
+          <li><a href="#equalizer" class="nav-link">Equalizer</a></li>
+          <li><a href="#features" class="nav-link">Features</a></li>
+          <li><a href="#specs" class="nav-link">Architecture</a></li>
+          <li><a href="#download" class="nav-link">Download</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <!-- Live Dynamic Accent Hue Indicator -->
+        <a href="#palette-demo" class="hue-picker-trigger" title="Dynamic OKLCH Color Engine">
+          <span class="hue-pip"></span>
+          <span id="hue-value-label">28°</span>
+        </a>
+
+        <!-- Dark / Light Mode Toggle -->
+        <button id="theme-toggle-btn" class="btn-icon" aria-label="Toggle Theme" title="Toggle Obsidian / Warm Paper">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+
+        <!-- Primary Download Button -->
+        <a href="#download" class="btn-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Get Studio</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       HERO SECTION
+       ========================================================================= -->
+  <main>
+    <section class="hero-section">
+      <div class="hero-pill">
+        <span class="hero-pill-dot"></span>
+        <span>LOCAL-FIRST AUDIOPHILE DESKTOP PLAYER</span>
+      </div>
+
+      <h1 class="hero-title">
+        The desktop music player crafted for <em>purists</em>.
+      </h1>
+
+      <p class="hero-sub">
+        Bit-perfect libmpv audio engine, modular dockable panels, ISO 10-band graphic equalizer, 
+        and dynamic album-following aesthetics. No telemetry. No cloud lock-in. Just your library.
+      </p>
+
+      <div class="hero-actions">
+        <a id="hero-download-btn" href="https://github.com/Adoxcol/studio/releases/latest" class="btn-primary" style="padding: 0.85rem 1.8rem; font-size: 0.95rem;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span id="hero-platform-label">Download for Windows</span>
+        </a>
+
+        <a href="#stage" class="btn-secondary play-trigger-btn" style="padding: 0.85rem 1.6rem; font-size: 0.95rem;">
+          <svg class="play-icon-symbol" width="16" height="16" viewBox="0 0 24 24">
+            <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
+          </svg>
+          <span>Play Interactive Stage</span>
+        </a>
+
+        <a href="https://github.com/Adoxcol/studio" target="_blank" rel="noopener" class="btn-secondary" style="padding: 0.85rem 1.2rem;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+          </svg>
+          <span>GitHub</span>
+        </a>
+      </div>
+
+      <div class="hero-meta">
+        <div class="hero-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+          <span>FLAC • ALAC • WAV • DSD</span>
+        </div>
+        <div class="hero-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span>32-Band FFT PCM Visualizer</span>
+        </div>
+        <div class="hero-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          <span>Dockable Panels</span>
+        </div>
+      </div>
+
+      <!-- =======================================================================
+           3D VINYL & STAGE WORKSPACE
+           ======================================================================= -->
+      <div id="stage" class="hero-stage-container">
+        <div class="hero-stage">
+          <!-- WebGL 3D Canvas -->
+          <div id="vinyl-canvas-container" title="Click & drag to rotate in 3D">
+            <!-- Three.js Canvas injected here -->
+          </div>
+
+          <!-- Stage Overlay UI -->
+          <div class="stage-overlay-ui">
+            <div class="stage-badge">
+              <span class="status-light"></span>
+              <span>3D ANALOG STAGE • 33 ⅓ RPM</span>
+            </div>
+
+            <div class="stage-controls">
+              <button class="stage-btn play-trigger-btn" aria-label="Play or Pause Vinyl Audio" title="Play/Pause">
+                <svg class="play-icon-symbol" width="14" height="14" viewBox="0 0 24 24">
+                  <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Now Playing Card on Stage -->
+          <div class="stage-track-info">
+            <div class="track-header">
+              <span class="track-tag">LOSSLESS FLAC</span>
+              <span class="mono" style="font-size: 0.72rem; color: var(--ink-muted);">192 kHz / 24-bit</span>
+            </div>
+            <div class="track-title">Solaris (Midnight Tape)</div>
+            <div class="track-artist">The Cinematic Soundscape Trio</div>
+
+            <!-- 32-Band FFT Audio Visualizer Bars -->
+            <div class="stage-spectrum" aria-label="Audio Visualizer">
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+              <div class="spectrum-bar"></div>
+            </div>
+          </div>
+
+          <div class="stage-hint">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l4-4 4 4M9 5v14M19 15l-4 4-4-4M15 19V5"/></svg>
+            <span>Tilt cursor to explore 3D lighting</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         DYNAMIC OKLCH ACCENT COLOR ENGINE DEMO
+         ========================================================================= -->
+    <section id="palette-demo" class="palette-showcase">
+      <div class="palette-bar-card">
+        <div class="palette-info">
+          <div class="palette-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2Z"/></svg>
+            <span>Dynamic OKLCH Accent Engine</span>
+          </div>
+          <p class="palette-desc">
+            Studio samples palette seeds from album covers in perceptually uniform OKLCH space. Try changing the hue:
+          </p>
+        </div>
+
+        <div class="palette-controls">
+          <!-- Preset Swatches -->
+          <div class="swatch-group">
+            <button class="swatch-btn active" data-hue="28" style="background: #E28A36;" title="Studio Amber (Default)"></button>
+            <button class="swatch-btn" data-hue="195" style="background: #2FA8CD;" title="Electric Azure"></button>
+            <button class="swatch-btn" data-hue="145" style="background: #38B072;" title="Emerald Grove"></button>
+            <button class="swatch-btn" data-hue="285" style="background: #9966FF;" title="Amethyst Dusk"></button>
+            <button class="swatch-btn" data-hue="345" style="background: #E0537A;" title="Crimson Velvet"></button>
+          </div>
+
+          <!-- Hue Slider -->
+          <div class="slider-container">
+            <input type="range" id="accent-hue-slider" class="hue-slider" min="0" max="360" value="28">
+            <span class="mono">0°–360°</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         MODULAR DOCKING PLAYGROUND
+         ========================================================================= -->
+    <section id="docking" class="section">
+      <div class="section-header">
+        <span class="section-tag">FLEXIBLE WORKSPACE</span>
+        <h2 class="section-title">A layout that bends to your workflow.</h2>
+        <p class="section-lead">
+          Built on Flutter's modular docking engine. Split, tab, drag, resize, or maximize any panel. 
+          Keep your library catalogue, EQ, queue, and lyrics exactly where you need them.
+        </p>
+      </div>
+
+      <div class="dock-playground">
+        <div class="dock-header">
+          <div class="dock-title-group">
+            <div class="window-dots">
+              <span class="window-dot"></span>
+              <span class="window-dot"></span>
+              <span class="window-dot"></span>
+            </div>
+            <span class="mono" style="font-size: 0.8rem; color: var(--ink-muted);">Studio Workspace Layout</span>
+          </div>
+
+          <!-- Layout Presets Tabs -->
+          <div class="dock-tabs">
+            <button class="dock-tab-btn active" data-layout="default">Default Studio</button>
+            <button class="dock-tab-btn" data-layout="lyrics">Lyrics Focus</button>
+            <button class="dock-tab-btn" data-layout="mastering">Mastering Console</button>
+            <button class="dock-tab-btn" data-layout="minimal">Distraction-Free</button>
+          </div>
+        </div>
+
+        <div class="dock-workspace">
+          <!-- Panel 1: Library Navigator -->
+          <div class="dock-panel">
+            <div class="panel-header">
+              <span>Library Navigation</span>
+              <div class="panel-actions">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="panel-library-list">
+                <div class="library-item active">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  <span>Artists & Albums</span>
+                </div>
+                <div class="library-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <span>Smart Playlists</span>
+                </div>
+                <div class="library-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  <span>Local Crate Folders</span>
+                </div>
+                <div class="library-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
+                  <span>Hi-Res Lossless Only</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel 2: Center Stage / Artwork & Synchronized Lyrics -->
+          <div class="dock-panel">
+            <div class="panel-header">
+              <span>Now Playing & Playback Stage</span>
+              <span class="mono" style="font-size: 0.7rem; color: var(--accent);">LRCLIB SYNCED</span>
+            </div>
+            <div class="panel-body">
+              <div class="lyrics-view">
+                <p class="lyric-line">[01:24] The needle drops in silence,</p>
+                <p class="lyric-line active">[01:28] Floating through waves of analog light,</p>
+                <p class="lyric-line">[01:34] In the studio where resonance meets,</p>
+                <p class="lyric-line">[01:42] Every nuance preserved, untouched by time.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel 3: Up Next Queue -->
+          <div class="dock-panel">
+            <div class="panel-header">
+              <span>Up Next Queue</span>
+              <span class="mono" style="font-size: 0.7rem;">4 Tracks</span>
+            </div>
+            <div class="panel-body">
+              <div class="panel-library-list">
+                <div class="library-item active">
+                  <span class="mono" style="font-size: 0.75rem; min-width: 18px;">01</span>
+                  <div>
+                    <div style="font-weight: 500;">Solaris (Midnight Tape)</div>
+                    <div style="font-size: 0.72rem; color: var(--ink-muted);">Cinematic Trio • 4:28</div>
+                  </div>
+                </div>
+                <div class="library-item">
+                  <span class="mono" style="font-size: 0.75rem; min-width: 18px; color: var(--ink-dim);">02</span>
+                  <div>
+                    <div>Chroma Drift</div>
+                    <div style="font-size: 0.72rem; color: var(--ink-muted);">Aura • 5:12</div>
+                  </div>
+                </div>
+                <div class="library-item">
+                  <span class="mono" style="font-size: 0.75rem; min-width: 18px; color: var(--ink-dim);">03</span>
+                  <div>
+                    <div>Equinox Horizon</div>
+                    <div style="font-size: 0.72rem; color: var(--ink-muted);">Vespera • 3:45</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         INTERACTIVE ISO 10-BAND GRAPHIC EQUALIZER
+         ========================================================================= -->
+    <section id="equalizer" class="section">
+      <div class="section-header">
+        <span class="section-tag">HARDWARE-ACCELERATED DSP</span>
+        <h2 class="section-title">ISO 10-band graphic equalizer with zero restart.</h2>
+        <p class="section-lead">
+          Runs as a persistent libmpv audio graph with automatic headroom compensation. 
+          Import Equalizer APO GraphicEQ files, AutoEQ parametric profiles, or fine-tune individual bands with real-time spline curves.
+        </p>
+      </div>
+
+      <div class="eq-container">
+        <div class="eq-top-bar">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span class="mono" style="font-weight: 600; font-size: 0.85rem;">FREQUENCY RESPONSE</span>
+            <span class="mono" style="font-size: 0.75rem; color: var(--ink-dim);">&plusmn;12 dB ISO BANDS</span>
+          </div>
+
+          <!-- Presets -->
+          <div class="eq-presets">
+            <button class="eq-preset-btn active" data-preset="flat">Flat</button>
+            <button class="eq-preset-btn" data-preset="bass">Bass Boost</button>
+            <button class="eq-preset-btn" data-preset="vocal">Vocal Warmth</button>
+            <button class="eq-preset-btn" data-preset="acoustic">Acoustic Air</button>
+            <button class="eq-preset-btn" data-preset="electronic">Electronic</button>
+          </div>
+        </div>
+
+        <!-- Real-Time Spline Canvas -->
+        <div class="eq-canvas-wrapper">
+          <canvas id="eq-curve-canvas"></canvas>
+        </div>
+
+        <!-- 10 Frequency Sliders -->
+        <div class="eq-sliders-grid">
+          <!-- 31 Hz -->
+          <div class="eq-band">
+            <span class="eq-gain-label">0.0 dB</span>
+            <div class="eq-slider-track">
+              <input type="range" class="eq-fader" data-index="0" min="-12" max="12" step="0.5" value="0">
+            </div>
+            <span class="eq-freq-label">31 Hz</span>
+          </div>
+
+          <!-- 63 Hz -->
+          <div class="eq-band">
+            <span class="eq-gain-label">0.0 dB</span>
+            <div class="eq-slider-track">
+              <input type="range" class="eq-fader" data-index="1" min="-12" max="12" step="0.5" value="0">
+            </div>
+            <span class="eq-freq-label">63 Hz</span>
+          </div>
+
+          <!-- 125 Hz -->
+          <div class="eq-band">
+            <span class="eq-gain-label">0.0 dB</span>
+            <div class="eq-slider-track">
+              <input type="range" class="eq-fader" data-index="2" min="-12" max="12" step="0.5" value="0">
+            </div>
+            <span class="eq-freq-label">125 Hz</span>
+          </div>
+
+          <!-- 250 Hz -->
+          <div class="eq-band">
+            <span class="eq-gain-label">0.0 dB</span>
+            <div class="eq-slider-track">
+              <input type="range" class="eq-fader" data-index="3" min="-12" max="12" step="0.5" value="0">
+            </div>
+            <span class="eq-freq-label">250 Hz</span>
+          </div>
+
+          <!-- 500 Hz -->
+          <div class="eq-band">
+            <span class="eq-gain-label">0.0 dB</span>
+            <div class="eq-slider-track">
+              <input type="range" class="eq-fader" data-index="4" min="-12" max="12" step="0.5" value="0">
+            </div>
+            <span class="eq-freq-label">500 Hz</span>
+          </div>
+
+          <!-- 1 kHz -->
+          <div class="eq-band">
+            <span class="eq-gain-label">0.0 dB</span>
+            <div class="eq-slider-track">
+              <input type="range" class="eq-fader" data-index="5" min="-12" max="12" step="0.5" value="0">
+            </div>
+            <span class="eq-freq-label">1 kHz</span>
+          </div>
+
+          <!-- 2 kHz -->
+          <div class="eq-band">
+            <span class="eq-gain-label">0.0 dB</span>
+            <div class="eq-slider-track">
+              <input type="range" class="eq-fader" data-index="6" min="-12" max="12" step="0.5" value="0">
+            </div>
+            <span class="eq-freq-label">2 kHz</span>
+          </div>
+
+          <!-- 4 kHz -->
+          <div class="eq-band">
+            <span class="eq-gain-label">0.0 dB</span>
+            <div class="eq-slider-track">
+              <input type="range" class="eq-fader" data-index="7" min="-12" max="12" step="0.5" value="0">
+            </div>
+            <span class="eq-freq-label">4 kHz</span>
+          </div>
+
+          <!-- 8 kHz -->
+          <div class="eq-band">
+            <span class="eq-gain-label">0.0 dB</span>
+            <div class="eq-slider-track">
+              <input type="range" class="eq-fader" data-index="8" min="-12" max="12" step="0.5" value="0">
+            </div>
+            <span class="eq-freq-label">8 kHz</span>
+          </div>
+
+          <!-- 16 kHz -->
+          <div class="eq-band">
+            <span class="eq-gain-label">0.0 dB</span>
+            <div class="eq-slider-track">
+              <input type="range" class="eq-fader" data-index="9" min="-12" max="12" step="0.5" value="0">
+            </div>
+            <span class="eq-freq-label">16 kHz</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         FEATURE DEEP DIVES (EDITORIAL GRID)
+         ========================================================================= -->
+    <section id="features" class="section">
+      <div class="section-header">
+        <span class="section-tag">ENGINEERED METICULOUSLY</span>
+        <h2 class="section-title">Every detail designed for listening.</h2>
+        <p class="section-lead">
+          From fast startup and native desktop integration to dual-player gapless crossfade, Studio prioritizes clarity and power.
+        </p>
+      </div>
+
+      <!-- Interactive Interface Spotlight Tour (No Wasted Space) -->
+      <div class="spotlight-tour">
+        <!-- Spotlight Tabs Bar -->
+        <div class="spotlight-nav">
+          <button class="spotlight-tab active" data-view="playback" data-img="assets/screenshots/playback-mode.png" data-title="Split-Stage Playback Environment" data-desc="Full-screen immersive audio stage with split layout, live synchronized lyrics, album jacket artwork, and dedicated audio engine modal." data-bullets="Time-synced lyrics with click-to-seek and dynamic album accent colors|Grooved vinyl record, album jacket, and full-bleed cover modes|Collapsible stage controls for distraction-free listening">
+            <span class="spotlight-tab-pip"></span>
+            <span>Split-Stage Playback</span>
+          </button>
+          <button class="spotlight-tab" data-view="darkmode" data-img="assets/screenshots/darkmode.png" data-title="Obsidian Dark Mode Library" data-desc="Complete local music catalogue browser with instantaneous indexing, album grid cards, artist grouping, and live now-playing hero bar." data-bullets="Drift + SQLite3 local database with incremental launch re-scan|Artist, Album, Track, Folder, and Playlist views|Multi-select for batch actions and instant playhead queueing">
+            <span class="spotlight-tab-pip"></span>
+            <span>Dark Mode Library</span>
+          </button>
+          <button class="spotlight-tab" data-view="library" data-img="assets/screenshots/library.png" data-title="Crate Browser & Quality Filters" data-desc="High-precision catalogue filtering built specifically for audiophile local music collections and large libraries." data-bullets="Filter by lossless formats (FLAC, ALAC, WAV, DSD)|Filter by sample rates up to 192 kHz, bit depth, and bitrate|Floating back button preserves catalogue scroll position and search">
+            <span class="spotlight-tab-pip"></span>
+            <span>Quality Filters</span>
+          </button>
+          <button class="spotlight-tab" data-view="smart" data-img="assets/screenshots/smart-playlist.png" data-title="Rule-Based Smart Playlists" data-desc="Dynamic crates that automatically update based on customizable boolean rules across audio metadata and technical tags." data-bullets="Match all/any rules: artist, genre, year, format, bitrate, sample rate|Instant live preview of matching tracks while building rules|Save any catalogue search as a dynamic smart playlist with one click">
+            <span class="spotlight-tab-pip"></span>
+            <span>Smart Playlists</span>
+          </button>
+          <button class="spotlight-tab" data-view="metadata" data-img="assets/screenshots/metadata-editor.png" data-title="Atomic Batch Metadata Editor" data-desc="Edit tags and embed pristine artwork directly into your audio files with pre-write diff inspection." data-bullets="Batch edit title, artist, album, genre, year, and track numbering|Replace or extract embedded high-res cover art (PNG/JPEG)|Atomic file writes prevent tag corruption during edits">
+            <span class="spotlight-tab-pip"></span>
+            <span>Metadata Editor</span>
+          </button>
+          <button class="spotlight-tab" data-view="eq" data-img="assets/screenshots/equalizer.png" data-title="ISO 10-Band Graphic Equalizer" data-desc="Persistent DSP audio graph running directly inside libmpv with zero playback interruption or track restarts." data-bullets="ISO 10-band faders (31 Hz – 16 kHz) with &plusmn;12 dB range|Import Equalizer APO GraphicEQ and AutoEQ headphone profiles|Automatic headroom compensation prevents clipping distortion">
+            <span class="spotlight-tab-pip"></span>
+            <span>Equalizer & Presets</span>
+          </button>
+        </div>
+
+        <!-- Desktop Frameless Window Frame -->
+        <div class="spotlight-frame">
+          <div class="spotlight-titlebar">
+            <div class="spotlight-dots">
+              <span class="spotlight-dot close"></span>
+              <span class="spotlight-dot min"></span>
+              <span class="spotlight-dot max"></span>
+            </div>
+            <span id="spotlight-title-label" class="spotlight-view-title">Studio — Split-Stage Playback Environment</span>
+            <span class="mono" style="font-size: 0.65rem; color: #5C5852;">192 kHz / 24-bit Lossless</span>
+          </div>
+          <div class="spotlight-img-wrap">
+            <img id="spotlight-main-img" src="assets/screenshots/playback-mode.png" alt="Studio Interface Preview" class="spotlight-img">
+          </div>
+        </div>
+
+        <!-- Spotlight Information Ribbon -->
+        <div class="spotlight-details">
+          <div class="spotlight-desc-col">
+            <h3 id="spotlight-heading" class="spotlight-feature-title">Split-Stage Playback Environment</h3>
+            <p id="spotlight-paragraph" class="spotlight-feature-desc">
+              Full-screen immersive audio stage with split layout, live synchronized lyrics, album jacket artwork, and dedicated audio engine modal.
+            </p>
+          </div>
+          <div id="spotlight-bullets-container" class="spotlight-bullets-col">
+            <div class="spotlight-bullet">
+              <svg class="spotlight-bullet-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Time-synced lyrics with click-to-seek and dynamic album accent colors</span>
+            </div>
+            <div class="spotlight-bullet">
+              <svg class="spotlight-bullet-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Grooved vinyl record, album jacket, and full-bleed cover modes</span>
+            </div>
+            <div class="spotlight-bullet">
+              <svg class="spotlight-bullet-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Collapsible stage controls for distraction-free listening</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Compact 3-Column Engineering Pillars (Zero Wasted Space) -->
+      <div class="compact-pillars-grid">
+        <!-- Pillar 1 -->
+        <div class="pillar-card">
+          <div class="pillar-header">
+            <div class="pillar-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            </div>
+            <span class="pillar-num">01 / DSP ENGINE</span>
+          </div>
+          <h3 class="pillar-title">Bit-Perfect libmpv Pipeline</h3>
+          <p class="pillar-desc">
+            Direct hardware pass-through via media_kit and libmpv. Supports FLAC, ALAC, WAV, DSD, and OGG with equal-power crossfade (0–15s).
+          </p>
+          <div class="pillar-metrics">
+            <div class="metric-row"><span class="metric-label">Crossfade Overlap</span><span class="metric-val">0–15s Gapless</span></div>
+            <div class="metric-row"><span class="metric-label">ReplayGain</span><span class="metric-val">Track &amp; Album</span></div>
+            <div class="metric-row"><span class="metric-label">Engine Core</span><span class="metric-val">libmpv native</span></div>
+          </div>
+        </div>
+
+        <!-- Pillar 2 -->
+        <div class="pillar-card">
+          <div class="pillar-header">
+            <div class="pillar-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            </div>
+            <span class="pillar-num">02 / LOCAL CRATE</span>
+          </div>
+          <h3 class="pillar-title">SQLite3 &amp; Drift ORM</h3>
+          <p class="pillar-desc">
+            Fast, zero-latency local library scanner. Incremental launch updates ensure your crates are ready the millisecond the app opens.
+          </p>
+          <div class="pillar-metrics">
+            <div class="metric-row"><span class="metric-label">Telemetry</span><span class="metric-val">Zero (100% Offline)</span></div>
+            <div class="metric-row"><span class="metric-label">Query Engine</span><span class="metric-val">SQLite3 Native</span></div>
+            <div class="metric-row"><span class="metric-label">Memory Usage</span><span class="metric-val">&lt; 40 MB</span></div>
+          </div>
+        </div>
+
+        <!-- Pillar 3 -->
+        <div class="pillar-card">
+          <div class="pillar-header">
+            <div class="pillar-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <span class="pillar-num">03 / INTEGRATION</span>
+          </div>
+          <h3 class="pillar-title">Native Desktop Shell</h3>
+          <p class="pillar-desc">
+            Custom frameless titlebar, system tray minimization, global media shortcuts, Discord Rich Presence, and persistent session restore.
+          </p>
+          <div class="pillar-metrics">
+            <div class="metric-row"><span class="metric-label">Titlebar</span><span class="metric-val">Custom Frameless</span></div>
+            <div class="metric-row"><span class="metric-label">Background Play</span><span class="metric-val">System Tray</span></div>
+            <div class="metric-row"><span class="metric-label">Rich Presence</span><span class="metric-val">Discord RPC</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         TECHNICAL SPECIFICATIONS BANNER
+         ========================================================================= -->
+    <section id="specs" class="section">
+      <div class="specs-banner">
+        <div class="spec-item">
+          <div class="spec-val">&lt; 40MB</div>
+          <div class="spec-title">Memory Footprint</div>
+          <div class="spec-desc">Compiled native binary. No heavyweight web runtime overhead.</div>
+        </div>
+
+        <div class="spec-item">
+          <div class="spec-val">0 ms</div>
+          <div class="spec-title">Cloud Latency</div>
+          <div class="spec-desc">100% local library scanning backed by SQLite3 and Drift ORM.</div>
+        </div>
+
+        <div class="spec-item">
+          <div class="spec-val">192 kHz</div>
+          <div class="spec-title">Bit-Perfect DAC</div>
+          <div class="spec-desc">Uncompromised high-resolution audio pass-through via libmpv.</div>
+        </div>
+
+        <div class="spec-item">
+          <div class="spec-val">100%</div>
+          <div class="spec-title">Open Source</div>
+          <div class="spec-desc">MIT Licensed. Zero tracking, zero telemetry, full sovereignty.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         DOWNLOAD MATRIX & INSTALLATION
+         ========================================================================= -->
+    <section id="download" class="section download-section">
+      <div class="section-header" style="align-items: center; text-align: center;">
+        <span class="section-tag">READY FOR YOUR CRATE</span>
+        <h2 class="section-title">Download Studio for your desktop.</h2>
+        <p class="section-lead">
+          Free and open-source. Choose your platform below to download the latest release.
+        </p>
+      </div>
+
+      <div class="download-grid">
+        <!-- Windows -->
+        <div class="download-card">
+          <svg class="os-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
+          </svg>
+          <div class="os-name">Windows</div>
+          <div class="os-detail">Windows 10 / 11 (x64)</div>
+          <a href="https://github.com/Adoxcol/studio/releases/latest/download/studio-windows-x64.zip" class="btn-primary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>studio-windows-x64.zip</span>
+          </a>
+          <p class="install-tip">Unzip anywhere and launch studio.exe. Portable & standalone.</p>
+        </div>
+
+        <!-- macOS -->
+        <div class="download-card">
+          <svg class="os-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 0.92-2.85-.9.04-2.02.6-2.66 1.34-.56.65-.95 1.7-0.83 2.72 1.01.08 2.06-.51 2.57-1.21Z"/>
+          </svg>
+          <div class="os-name">macOS</div>
+          <div class="os-detail">Apple Silicon & Intel</div>
+          <a href="https://github.com/Adoxcol/studio/releases/latest/download/studio-macos.zip" class="btn-primary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>studio-macos.zip</span>
+          </a>
+          <p class="install-tip">Move studio.app to Applications. Right-click Open on first launch.</p>
+        </div>
+
+        <!-- Linux -->
+        <div class="download-card">
+          <svg class="os-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12.001 0a7.487 7.487 0 0 0-7.488 7.488c0 2.378 1.111 4.502 2.85 5.865a7.464 7.464 0 0 0-2.85 5.923C4.513 21.411 7.865 24 12 24s7.488-2.589 7.488-4.724a7.464 7.464 0 0 0-2.851-5.923 7.483 7.483 0 0 0 2.851-5.865A7.487 7.487 0 0 0 12 0Z"/>
+          </svg>
+          <div class="os-name">Linux</div>
+          <div class="os-detail">Ubuntu, Debian, Fedora, Arch</div>
+          <a href="https://github.com/Adoxcol/studio/releases/latest/download/studio-linux-x64.tar.gz" class="btn-primary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>studio-linux-x64.tar.gz</span>
+          </a>
+          <p class="install-tip">Extract and run <code>./studio</code>. Requires libmpv.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- =========================================================================
+       PERSISTENT BOTTOM PLAYER BAR (SIMULATOR)
+       ========================================================================= -->
+  <aside class="bottom-player-bar" aria-label="Persistent Audio Player">
+    <div class="player-left">
+      <div class="player-cover">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="position: absolute; top: 9px; left: 9px; opacity: 0.6;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div class="player-meta">
+        <div class="player-title">Solaris (Midnight Tape)</div>
+        <div class="player-artist">The Cinematic Soundscape Trio</div>
+      </div>
+    </div>
+
+    <div class="player-center">
+      <div class="player-controls">
+        <button class="ctrl-btn" aria-label="Previous Track">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+        </button>
+        <button class="ctrl-btn play-btn play-trigger-btn" aria-label="Play or Pause">
+          <svg class="play-icon-symbol" width="16" height="16" viewBox="0 0 24 24">
+            <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
+          </svg>
+        </button>
+        <button class="ctrl-btn" aria-label="Next Track">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+        </button>
+      </div>
+      <div class="scrubber-wrapper">
+        <span>01:28</span>
+        <div class="scrubber-bar">
+          <div class="scrubber-fill"></div>
+        </div>
+        <span>04:28</span>
+      </div>
+    </div>
+
+    <div class="player-right">
+      <a href="#equalizer" class="ctrl-btn" title="Jump to Equalizer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+      </a>
+      <a href="#docking" class="ctrl-btn" title="Jump to Docking">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+      </a>
+    </div>
+  </aside>
+
+  <!-- =========================================================================
+       SITE FOOTER
+       ========================================================================= -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <div class="brand-wrap">
+          <div class="brand-icon">
+            <img src="assets/studio-icon.png" alt="Studio Icon" class="brand-icon-img">
+          </div>
+          <span class="brand-title">Studio</span>
+        </div>
+        <p class="footer-tagline">
+          An obsessively crafted desktop music player for local library collectors, audiophiles, and music lovers.
+        </p>
+      </div>
+
+      <div class="footer-links-group">
+        <div class="footer-col">
+          <div class="footer-heading">Product</div>
+          <a href="#stage" class="footer-link">3D Vinyl Stage</a>
+          <a href="#docking" class="footer-link">Modular Docking</a>
+          <a href="#equalizer" class="footer-link">ISO Equalizer</a>
+          <a href="#specs" class="footer-link">Audio Pipeline</a>
+        </div>
+
+        <div class="footer-col">
+          <div class="footer-heading">Releases</div>
+          <a href="https://github.com/Adoxcol/studio/releases" target="_blank" rel="noopener" class="footer-link">Latest Release (v0.3.0)</a>
+          <a href="https://github.com/Adoxcol/studio/blob/main/CHANGELOG.md" target="_blank" rel="noopener" class="footer-link">Changelog</a>
+          <a href="https://github.com/Adoxcol/studio/blob/main/LICENSE" target="_blank" rel="noopener" class="footer-link">MIT License</a>
+        </div>
+
+        <div class="footer-col">
+          <div class="footer-heading">Community & Code</div>
+          <a href="https://github.com/Adoxcol/studio" target="_blank" rel="noopener" class="footer-link">GitHub Repository</a>
+          <a href="https://github.com/Adoxcol/studio/issues" target="_blank" rel="noopener" class="footer-link">Issue Tracker</a>
+          <a href="https://github.com/Adoxcol/studio/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener" class="footer-link">Contributing Guide</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div>Crafted with Flutter &amp; Three.js for pure listening pleasure.</div>
+      <div>&copy; 2026 Studio Contributors. Released under the MIT License.</div>
+    </div>
+  </footer>
+
+  <!-- Main Orchestrator Script -->
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
