@@ -60,6 +60,11 @@ final playlistsProvider = StreamProvider<List<Playlist>>((ref) {
   return ref.watch(studioDatabaseProvider).watchPlaylists();
 });
 
+final playlistsByIdProvider = Provider<Map<int, Playlist>>((ref) {
+  final playlists = ref.watch(playlistsProvider).value ?? const [];
+  return {for (final p in playlists) p.id: p};
+});
+
 final playlistTracksProvider = StreamProvider.autoDispose
     .family<List<Track>, int>((ref, playlistId) {
       return ref.watch(studioDatabaseProvider).watchPlaylistTracks(playlistId);
