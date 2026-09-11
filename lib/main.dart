@@ -16,6 +16,8 @@ import 'package:studio/features/artist_artwork/data/musicbrainz_artist_picture_l
 import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
 import 'package:studio/core/desktop/close_preference_provider.dart';
 import 'package:studio/core/desktop/close_preference_store.dart';
+import 'package:studio/features/subsonic/data/subsonic_settings_store.dart';
+import 'package:studio/features/subsonic/presentation/subsonic_providers.dart';
 import 'package:studio/discord/discord_artwork.dart';
 import 'package:studio/discord/discord_settings_provider.dart';
 import 'package:studio/discord/discord_settings_store.dart';
@@ -65,9 +67,13 @@ Future<void> main() async {
   final discordArtwork = FreeImageArtworkUploader(
     cacheFile: File(p.join(support.path, 'discord-art.json')),
   );
+  final subsonicSettings = FileSubsonicSettingsStore(
+    File(p.join(support.path, 'subsonic.json')),
+  );
   runApp(
     ProviderScope(
       overrides: [
+        subsonicSettingsStoreProvider.overrideWithValue(subsonicSettings),
         fanartSettingsStoreProvider.overrideWithValue(
           FanartSettingsStore(file: File(p.join(support.path, 'fanart.json'))),
         ),

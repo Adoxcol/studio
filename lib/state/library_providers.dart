@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:studio/features/subsonic/data/subsonic_playable_provider.dart';
+import 'package:studio/features/subsonic/presentation/subsonic_providers.dart';
 import 'package:studio/library/artwork_store.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/library/library_index.dart';
@@ -8,6 +10,7 @@ import 'package:studio/library/scan_progress.dart';
 import 'package:studio/library/scanner.dart';
 import 'package:studio/playback/audio_engine.dart';
 import 'package:studio/playback/media_kit_engine.dart';
+import 'package:studio/providers/local_file_provider.dart';
 import 'package:studio/providers/resolver_registry.dart';
 
 final studioDatabaseProvider = Provider<StudioDatabase>((ref) {
@@ -27,7 +30,14 @@ final spectrumBandsProvider = StreamProvider<List<double>>((ref) {
 });
 
 final resolverRegistryProvider = Provider<ResolverRegistry>((ref) {
-  return ResolverRegistry();
+  return ResolverRegistry(
+    resolvers: [
+      const LocalFileProvider(),
+      SubsonicPlayableProvider(
+        clientGetter: () => ref.read(subsonicClientProvider),
+      ),
+    ],
+  );
 });
 
 final folderScannerProvider = Provider<FolderScanner>((ref) {

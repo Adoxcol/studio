@@ -128,20 +128,35 @@ class StudioDatabase extends _$StudioDatabase {
     return {for (final row in rows) row.read<String>('name')};
   }
 
-  Stream<List<Track>> watchTracks() {
+  Stream<List<Track>> watchTracks({String source = 'local'}) {
     return watchCoalescedQuery(
       tableUpdates(TableUpdateQuery.onTable(tracks)),
       () =>
-          (select(tracks)..orderBy([
-                (t) => OrderingTerm(expression: t.album),
-                (t) => OrderingTerm(expression: t.trackNumber),
-                (t) => OrderingTerm(expression: t.title),
-              ]))
+          (select(tracks)
+                ..where((t) => t.source.equals(source))
+                ..orderBy([
+                  (t) => OrderingTerm(expression: t.album),
+                  (t) => OrderingTerm(expression: t.trackNumber),
+                  (t) => OrderingTerm(expression: t.title),
+                ]))
               .get(),
     );
   }
 
-  Future<List<Track>> allTracks() => select(tracks).get();
+  Future<List<Track>> allTracks({String source = 'local'}) =>
+      (select(tracks)..where((t) => t.source.equals(source))).get();
+
+  Future<Track> getOrInsertTrack(TracksCompanion companion) async {
+    final existing =
+        await (select(tracks)
+              ..where((t) => t.locator.equals(companion.locator.value)))
+            .getSingleOrNull();
+    if (existing != null) {
+      return existing;
+    }
+    final id = await into(tracks).insert(companion);
+    return (await trackById(id))!;
+  }
 
   Future<List<LibraryFolder>> allFolders() => select(libraryFolders).get();
 

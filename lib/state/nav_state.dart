@@ -1,5 +1,6 @@
 enum StudioDestination {
   library,
+  subsonic,
   nowPlaying,
   playbackMode,
   queue,

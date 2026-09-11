@@ -10,6 +10,7 @@ class TrackLocator {
   final String locator;
 
   static const local = 'local';
+  static const subsonic = 'subsonic';
 }
 
 /// Turns a [TrackLocator] into a playable [Uri] for the audio engine.
