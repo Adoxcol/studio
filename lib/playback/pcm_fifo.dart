@@ -35,14 +35,13 @@ class PcmFifo {
 
 class _PosixFifo {
   static Future<PcmFifo> create() async {
-    final path =
-        '${Directory.systemTemp.path}/studio-fft-$pid-${DateTime.now().microsecondsSinceEpoch}.pcm';
-    final file = File(path);
-    if (file.existsSync()) file.deleteSync();
+    final dir = await Directory.systemTemp.createTemp('studio-fft-');
+    final path = '${dir.path}/fifo.pcm';
     final result = await Process.run('mkfifo', [path]);
     if (result.exitCode != 0) {
       throw StateError('mkfifo failed: ${result.stderr}');
     }
+    final file = File(path);
     final opener = file.open(mode: FileMode.read);
     RandomAccessFile? raf;
     var closed = false;
@@ -65,7 +64,7 @@ class _PosixFifo {
           // Best-effort.
         }
         try {
-          if (file.existsSync()) file.deleteSync();
+          if (dir.existsSync()) dir.deleteSync(recursive: true);
         } on Object {
           // Best-effort.
         }
