@@ -168,6 +168,21 @@ class ArtistPictureRepository {
     );
   }
 
+  /// Stores a server-provided artist image in the same local cache as other
+  /// automatic artwork, without replacing a user's custom image.
+  Future<void> saveRemote(String artist, Uint8List bytes) async {
+    final path = await store.saveImage(await _prepare(bytes));
+    await _mutate(
+      artistKey(artist),
+      (old) => old.customPath == null
+          ? ArtistPicture(
+              remotePath: path,
+              credit: old.credit,
+            )
+          : old,
+    );
+  }
+
   /// Changing providers invalidates only negative results, never saved images.
   /// Keep the repository alive so widgets and manual imports retain ownership.
   Future<void> refreshSources() async {

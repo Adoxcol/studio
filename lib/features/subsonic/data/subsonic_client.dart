@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
@@ -67,6 +68,24 @@ class SubsonicClient {
       'id': coverArtId,
       'size': size.toString(),
     });
+  }
+
+  Future<Uint8List> fetchArtistImage(String imageUrl) async {
+    final parsed = Uri.parse(imageUrl);
+    final uri = (parsed.hasScheme
+            ? parsed
+            : Uri.parse(config.normalizedUrl).resolve(imageUrl))
+        .replace(queryParameters: {
+      ...parsed.queryParameters,
+      ..._buildAuthParams(),
+    });
+    final response = await _httpClient
+        .get(uri)
+        .timeout(const Duration(seconds: 20));
+    if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
+      throw Exception('Artist image returned HTTP ${response.statusCode}');
+    }
+    return response.bodyBytes;
   }
 
   Future<Map<String, dynamic>> _getJson(
