@@ -29,8 +29,9 @@ Required repository configuration:
 - `WINDOWS_SIGN_TIMESTAMP_URL`: trusted RFC3161 timestamp endpoint.
 
 The certificate and password must only exist in GitHub Actions secrets. Never
-commit them or print them in logs. The workflow intentionally fails until
-production signing is configured.
+commit them or print them in logs. If signing configuration is absent, the
+workflow publishes an explicitly unsigned installer for testing and reports a
+warning; configure all four values before distributing a production release.
 
 ## Local packaging
 
