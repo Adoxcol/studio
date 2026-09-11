@@ -139,6 +139,17 @@ class StudioApp {
 
     if (!tabs || tabs.length === 0 || !mainImg) return;
 
+    // Preload all spotlight images into cache immediately
+    tabs.forEach(tab => {
+      const src = tab.dataset.img;
+      if (src) {
+        const preloadImg = new Image();
+        preloadImg.src = src;
+      }
+    });
+
+    let currentTransitionId = 0;
+
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
         tabs.forEach(t => t.classList.remove('active'));
@@ -148,13 +159,6 @@ class StudioApp {
         const title = tab.dataset.title;
         const desc = tab.dataset.desc;
         const bullets = (tab.dataset.bullets || '').split('|');
-
-        // Smooth image swap
-        mainImg.style.opacity = '0.3';
-        setTimeout(() => {
-          mainImg.src = imgSrc;
-          mainImg.style.opacity = '1';
-        }, 120);
 
         if (titleLabel) titleLabel.textContent = `Studio — ${title}`;
         if (heading) heading.textContent = title;
@@ -167,6 +171,32 @@ class StudioApp {
               <span>${b}</span>
             </div>
           `).join('');
+        }
+
+        // Increment transition id to invalidate any prior in-flight loads
+        const thisTransitionId = ++currentTransitionId;
+
+        // Smooth image swap with cache check and onload handling
+        mainImg.style.opacity = '0.3';
+
+        const tempImg = new Image();
+        tempImg.onload = () => {
+          if (thisTransitionId !== currentTransitionId) return;
+          mainImg.src = imgSrc;
+          mainImg.style.opacity = '1';
+        };
+        tempImg.onerror = () => {
+          if (thisTransitionId !== currentTransitionId) return;
+          // Fallback: still set src and restore opacity so browser handles or retry
+          mainImg.src = imgSrc;
+          mainImg.style.opacity = '1';
+        };
+        tempImg.src = imgSrc;
+
+        // In case image is already cached and loaded synchronously
+        if (tempImg.complete && tempImg.naturalWidth > 0) {
+          mainImg.src = imgSrc;
+          mainImg.style.opacity = '1';
         }
       });
     });
