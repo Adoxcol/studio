@@ -7,6 +7,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Interactive showcase website in `website/` showcasing Studio's Editorial Mono design aesthetic, WebGL 3D grooved vinyl record with interactive lighting and physics, live OKLCH dynamic accent color engine, 32-band FFT audio spectrum visualizer, ISO 10-band graphic equalizer with real-time curve drawing, modular docking layout demo, and direct platform downloads.
+
 ## [0.4.0] - 2026-09-11
 
 ### Added

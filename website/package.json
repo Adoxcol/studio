@@ -1,0 +1,19 @@
+{
+  "name": "studio-website",
+  "version": "0.3.0",
+  "description": "Showcase website for Studio — A fast, responsive, highly customizable desktop music player",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve": "npx serve ."
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "three": "^0.160.0"
+  }
+}

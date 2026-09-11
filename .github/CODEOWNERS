@@ -1,0 +1,11 @@
+# CODEOWNERS — Studio Repository Access Control
+# Documentation: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Maintainer has default ownership
+* @Adoxcol
+
+# Strict lockdown: Only @Adoxcol can approve changes to the showcase website
+/website/ @Adoxcol
+
+# Strict lockdown: GitHub Actions CI workflows and repository security
+/.github/ @Adoxcol

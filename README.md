@@ -11,7 +11,7 @@ Local library first — Spotify-style streaming is planned for a later phase.
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-54C5F8?logo=flutter&logoColor=white)](https://flutter.dev)
 [![License](https://img.shields.io/github/license/Adoxcol/studio?color=green)](LICENSE)
 
-[**Download**](https://github.com/Adoxcol/studio/releases/latest) · [**Changelog**](CHANGELOG.md) · [**Contributing**](CONTRIBUTING.md) · [**Docs**](docs/)
+[**Website**](website/) · [**Download**](https://github.com/Adoxcol/studio/releases/latest) · [**Changelog**](CHANGELOG.md) · [**Contributing**](CONTRIBUTING.md) · [**Docs**](docs/)
 
 </div>
 
