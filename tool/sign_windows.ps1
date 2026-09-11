@@ -1,9 +1,9 @@
-$ErrorActionPreference = 'Stop'
-
 param(
   [Parameter(Mandatory = $true)]
   [string]$Path
 )
+
+$ErrorActionPreference = 'Stop'
 
 if (-not $env:WINDOWS_SIGNTOOL_PATH) {
   throw 'WINDOWS_SIGNTOOL_PATH is required for production releases.'
