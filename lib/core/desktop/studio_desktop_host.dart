@@ -270,6 +270,12 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
     try {
       await windowManager.setSkipTaskbar(false);
       await windowManager.show();
+      // Re-centre in case the window drifted off-screen (e.g. display config
+      // changed since last run) and give the OS a tick to process show() before
+      // requesting foreground — Windows ignores SetForegroundWindow if called
+      // too quickly after ShowWindow when foreground rights are stale.
+      await windowManager.center();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
       try {
         await windowManager.setAlwaysOnTop(true);
         await windowManager.focus();
