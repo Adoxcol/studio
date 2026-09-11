@@ -3,7 +3,7 @@
 # 🎵 Studio
 
 **A fast, responsive, highly customizable desktop music player.**  
-Local library first — Spotify-style streaming is planned for a later phase.
+Local library first with remote OpenSubsonic & Navidrome streaming support.
 
 [![CI](https://github.com/Adoxcol/studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Adoxcol/studio/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/Adoxcol/studio?label=release&color=blueviolet)](https://github.com/Adoxcol/studio/releases/latest)
@@ -22,6 +22,16 @@ Local library first — Spotify-style streaming is planned for a later phase.
 ---
 
 ## Features
+
+### 🌐 Remote Streaming (Subsonic & Navidrome)
+
+- Connect to self-hosted music servers (Navidrome, OpenSubsonic, Subsonic, LMS, Gonic)
+- Modern salt + token MD5 authentication over REST API v1.16.1
+- **Strictly separated from local catalogues**: remote collections live in their own dedicated workspace destination
+- Browse remote albums, artist directories, and search across track titles with instant results
+- Native lossless/transcoded audio streaming with full EQ, visualizer, volume, and playback queue integration
+
+---
 
 ### 📚 Library
 

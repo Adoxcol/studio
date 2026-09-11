@@ -7,9 +7,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-09-11
+
 ### Added
 
-- Interactive showcase website in `website/` showcasing Studio's Editorial Mono design aesthetic, WebGL 3D grooved vinyl record with interactive lighting and physics, live OKLCH dynamic accent color engine, 32-band FFT audio spectrum visualizer, ISO 10-band graphic equalizer with real-time curve drawing, modular docking layout demo, and direct platform downloads.
+- **OpenSubsonic & Navidrome Remote Streaming**:
+  - Connect to remote music servers (Navidrome, Subsonic, LMS, Gonic, etc.) via modern salt + token MD5 authentication over REST API v1.16.1.
+  - Dedicated Subsonic destination on the icon rail, strictly isolated from the local library database and local scan catalogues.
+  - Remote album grid, artist directory, song lists, and server-side search (`search3`).
+  - Native lossless/transcoded audio streaming directly through Studio's `media_kit` (libmpv) engine with full visualizer, DSP equalizer, and transport controls.
+  - Secure local persistence of server configurations and connection status.
+- **Showcase Website (`website/`)**:
+  - High-performance showcase site featuring interactive WebGL 3D grooved vinyl record with realistic lighting and physical drag rotation.
+  - Dynamic OKLCH color engine matching the desktop player's dynamic palette system.
+  - 32-band FFT audio spectrum visualizer and ISO 10-band interactive graphic equalizer demo.
+  - Multi-platform desktop build tour and direct releases showcase.
 
 ## [0.4.0] - 2026-09-11
 

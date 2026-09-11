@@ -34,6 +34,13 @@ class StudioIconRail extends StatelessWidget {
               onTap: () => onSelect(StudioDestination.library),
             ),
             _RailButton(
+              icon: Icons.cloud_outlined,
+              selectedIcon: Icons.cloud,
+              tooltip: 'Remote Server (Navidrome)',
+              selected: selected == StudioDestination.subsonic,
+              onTap: () => onSelect(StudioDestination.subsonic),
+            ),
+            _RailButton(
               icon: Icons.graphic_eq_outlined,
               selectedIcon: Icons.graphic_eq,
               tooltip: 'Now Playing',

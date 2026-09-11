@@ -13,6 +13,7 @@ import 'package:studio/ui/layout/studio_workspace.dart';
 import 'package:studio/ui/layout/title_bar.dart';
 import 'package:studio/ui/keyboard_shortcuts/studio_keyboard_shortcuts.dart';
 import 'package:studio/ui/library_browser/scan_notice.dart';
+import 'package:studio/features/subsonic/presentation/subsonic_page.dart';
 import 'package:studio/ui/now_playing/player_bar.dart';
 import 'package:studio/ui/now_playing/now_playing_page.dart';
 import 'package:studio/ui/settings/settings_page.dart';
@@ -52,11 +53,15 @@ class StudioShell extends ConsumerWidget {
                                   Offstage(
                                     offstage:
                                         destination ==
-                                        StudioDestination.settings,
+                                            StudioDestination.settings ||
+                                        destination ==
+                                            StudioDestination.subsonic,
                                     child: const StudioWorkspace(),
                                   ),
                                   if (destination == StudioDestination.settings)
                                     const SettingsPage(),
+                                  if (destination == StudioDestination.subsonic)
+                                    const SubsonicPage(),
                                   const Positioned(
                                     right: 20,
                                     bottom: 72,
