@@ -175,10 +175,7 @@ class ArtistPictureRepository {
     await _mutate(
       artistKey(artist),
       (old) => old.customPath == null
-          ? ArtistPicture(
-              remotePath: path,
-              credit: old.credit,
-            )
+          ? ArtistPicture(remotePath: path, credit: old.credit)
           : old,
     );
   }

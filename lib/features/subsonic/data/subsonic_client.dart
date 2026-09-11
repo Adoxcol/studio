@@ -72,13 +72,16 @@ class SubsonicClient {
 
   Future<Uint8List> fetchArtistImage(String imageUrl) async {
     final parsed = Uri.parse(imageUrl);
-    final uri = (parsed.hasScheme
-            ? parsed
-            : Uri.parse(config.normalizedUrl).resolve(imageUrl))
-        .replace(queryParameters: {
-      ...parsed.queryParameters,
-      ..._buildAuthParams(),
-    });
+    final uri =
+        (parsed.hasScheme
+                ? parsed
+                : Uri.parse(config.normalizedUrl).resolve(imageUrl))
+            .replace(
+              queryParameters: {
+                ...parsed.queryParameters,
+                ..._buildAuthParams(),
+              },
+            );
     final response = await _httpClient
         .get(uri)
         .timeout(const Duration(seconds: 20));

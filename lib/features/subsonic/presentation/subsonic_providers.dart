@@ -95,7 +95,8 @@ Future<void> _cacheArtistArtwork(
   List<SubsonicArtist> artists,
 ) async {
   for (final artist in artists) {
-    final imageUrl = artist.artistImageUrl ??
+    final imageUrl =
+        artist.artistImageUrl ??
         client.buildCoverArtUri(artist.coverArtId)?.toString();
     if (imageUrl == null || (await artwork.get(artist.name)).path != null) {
       continue;

@@ -35,9 +35,7 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('removed shortcuts never hijack text editing', (
-    tester,
-  ) async {
+  testWidgets('removed shortcuts never hijack text editing', (tester) async {
     await pumpApp(tester);
 
     await tester.tap(find.byType(TextField).first);

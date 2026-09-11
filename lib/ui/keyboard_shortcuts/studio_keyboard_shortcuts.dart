@@ -38,14 +38,12 @@ class StudioKeyboardShortcuts extends ConsumerWidget {
         const SingleActivator(LogicalKeyboardKey.space): () =>
             run(controller.togglePlayPause),
         const SingleActivator(LogicalKeyboardKey.arrowRight): () => run(
-          () => controller.seekTo(
-            playback.position + const Duration(seconds: 5),
-          ),
+          () =>
+              controller.seekTo(playback.position + const Duration(seconds: 5)),
         ),
         const SingleActivator(LogicalKeyboardKey.arrowLeft): () => run(
-          () => controller.seekTo(
-            playback.position - const Duration(seconds: 5),
-          ),
+          () =>
+              controller.seekTo(playback.position - const Duration(seconds: 5)),
         ),
         const SingleActivator(LogicalKeyboardKey.arrowUp): () =>
             run(() => controller.setVolume(playback.volume + 0.05)),
