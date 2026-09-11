@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/state/nav_provider.dart';
 import 'package:studio/state/nav_state.dart';
+import 'package:studio/state/playback_mode_provider.dart';
 import 'package:studio/ui/layout/studio_shell.dart';
 
 import '../helpers/pump_studio.dart';
@@ -75,5 +76,40 @@ void main() {
     expect(find.text('Keyboard shortcuts'), findsOneWidget);
     expect(find.text('Play / pause'), findsOneWidget);
     expect(find.text('Ctrl + 3'), findsOneWidget);
+  });
+
+  testWidgets(
+    'typing spaces and letters in search text field is never intercepted',
+    (tester) async {
+      await pumpApp(tester);
+      final searchField = find.byType(TextField).first;
+      await tester.tap(searchField);
+      await tester.pump();
+
+      await tester.enterText(searchField, 'radiohead in rainbows');
+      await tester.pump();
+
+      final editable = tester.widget<TextField>(searchField);
+      expect(editable.controller?.text, 'radiohead in rainbows');
+    },
+  );
+
+  testWidgets('escape key exits Playback Mode back to windowed shell', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    final shell = tester.element(find.byType(StudioShell));
+    final container = ProviderScope.containerOf(shell);
+
+    // Enter playback mode
+    container.read(playbackModeProvider.notifier).enter();
+    await tester.pumpAndSettle();
+    expect(container.read(playbackModeProvider), isTrue);
+
+    // Press Escape
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    expect(container.read(playbackModeProvider), isFalse);
   });
 }
