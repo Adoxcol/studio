@@ -11,7 +11,7 @@ Local library first with remote OpenSubsonic & Navidrome streaming support.
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-54C5F8?logo=flutter&logoColor=white)](https://flutter.dev)
 [![License](https://img.shields.io/github/license/Adoxcol/studio?color=green)](LICENSE)
 
-[**Website**](website/) · [**Download**](https://github.com/Adoxcol/studio/releases/latest) · [**Changelog**](CHANGELOG.md) · [**Contributing**](CONTRIBUTING.md) · [**Docs**](docs/)
+[**Website**](https://studio.adoxcol.com) · [**Download**](https://github.com/Adoxcol/studio/releases/latest) · [**Changelog**](CHANGELOG.md) · [**Contributing**](CONTRIBUTING.md) · [**Docs**](docs/)
 
 </div>
 
