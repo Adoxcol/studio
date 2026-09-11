@@ -54,3 +54,8 @@ app.*.map.json
 # Widget Preview related
 .widget_preview/
 .vscode/settings.json
+
+# Website
+website/dist/
+website/node_modules/
+

@@ -7,6 +7,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Showcase Website Assets**: Relocated static screenshots and brand icons into `website/public/assets/` so Vite copies all interface preview images into `dist/assets/screenshots/` without 404 errors on Vercel.
+- **Navidrome & Subsonic Full Scanning & Discography**:
+  - Full server library scan: Introduced background library scan that paginates and indexes all remote albums and tracks with live progress, track counts, and cancellation.
+  - Remote Tracks tab: Browse all remote server songs with quick filtering, "Play All", "Shuffle All", and cache clearing.
+  - Multi-sort album browser: Added sort modes (A–Z, Recently Added, Newest, Most Played, Random) and on-demand pagination / "Load More" / "Load All" across large remote collections.
+  - Artist Discography view: Tapping an artist now displays all albums by that artist with play controls, rather than only opening the first album.
+
 ## [0.4.5] - 2026-09-11
 
 ### Added
