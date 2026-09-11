@@ -5,14 +5,14 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-if (-not $env:WINDOWS_SIGNTOOL_PATH) {
-  throw 'WINDOWS_SIGNTOOL_PATH is required for production releases.'
-}
-if (-not $env:WINDOWS_SIGN_CERT_BASE64) {
-  throw 'WINDOWS_SIGN_CERT_BASE64 is required for production releases.'
-}
-if (-not $env:WINDOWS_SIGN_CERT_PASSWORD) {
-  throw 'WINDOWS_SIGN_CERT_PASSWORD is required for production releases.'
+if (
+  -not $env:WINDOWS_SIGNTOOL_PATH -or
+  -not $env:WINDOWS_SIGN_TIMESTAMP_URL -or
+  -not $env:WINDOWS_SIGN_CERT_BASE64 -or
+  -not $env:WINDOWS_SIGN_CERT_PASSWORD
+) {
+  Write-Warning 'Windows signing configuration is absent; leaving the release unsigned.'
+  exit 0
 }
 
 $cert = Join-Path $env:RUNNER_TEMP 'studio-signing.pfx'

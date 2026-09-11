@@ -56,13 +56,8 @@ jobs:
         shell: pwsh
         run: .\tool\package_windows.ps1 -Version $env:RELEASE_VERSION -Output dist\windows
       - name: Sign and verify Windows binaries
-        if: ${{ vars.WINDOWS_SIGNTOOL_PATH != '' && vars.WINDOWS_SIGN_TIMESTAMP_URL != '' && secrets.WINDOWS_SIGN_CERT_BASE64 != '' && secrets.WINDOWS_SIGN_CERT_PASSWORD != '' }}
         shell: pwsh
         run: .\tool\sign_windows.ps1 -Path dist\windows
-      - name: Report unsigned Windows build
-        if: ${{ vars.WINDOWS_SIGNTOOL_PATH == '' || vars.WINDOWS_SIGN_TIMESTAMP_URL == '' || secrets.WINDOWS_SIGN_CERT_BASE64 == '' || secrets.WINDOWS_SIGN_CERT_PASSWORD == '' }}
-        shell: pwsh
-        run: Write-Warning 'Windows signing secrets are not configured; publishing an unsigned installer.'
       - uses: actions/upload-artifact@v4
         with:
           name: studio-windows-velopack
