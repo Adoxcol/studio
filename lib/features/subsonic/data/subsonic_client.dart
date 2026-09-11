@@ -166,12 +166,14 @@ class SubsonicClient {
   }
 
   Future<List<SubsonicAlbum>> getAlbumList({
-    String type = 'recent',
-    int size = 30,
+    String type = 'alphabeticalByName',
+    int size = 100,
+    int offset = 0,
   }) async {
     final response = await _getJson('getAlbumList2', {
       'type': type,
       'size': size.toString(),
+      'offset': offset.toString(),
     });
     final root = response['albumList2'] as Map<String, dynamic>?;
     if (root == null) return [];
@@ -180,6 +182,43 @@ class SubsonicClient {
     return albumList
         .whereType<Map<String, dynamic>>()
         .map(SubsonicAlbum.fromJson)
+        .toList();
+  }
+
+  Future<List<SubsonicAlbum>> getAllAlbums({
+    String type = 'alphabeticalByName',
+    int pageSize = 500,
+    int maxCount = 10000,
+    void Function(int fetched)? onProgress,
+  }) async {
+    final all = <SubsonicAlbum>[];
+    var offset = 0;
+    while (all.length < maxCount) {
+      final batch = await getAlbumList(
+        type: type,
+        size: pageSize,
+        offset: offset,
+      );
+      if (batch.isEmpty) break;
+      all.addAll(batch);
+      onProgress?.call(all.length);
+      if (batch.length < pageSize) break;
+      offset += batch.length;
+    }
+    return all;
+  }
+
+  Future<List<SubsonicSong>> getRandomSongs({int size = 50}) async {
+    final response = await _getJson('getRandomSongs', {
+      'size': size.toString(),
+    });
+    final root = response['randomSongs'] as Map<String, dynamic>?;
+    if (root == null) return [];
+
+    final songList = root['song'] as List<dynamic>? ?? [];
+    return songList
+        .whereType<Map<String, dynamic>>()
+        .map(SubsonicSong.fromJson)
         .toList();
   }
 

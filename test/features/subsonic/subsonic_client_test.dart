@@ -50,5 +50,43 @@ void main() {
       expect(uri.path, '/rest/stream');
       client.dispose();
     });
+
+    test(
+      'buildEndpointUri includes extraParams such as type, size and offset',
+      () {
+        final client = SubsonicClient(config: config);
+        final uri = client.buildEndpointUri('getAlbumList2', {
+          'type': 'alphabeticalByName',
+          'size': '100',
+          'offset': '200',
+        });
+        expect(uri.path, '/rest/getAlbumList2');
+        expect(uri.queryParameters['type'], 'alphabeticalByName');
+        expect(uri.queryParameters['size'], '100');
+        expect(uri.queryParameters['offset'], '200');
+        client.dispose();
+      },
+    );
+
+    test('SubsonicScanState tracks progress percentage properly', () {
+      const state = SubsonicScanState(
+        isScanning: true,
+        currentAlbum: 50,
+        totalAlbums: 100,
+        totalTracks: 540,
+        currentAlbumName: 'Abbey Road',
+      );
+      expect(state.progress, 0.5);
+      expect(state.isScanning, isTrue);
+
+      final updated = state.copyWith(
+        currentAlbum: 100,
+        isCompleted: true,
+        isScanning: false,
+      );
+      expect(updated.progress, 1.0);
+      expect(updated.isCompleted, isTrue);
+      expect(updated.isScanning, isFalse);
+    });
   });
 }

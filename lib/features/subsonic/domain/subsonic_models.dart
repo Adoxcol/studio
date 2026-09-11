@@ -206,3 +206,59 @@ class SubsonicSong {
     );
   }
 }
+
+enum SubsonicAlbumSort {
+  alphabeticalByName('alphabeticalByName', 'A–Z'),
+  recent('recent', 'Recently Added'),
+  newest('newest', 'Newest Releases'),
+  frequent('frequent', 'Most Played'),
+  random('random', 'Random');
+
+  const SubsonicAlbumSort(this.apiValue, this.label);
+  final String apiValue;
+  final String label;
+}
+
+@immutable
+class SubsonicScanState {
+  const SubsonicScanState({
+    this.isScanning = false,
+    this.currentAlbum = 0,
+    this.totalAlbums = 0,
+    this.totalTracks = 0,
+    this.currentAlbumName = '',
+    this.error,
+    this.isCompleted = false,
+  });
+
+  final bool isScanning;
+  final int currentAlbum;
+  final int totalAlbums;
+  final int totalTracks;
+  final String currentAlbumName;
+  final String? error;
+  final bool isCompleted;
+
+  double get progress =>
+      totalAlbums > 0 ? (currentAlbum / totalAlbums).clamp(0.0, 1.0) : 0.0;
+
+  SubsonicScanState copyWith({
+    bool? isScanning,
+    int? currentAlbum,
+    int? totalAlbums,
+    int? totalTracks,
+    String? currentAlbumName,
+    String? error,
+    bool? isCompleted,
+  }) {
+    return SubsonicScanState(
+      isScanning: isScanning ?? this.isScanning,
+      currentAlbum: currentAlbum ?? this.currentAlbum,
+      totalAlbums: totalAlbums ?? this.totalAlbums,
+      totalTracks: totalTracks ?? this.totalTracks,
+      currentAlbumName: currentAlbumName ?? this.currentAlbumName,
+      error: error,
+      isCompleted: isCompleted ?? this.isCompleted,
+    );
+  }
+}
