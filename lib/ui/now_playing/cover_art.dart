@@ -22,7 +22,18 @@ class CoverArt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
-    final file = path == null ? null : File(path!);
+    final artwork = path;
+    if (artwork != null && _isNetworkUri(artwork)) {
+      return Image.network(
+        artwork,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, _, _) => _Placeholder(size: size, palette: palette),
+      );
+    }
+    final file = artwork == null ? null : File(artwork);
     if (file != null) {
       final extent = decodeExtent(size, MediaQuery.devicePixelRatioOf(context));
       return Image(
@@ -40,6 +51,11 @@ class CoverArt extends StatelessWidget {
       );
     }
     return _Placeholder(size: size, palette: palette);
+  }
+
+  static bool _isNetworkUri(String value) {
+    final uri = Uri.tryParse(value);
+    return uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
   }
 }
 

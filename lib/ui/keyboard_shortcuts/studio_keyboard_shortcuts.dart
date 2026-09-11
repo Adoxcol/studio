@@ -18,16 +18,13 @@ class StudioKeyboardShortcuts extends ConsumerWidget {
     if (focus == null) return false;
     final context = focus.context;
     if (context == null) return false;
-    if (context.widget is EditableText) return true;
-    if (context.findAncestorWidgetOfExactType<EditableText>() != null) {
-      return true;
-    }
-    if (context.findAncestorStateOfType<EditableTextState>() != null) {
-      return true;
-    }
-    final renderObject = context.findRenderObject();
-    if (renderObject is RenderEditable) return true;
-    return false;
+
+    return context.widget is EditableText ||
+        context.findAncestorWidgetOfExactType<EditableText>() != null ||
+        context.findAncestorStateOfType<EditableTextState>() != null ||
+        context.findAncestorWidgetOfExactType<TextField>() != null ||
+        context.findAncestorWidgetOfExactType<TextFormField>() != null ||
+        context.findRenderObject() is RenderEditable;
   }
 
   @override

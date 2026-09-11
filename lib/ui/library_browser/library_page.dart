@@ -14,6 +14,7 @@ import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/library_browser/library_browse_view.dart';
 import 'package:studio/features/library_folders/presentation/library_folders_panel.dart';
 import 'package:studio/features/metadata_editor/presentation/batch_metadata_editor_dialog.dart';
+import 'package:studio/features/subsonic/presentation/subsonic_providers.dart';
 import 'package:studio/features/playlist_management/presentation/playlist_dialogs.dart';
 import 'package:studio/features/smart_playlists/domain/smart_playlist.dart';
 import 'package:studio/features/smart_playlists/presentation/smart_playlist_editor.dart';
@@ -43,6 +44,7 @@ typedef _LibraryLocation = ({
 });
 
 class _LibraryPageState extends ConsumerState<LibraryPage> {
+  static const _remoteFolderId = -1;
   final _search = TextEditingController();
   Timer? _searchTimer;
   String _query = '';
@@ -337,13 +339,50 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     });
     final palette = StudioPalette.of(context);
     final scanActive = ref.watch(libraryScanProvider.select((s) => s.active));
-    final folders = ref.watch(libraryFoldersProvider).value ?? const [];
+    final localFolders = ref.watch(libraryFoldersProvider).value ?? const [];
+    final remoteTracks = ref.watch(subsonicTracksProvider).value ?? const [];
+    final config = ref.watch(subsonicConfigProvider);
+    final remoteFolder = config == null
+        ? null
+        : LibraryFolder(
+            id: _remoteFolderId,
+            path: 'Navidrome / ${config.serverName}',
+          );
+    final folders = [
+      ...localFolders,
+      ...?remoteFolder == null ? null : [remoteFolder],
+    ];
+    if (localFolders.isEmpty &&
+        remoteFolder != null &&
+        _folderId == null &&
+        _history.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _folderId != null || localFolders.isNotEmpty) return;
+        setState(() {
+          _tab = LibraryTab.folders;
+          _folderId = _remoteFolderId;
+        });
+      });
+    }
     final tracks = ref.watch(libraryTracksProvider);
 
     return tracks.when(
-      data: (rows) => _body(context, palette, rows, folders, scanActive),
-      loading: () =>
-          _body(context, palette, const <Track>[], folders, scanActive),
+      data: (rows) => _body(
+        context,
+        palette,
+        _folderId == _remoteFolderId ? remoteTracks : rows,
+        folders,
+        localFolders,
+        scanActive,
+      ),
+      loading: () => _body(
+        context,
+        palette,
+        _folderId == _remoteFolderId ? remoteTracks : const <Track>[],
+        folders,
+        localFolders,
+        scanActive,
+      ),
       error: (error, _) => Padding(
         padding: const EdgeInsets.all(32),
         child: Text('$error', style: TextStyle(color: palette.inkMuted)),
@@ -356,13 +395,15 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     StudioPalette palette,
     List<Track> allTracks,
     List<LibraryFolder> folders,
+    List<LibraryFolder> localFolders,
     bool scanning,
   ) {
-    final index = ref.watch(libraryIndexProvider);
+    final index = LibraryIndex(allTracks);
     final folder = _tab == LibraryTab.folders
         ? folders.where((f) => f.id == _folderId).firstOrNull
         : null;
     final viewingFolder = folder != null;
+    final folderFilterId = folder?.id == _remoteFolderId ? null : folder?.id;
     final key = (
       index,
       _query,
@@ -387,7 +428,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         artist: _artistFilter,
         album: _albumFilter,
         genre: _genreFilter,
-        folderId: folder?.id,
+        folderId: folderFilterId,
         filters: _trackFilters,
         sort: _sort,
         order: _order,
@@ -522,7 +563,8 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                   .setTrackLayout(next);
                             },
                             filterCount: _trackFilters.activeCount,
-                            onFilters: () => _showFilters(allTracks, folders),
+                            onFilters: () =>
+                                _showFilters(allTracks, localFolders),
                             extras: [
                               if (showTable && !viewingPlaylist)
                                 LibraryTextAction(
@@ -658,6 +700,11 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                   _tab == LibraryTab.folders && !viewingFolder
                                   ? LibraryFoldersPanel(
                                       query: _query,
+                                      additionalFolders: [
+                                        for (final extra in folders)
+                                          if (!localFolders.contains(extra))
+                                            extra,
+                                      ],
                                       onOpen: (selected) {
                                         _open(() {
                                           _folderId = selected.id;

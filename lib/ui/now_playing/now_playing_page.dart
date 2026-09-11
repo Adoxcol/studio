@@ -268,16 +268,7 @@ class PlaybackBackground extends ConsumerWidget {
         children: [
           const _PermanentPlaybackBackground(),
           if (path != null && path.isNotEmpty)
-            Opacity(
-              opacity: 0.52,
-              child: Image.file(
-                File(path),
-                fit: BoxFit.cover,
-                color: const Color(0xffb7a99a),
-                colorBlendMode: BlendMode.modulate,
-                errorBuilder: (_, _, _) => const SizedBox.shrink(),
-              ),
-            ),
+            Opacity(opacity: 0.52, child: _ArtworkBackground(path: path)),
         ],
       ),
     };
@@ -289,6 +280,29 @@ class PlaybackBackground extends ConsumerWidget {
         key: ValueKey('${mode.name}-${path ?? ''}'),
         child: background,
       ),
+    );
+  }
+}
+
+class _ArtworkBackground extends StatelessWidget {
+  const _ArtworkBackground({required this.path});
+
+  final String path;
+
+  @override
+  Widget build(BuildContext context) {
+    final uri = Uri.tryParse(path);
+    final isNetwork =
+        uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
+    final image = isNetwork
+        ? Image.network(path, fit: BoxFit.cover)
+        : Image.file(File(path), fit: BoxFit.cover);
+    return ColorFiltered(
+      colorFilter: const ColorFilter.mode(
+        Color(0xffb7a99a),
+        BlendMode.modulate,
+      ),
+      child: image,
     );
   }
 }

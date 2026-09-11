@@ -7,6 +7,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Global playback shortcuts no longer intercept letters typed into search and
+  other text fields.
+- Navidrome artwork now loads in the player bar, Now Playing, fullscreen
+  playback background, and vinyl presentation.
+- The Navidrome screen now manages connected servers and cache scanning; the
+  server library is browsed from the main Library as a separate folder.
+
 ## [0.4.6] - 2026-09-11
 
 ### Fixed
