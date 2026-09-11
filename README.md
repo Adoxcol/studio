@@ -1,13 +1,21 @@
-# Studio
+<div align="center">
 
-> A fast, responsive, highly customizable desktop music player.  
-> Local library first — Spotify-style streaming is planned for a later phase.
+# 🎵 Studio
 
-[![CI](https://github.com/YOUR_USERNAME/studio/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/studio/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/YOUR_USERNAME/studio?label=release)](https://github.com/YOUR_USERNAME/studio/releases/latest)
+**A fast, responsive, highly customizable desktop music player.**  
+Local library first — Spotify-style streaming is planned for a later phase.
+
+[![CI](https://github.com/Adoxcol/studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Adoxcol/studio/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Adoxcol/studio?label=release&color=blueviolet)](https://github.com/Adoxcol/studio/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)](#install)
-[![Flutter](https://img.shields.io/badge/Flutter-3.x-54C5F8?logo=flutter)](https://flutter.dev)
-[![License](https://img.shields.io/github/license/YOUR_USERNAME/studio)](LICENSE)
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-54C5F8?logo=flutter&logoColor=white)](https://flutter.dev)
+[![License](https://img.shields.io/github/license/Adoxcol/studio?color=green)](LICENSE)
+
+[**Download**](https://github.com/Adoxcol/studio/releases/latest) · [**Changelog**](CHANGELOG.md) · [**Contributing**](CONTRIBUTING.md) · [**Docs**](docs/)
+
+</div>
+
+---
 
 ![Dark mode overview](docs/screenshots/darkmode.png)
 
@@ -15,7 +23,7 @@
 
 ## Features
 
-### Library
+### 📚 Library
 
 - Folder-based scan with incremental re-scan on launch
 - Artist / Album / Track / Folder / Playlist tabs with search, sort, and filters
@@ -27,7 +35,7 @@
 
 ---
 
-### Playback
+### ▶️ Playback
 
 - URI-only playback via **media_kit** (libmpv) — every format libmpv supports
 - Dual-player crossfade (0–15 s) with equal-power overlap
@@ -39,7 +47,7 @@
 
 ---
 
-### Equalizer
+### 🎛️ Equalizer
 
 - ISO 10-band graphic equalizer (31 Hz – 16 kHz)
 - Named presets: Bass, Rock, Pop, Dance, and more
@@ -50,7 +58,7 @@
 
 ---
 
-### Now Playing & Playback Mode
+### 🎨 Now Playing & Playback Mode
 
 - 32-band FFT spectrum visualizer tapped from a silent PCM stream
 - Full-screen **Playback Mode**: artwork, artist image, or Studio-gradient backdrop  
@@ -64,7 +72,7 @@
 
 ---
 
-### Playlists
+### 📋 Playlists
 
 - Regular playlists with drag-to-reorder editor and Save/Cancel
 - **Smart playlists** — all/any rules for artist, album, genre, year, format,  
@@ -75,7 +83,7 @@
 
 ---
 
-### Metadata editor
+### ✏️ Metadata Editor
 
 - Preview changes before writing — title, artist, album, genre, year, track number
 - Replace or remove embedded cover art (JPEG/PNG); cached for immediate use
@@ -85,7 +93,7 @@
 
 ---
 
-### Appearance & customization
+### 🎨 Appearance & Customization
 
 - Dark / Light / System theme
 - Auto accent colour derived from album art (OKLCH) or a custom hue wheel
@@ -96,7 +104,7 @@
 
 ---
 
-### System integration
+### 🖥️ System Integration
 
 - Custom frameless titlebar with minimize / maximize / close
 - System tray with Play/Pause/Next/Previous; close-to-tray with "don't ask again"
@@ -109,31 +117,48 @@
 
 ## Install
 
-**Windows (x64)**
+<table>
+<tr>
+<td align="center" width="33%">
 
-1. Download `studio-windows-x64.zip` from the [latest release](https://github.com/YOUR_USERNAME/studio/releases/latest).
-2. Unzip anywhere.
-3. Run `studio.exe`. Keep the `data` folder and DLLs next to the exe.  
-   Windows may show an unsigned-app warning — click **More info → Run anyway**.
+**🪟 Windows x64**
 
-**macOS**
+1. Download `studio-windows-x64.zip` from [Releases](https://github.com/Adoxcol/studio/releases/latest)
+2. Unzip anywhere
+3. Run `studio.exe` — keep `data/` and DLLs next to it
+4. Windows may show an unsigned warning → **More info → Run anyway**
 
-1. Download `studio-macos.zip` from the [latest release](https://github.com/YOUR_USERNAME/studio/releases/latest).
-2. Unzip and move `studio.app` to your Applications folder.
-3. First launch: right-click → **Open** to bypass Gatekeeper (unsigned build).
+</td>
+<td align="center" width="33%">
 
-**Linux (x64)**
+**🍎 macOS**
 
-1. Download `studio-linux-x64.tar.gz` from the [latest release](https://github.com/YOUR_USERNAME/studio/releases/latest).
-2. Extract: `tar -xzf studio-linux-x64.tar.gz`
-3. Run `./studio`. Requires `libkeybinder-3.0` and `libayatana-appindicator3` on the host:
-   ```bash
-   sudo apt install libkeybinder-3.0-dev libayatana-appindicator3-dev
-   ```
+1. Download `studio-macos.zip` from [Releases](https://github.com/Adoxcol/studio/releases/latest)
+2. Unzip and move `studio.app` to Applications
+3. First launch: right-click → **Open** to bypass Gatekeeper (unsigned build)
+
+</td>
+<td align="center" width="33%">
+
+**🐧 Linux x64**
+
+1. Download `studio-linux-x64.tar.gz` from [Releases](https://github.com/Adoxcol/studio/releases/latest)
+2. `tar -xzf studio-linux-x64.tar.gz`
+3. `./studio`
+
+Requires on host:
+```bash
+sudo apt install libkeybinder-3.0-dev \
+  libayatana-appindicator3-dev
+```
+
+</td>
+</tr>
+</table>
 
 ---
 
-## Build from source
+## Build from Source
 
 ### Prerequisites
 
@@ -150,7 +175,7 @@ sudo apt install libkeybinder-3.0-dev libayatana-appindicator3-dev \
 ### Run
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/studio.git
+git clone https://github.com/Adoxcol/studio.git
 cd studio
 flutter pub get
 flutter run -d windows   # or -d macos / -d linux
@@ -166,7 +191,7 @@ flutter build linux   --release   # build\linux\x64\release\bundle\
 
 ---
 
-## Tech stack
+## Tech Stack
 
 | Layer | Library |
 |-------|---------|
@@ -182,26 +207,30 @@ flutter build linux   --release   # build\linux\x64\release\bundle\
 
 ---
 
-## Contributing
+## Contributors
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). After cloning, install the git hooks:
+<a href="https://github.com/Adoxcol/studio/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Adoxcol/studio" alt="Contributors" />
+</a>
 
-```bash
-git config core.hooksPath .githooks
-```
+| | Name | Role | Contributions |
+|---|------|------|--------------|
+| <img src="https://avatars.githubusercontent.com/u/99127099?v=4" width="32" height="32" style="border-radius:50%" /> | [**Adoxcol**](https://github.com/Adoxcol) | Maintainer & author | 112 commits |
+| <img src="https://avatars.githubusercontent.com/in/842251?v=4" width="32" height="32" style="border-radius:50%" /> | [google-labs-jules](https://github.com/apps/google-labs-jules) | AI contributor | 2 commits |
+| <img src="https://avatars.githubusercontent.com/in/1143301?v=4" width="32" height="32" style="border-radius:50%" /> | [Copilot](https://github.com/apps/copilot-swe-agent) | AI contributor | 1 commit |
 
-This project follows [Conventional Commits](https://www.conventionalcommits.org/),
-uses a protected `main` branch, and requires CI green before merge.  
-Read [AGENTS.md](AGENTS.md) for the full workflow — it applies to human and AI contributors alike.
-
----
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for a full version history.
+> Want to contribute? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
 ## License
 
-[MIT](LICENSE) — © YOUR_NAME
+[MIT](LICENSE) © 2026 [Adoxcol](https://github.com/Adoxcol)
+
+---
+
+<div align="center">
+
+Made with ❤️ and Flutter · [⭐ Star this repo](https://github.com/Adoxcol/studio) if you find it useful
+
+</div>
