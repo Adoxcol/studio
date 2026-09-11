@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-09-11
+
 ### Fixed
 
 - **Showcase Website Assets**: Relocated static screenshots and brand icons into `website/public/assets/` so Vite copies all interface preview images into `dist/assets/screenshots/` without 404 errors on Vercel.
@@ -15,6 +17,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Remote Tracks tab: Browse all remote server songs with quick filtering, "Play All", "Shuffle All", and cache clearing.
   - Multi-sort album browser: Added sort modes (A–Z, Recently Added, Newest, Most Played, Random) and on-demand pagination / "Load More" / "Load All" across large remote collections.
   - Artist Discography view: Tapping an artist now displays all albums by that artist with play controls, rather than only opening the first album.
+- **Window not appearing on launch**: `flutter run -d windows` no longer opens behind the IDE or stays invisible. A 50 ms delay between `show()` and `focus()` lets Windows finish processing `ShowWindow` before the foreground request, and a `center()` call in the post-frame raise prevents the window from being stuck off-screen from a previous session.
 
 ## [0.4.5] - 2026-09-11
 
