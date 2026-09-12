@@ -5,7 +5,7 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.8] - 2026-09-12
+## [0.4.11] - 2026-09-12
 
 ### Fixed
 
@@ -20,10 +20,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Fixed the Windows release signing script so the production packaging job
   executes its parameters correctly.
 
+- Reduced global keyboard shortcuts to play/pause, seek and volume arrows, and
+  Escape for Playback Mode; letters, Space, and editing keys remain available
+  to search and other text fields.
+- Navidrome artist artwork is downloaded into Studio's local artist-art cache
+  and reused by artist portraits, while custom artwork remains higher priority.
+
 ## [Unreleased]
-
-### Fixed
-
 - Global playback shortcuts no longer intercept letters typed into search and
   other text fields.
 - Navidrome artwork now loads in the player bar, Now Playing, fullscreen

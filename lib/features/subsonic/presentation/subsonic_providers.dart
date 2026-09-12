@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/features/subsonic/data/subsonic_client.dart';
 import 'package:studio/features/subsonic/data/subsonic_settings_store.dart';
 import 'package:studio/features/subsonic/domain/subsonic_models.dart';
+import 'package:studio/features/artist_artwork/data/artist_picture_repository.dart';
+import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/providers/playable_resolver.dart';
 import 'package:studio/state/library_providers.dart';
@@ -78,8 +83,32 @@ final subsonicArtistsProvider = FutureProvider<List<SubsonicArtist>>((
   if (!conn.isConnected) return const [];
   final client = ref.watch(subsonicClientProvider);
   if (client == null) return const [];
-  return client.getArtists();
+  final artists = await client.getArtists();
+  final artwork = ref.read(artistPictureRepositoryProvider);
+  unawaited(_cacheArtistArtwork(client, artwork, artists));
+  return artists;
 });
+
+Future<void> _cacheArtistArtwork(
+  SubsonicClient client,
+  ArtistPictureRepository artwork,
+  List<SubsonicArtist> artists,
+) async {
+  for (final artist in artists) {
+    final imageUrl =
+        artist.artistImageUrl ??
+        client.buildCoverArtUri(artist.coverArtId)?.toString();
+    if (imageUrl == null || (await artwork.get(artist.name)).path != null) {
+      continue;
+    }
+    try {
+      final bytes = await client.fetchArtistImage(imageUrl);
+      await artwork.saveRemote(artist.name, bytes);
+    } catch (error) {
+      debugPrint('Studio Navidrome artist artwork unavailable: $error');
+    }
+  }
+}
 
 class SubsonicAlbumSortNotifier extends Notifier<SubsonicAlbumSort> {
   @override
