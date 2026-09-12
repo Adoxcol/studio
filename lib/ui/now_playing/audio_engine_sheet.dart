@@ -76,6 +76,7 @@ class AudioEngineSheet extends ConsumerWidget {
                   ),
                   const Spacer(),
                   IconButton(
+                    tooltip: 'Close',
                     icon: const Icon(Icons.close, size: 18),
                     visualDensity: VisualDensity.compact,
                     color: palette.inkMuted,
