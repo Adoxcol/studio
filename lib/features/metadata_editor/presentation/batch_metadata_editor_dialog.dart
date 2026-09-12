@@ -97,11 +97,12 @@ class _BatchMetadataEditorDialogState
         allowedExtensions: const ['jpg', 'jpeg', 'png'],
       );
       if (picked?.path == null || !mounted) return;
-      final bytes = await File(picked!.path!).readAsBytes();
-      if (!mounted) return;
-      if (bytes.length > 20 * 1024 * 1024) {
+      final file = File(picked!.path!);
+      if (await file.length() > 20 * 1024 * 1024) {
         throw const FormatException('Cover art must be 20 MB or smaller.');
       }
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
       final mime = _imageMime(bytes);
       if (mime == null) {
         throw const FormatException('Choose a valid JPEG or PNG image.');

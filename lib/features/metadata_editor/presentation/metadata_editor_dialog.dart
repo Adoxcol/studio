@@ -108,15 +108,17 @@ class _MetadataEditorDialogState extends ConsumerState<_MetadataEditorDialog> {
         allowedExtensions: const ['jpg', 'jpeg', 'png'],
       );
       if (picked?.path == null || !mounted) return;
-      bytes = await File(picked!.path!).readAsBytes();
+      final file = File(picked!.path!);
+      if (await file.length() > 20 * 1024 * 1024) {
+        if (mounted)
+          setState(() => _error = 'Cover art must be 20 MB or smaller.');
+        return;
+      }
+      bytes = await file.readAsBytes();
       if (!mounted) return;
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _error = 'Could not read the selected image.\n$error');
-      return;
-    }
-    if (bytes.length > 20 * 1024 * 1024) {
-      setState(() => _error = 'Cover art must be 20 MB or smaller.');
       return;
     }
     final mime = _imageMime(bytes);
