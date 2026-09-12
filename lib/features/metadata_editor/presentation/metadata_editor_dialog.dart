@@ -110,8 +110,9 @@ class _MetadataEditorDialogState extends ConsumerState<_MetadataEditorDialog> {
       if (picked?.path == null || !mounted) return;
       final file = File(picked!.path!);
       if (await file.length() > 20 * 1024 * 1024) {
-        if (mounted)
+        if (mounted) {
           setState(() => _error = 'Cover art must be 20 MB or smaller.');
+        }
         return;
       }
       bytes = await file.readAsBytes();
