@@ -89,12 +89,10 @@ class _PlaybackModeButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = StudioPalette.of(context);
-    return Tooltip(
-      message: 'Enter Playback Mode',
-      child: IconButton(
-        onPressed: ref.read(playbackModeProvider.notifier).enter,
-        icon: Icon(Icons.fullscreen, color: palette.inkMuted),
-      ),
+    return IconButton(
+      tooltip: 'Enter Playback Mode',
+      onPressed: ref.read(playbackModeProvider.notifier).enter,
+      icon: Icon(Icons.fullscreen, color: palette.inkMuted),
     );
   }
 }
