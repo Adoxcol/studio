@@ -47,6 +47,8 @@ class FileSubsonicSettingsStore implements SubsonicSettingsStore {
       return;
     }
     file.parent.createSync(recursive: true);
-    file.writeAsStringSync(jsonEncode(config.toJson()));
+    final part = File('${file.path}.part');
+    part.writeAsStringSync(jsonEncode(config.toJson()), flush: true);
+    part.renameSync(file.path);
   }
 }
