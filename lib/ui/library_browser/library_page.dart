@@ -930,7 +930,9 @@ class _Tabs extends StatelessWidget {
                       child: Text(
                         tab.label,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: tab == selected ? palette.ink : palette.inkMuted,
+                          color: tab == selected
+                              ? palette.ink
+                              : palette.inkMuted,
                           fontWeight: tab == selected
                               ? FontWeight.w500
                               : FontWeight.w400,
@@ -1240,7 +1242,9 @@ class _RefreshButton extends StatelessWidget {
         child: GestureDetector(
           onTap: enabled ? onTap : null,
           child: MouseRegion(
-            cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+            cursor: enabled
+                ? SystemMouseCursors.click
+                : SystemMouseCursors.basic,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: palette.bg,
