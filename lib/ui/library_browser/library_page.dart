@@ -919,17 +919,22 @@ class _Tabs extends StatelessWidget {
             for (final tab in LibraryTab.values)
               Padding(
                 padding: const EdgeInsets.only(right: 20),
-                child: GestureDetector(
-                  onTap: () => onSelect(tab),
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: Text(
-                      tab.label,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: tab == selected ? palette.ink : palette.inkMuted,
-                        fontWeight: tab == selected
-                            ? FontWeight.w500
-                            : FontWeight.w400,
+                child: Semantics(
+                  button: true,
+                  label: tab.label,
+                  selected: tab == selected,
+                  child: GestureDetector(
+                    onTap: () => onSelect(tab),
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: Text(
+                        tab.label,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: tab == selected ? palette.ink : palette.inkMuted,
+                          fontWeight: tab == selected
+                              ? FontWeight.w500
+                              : FontWeight.w400,
+                        ),
                       ),
                     ),
                   ),
@@ -1229,19 +1234,23 @@ class _RefreshButton extends StatelessWidget {
     final color = enabled ? palette.ink : palette.inkMuted;
     return Tooltip(
       message: 'Rescan library',
-      child: GestureDetector(
-        onTap: enabled ? onTap : null,
-        child: MouseRegion(
-          cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: palette.bg,
-              border: Border.all(color: palette.hairline),
-            ),
-            child: SizedBox(
-              width: 40,
-              height: 40,
-              child: Icon(Icons.refresh, size: 18, color: color),
+      child: Semantics(
+        button: true,
+        label: 'Rescan library',
+        child: GestureDetector(
+          onTap: enabled ? onTap : null,
+          child: MouseRegion(
+            cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: palette.bg,
+                border: Border.all(color: palette.hairline),
+              ),
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: Icon(Icons.refresh, size: 18, color: color),
+              ),
             ),
           ),
         ),
