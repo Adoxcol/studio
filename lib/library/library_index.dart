@@ -40,7 +40,7 @@ class LibraryIndex {
     final result = <String, List<Track>>{};
     for (final track in tracks) {
       for (final credit in creditsOf(track)) {
-        result.putIfAbsent(credit.toLowerCase(), () => []).add(track);
+        (result[credit.toLowerCase()] ??= []).add(track);
       }
     }
     return result.map((key, value) => MapEntry(key, List.unmodifiable(value)));
@@ -53,7 +53,7 @@ class LibraryIndex {
         artistOf(track).toLowerCase(),
         LibraryQuery.albumName(track).toLowerCase(),
       );
-      result.putIfAbsent(key, () => []).add(track);
+      (result[key] ??= []).add(track);
     }
     return result.map((key, value) => MapEntry(key, List.unmodifiable(value)));
   }
