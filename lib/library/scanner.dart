@@ -45,7 +45,7 @@ class FolderScanner {
     final tracksByFolder = <int, List<Track>>{};
     for (final track in allTracks) {
       if (track.folderId != null) {
-        tracksByFolder.putIfAbsent(track.folderId!, () => []).add(track);
+        (tracksByFolder[track.folderId!] ??= []).add(track);
       }
     }
 
@@ -280,7 +280,7 @@ class FolderScanner {
       if (track.fileModifiedMs == null) continue;
       final key = _albumKey(track.artist, track.album);
       final art = track.artworkPath;
-      if (key != null && art != null) albumArt.putIfAbsent(key, () => art);
+      if (key != null && art != null) albumArt[key] ??= art;
     }
 
     final sidecarCache = <String, String?>{};
@@ -293,7 +293,7 @@ class FolderScanner {
       path ??= albumKey == null ? null : albumArt[albumKey];
       if (path != null) {
         updates[track.id] = path;
-        if (albumKey != null) albumArt.putIfAbsent(albumKey, () => path!);
+        if (albumKey != null) albumArt[albumKey] ??= path!;
       }
     }
     if (updates.isNotEmpty) {
@@ -340,7 +340,7 @@ class FolderScanner {
       if (artist == LibraryQuery.unknownArtist) continue;
       final key = _albumKey(track.artist, album);
       if (key == null) continue;
-      groups.putIfAbsent(key, () => []).add(track);
+      (groups[key] ??= []).add(track);
     }
 
     final updates = <int, String>{};
