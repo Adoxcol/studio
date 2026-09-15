@@ -293,7 +293,7 @@ class FolderScanner {
       path ??= albumKey == null ? null : albumArt[albumKey];
       if (path != null) {
         updates[track.id] = path;
-        if (albumKey != null) albumArt[albumKey] ??= path!;
+        if (albumKey != null) albumArt[albumKey] ??= path;
       }
     }
     if (updates.isNotEmpty) {
