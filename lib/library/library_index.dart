@@ -11,14 +11,17 @@ class LibraryIndex {
   late final Map<int, Track> byId = Map.unmodifiable({
     for (final track in tracks) track.id: track,
   });
-  late final _search = [
+  // ⚡ Bolt: Join search fields with a null byte to create a single searchable
+  // string per track. This avoids allocating a List<String> per track and
+  // eliminates the overhead of .any() closures during text searches.
+  late final List<String> _search = [
     for (final track in tracks)
       [
         track.title,
         track.artist ?? '',
         track.album ?? '',
         track.genre ?? '',
-      ].map((text) => text.toLowerCase()).toList(growable: false),
+      ].join('\u0000').toLowerCase(),
   ];
   late final Map<String, List<Track>> _byArtist = _artistIndex();
   late final Map<(String, String), List<Track>> _byAlbum = _albumIndex();
@@ -63,7 +66,7 @@ class LibraryIndex {
     if (needle.isEmpty) return tracks;
     return [
       for (var i = 0; i < tracks.length; i++)
-        if (_search[i].any((field) => field.contains(needle))) tracks[i],
+        if (_search[i].contains(needle)) tracks[i],
     ];
   }
 }
