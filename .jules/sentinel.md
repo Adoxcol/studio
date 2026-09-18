@@ -1,8 +1,4 @@
-## 2024-05-18 - Prevent DoS in Equalizer Import
-**Vulnerability:** Equalizer text files were read directly into memory without file size limits, allowing arbitrary sized files to be parsed, potentially causing Out Of Memory (OOM) Denial of Service.
-**Learning:** Dart's FilePicker gives a raw file path, but reading its contents via `readAsString()` on gigabyte-sized txt files can crash the app or block UI resources.
-**Prevention:** Always implement a sane, maximum file size check (e.g., 1 MB) using `await file.length()` before reading file contents into memory.
-## 2024-05-24 - [Fix SQL injection in Drift PRAGMA table_info]
-**Vulnerability:** The `_columnNames` method in `lib/library/database.dart` used raw string interpolation (`PRAGMA table_info($table)`) in a `customSelect` query without validating the `table` argument. This is a classic SQL injection vector if user-controlled input were ever passed to this method.
-**Learning:** SQLite does not support bind parameters (e.g., `?`) for identifiers like table names or within `PRAGMA` statements. Therefore, when these must be dynamic, string interpolation is functionally required.
-**Prevention:** When using string interpolation for SQL identifiers that cannot use bind parameters, always validate the input string against a strict allowlist (e.g., `RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(table)`) before execution.
+## 2024-05-24 - Predictable Temp Files in Tests
+**Vulnerability:** Tests were writing directly to predictable files in the shared `Directory.systemTemp.path` (e.g., `/tmp/studio-close-pref-test.json`), introducing a risk of symlink attacks and race conditions on the host system.
+**Learning:** Dart's `Directory.systemTemp.path` resolves to a globally writable temporary directory (`/tmp` on Unix-like systems). Writing static filenames directly into it exposes the process to Time-of-Check to Time-of-Use (TOCTOU) file overwrite vulnerabilities if another user or process pre-creates a symlink with that name.
+**Prevention:** When testing or writing to temp files, always use `Directory.systemTemp.createTemp(prefix)` or `createTempSync(prefix)` to generate a secure, process-exclusive random subdirectory first. Ensure recursive deletion of that parent directory in tear-down.
