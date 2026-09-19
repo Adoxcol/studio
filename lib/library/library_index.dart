@@ -117,7 +117,8 @@ class LibraryView {
                 index
                     .creditsOf(track)
                     .any(
-                      (credit) => LibraryQuery.compareText(credit, artist!) == 0,
+                      (credit) =>
+                          LibraryQuery.compareText(credit, artist!) == 0,
                     )) &&
             (album == null || LibraryQuery.albumName(track) == album) &&
             (genre == null || LibraryQuery.genreName(track) == genre))
