@@ -26,10 +26,14 @@ class LibraryIndex {
   late final Map<String, List<Track>> _byArtist = _artistIndex();
   late final Map<(String, String), List<Track>> _byAlbum = _albumIndex();
 
-  List<String> creditsOf(Track track) => _credits.putIfAbsent(
-    track.artist,
-    () => List.unmodifiable(LibraryQuery.creditedArtists(track.artist)),
-  );
+  // ⚡ Bolt Optimization:
+  // Replaced `_credits.putIfAbsent(track.artist, () => ...)` with the `??=` operator.
+  // Using `putIfAbsent` forces an anonymous closure `() => ...` allocation on every
+  // invocation even if the key is already present. This function is called in tight
+  // O(N) loops during `LibraryView` instantiation (e.g., inside `_artistIndex()`).
+  // Bypassing closure allocation reduces GC pressure and speeds up library indexing.
+  List<String> creditsOf(Track track) => _credits[track.artist] ??=
+      List.unmodifiable(LibraryQuery.creditedArtists(track.artist));
 
   String artistOf(Track track) => creditsOf(track).first;
 
