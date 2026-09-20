@@ -94,20 +94,37 @@ class LibraryView {
   final LibraryOrder order;
 
   late final searched = index.search(query);
-  late final filtered = [
-    for (final track in searched)
-      if ((folderId == null || track.folderId == folderId) &&
-          filters.matches(track) &&
-          (artist == null ||
-              index
-                  .creditsOf(track)
-                  .any(
-                    (credit) => LibraryQuery.compareText(credit, artist!) == 0,
-                  )) &&
-          (album == null || LibraryQuery.albumName(track) == album) &&
-          (genre == null || LibraryQuery.genreName(track) == genre))
-        track,
-  ];
+  late final filtered = () {
+    Iterable<Track> base = searched;
+
+    // ⚡ Bolt Optimization:
+    // When the user is not searching but navigating by artist/album, `searched`
+    // contains the entire library. Iterating over it and doing string comparisons
+    // is O(N) and slow. We can start from the pre-computed O(1) subset instead.
+    if (query.trim().isEmpty) {
+      if (artist != null && album != null) {
+        base = index.forAlbum(artist!, album!);
+      } else if (artist != null) {
+        base = index.forArtist(artist!);
+      }
+    }
+
+    return [
+      for (final track in base)
+        if ((folderId == null || track.folderId == folderId) &&
+            filters.matches(track) &&
+            (artist == null ||
+                index
+                    .creditsOf(track)
+                    .any(
+                      (credit) =>
+                          LibraryQuery.compareText(credit, artist!) == 0,
+                    )) &&
+            (album == null || LibraryQuery.albumName(track) == album) &&
+            (genre == null || LibraryQuery.genreName(track) == genre))
+          track,
+    ];
+  }();
   late final sorted = LibraryQuery.sorted(
     tracks: filtered,
     sort: sort,
