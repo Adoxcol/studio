@@ -1150,6 +1150,7 @@ class _Swatch extends StatelessWidget {
       child: Semantics(
         button: true,
         label: seed.label,
+        selected: selected,
         child: GestureDetector(
           onTap: onTap,
           child: MouseRegion(
