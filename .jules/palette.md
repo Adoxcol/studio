@@ -1,6 +1,9 @@
 ## 2024-05-18 - Missing Semantics in Custom Clickable Widgets
 **Learning:** Custom clickable widgets wrapped in `GestureDetector` lack proper semantics for screen readers, meaning they are not announced as interactive elements or buttons.
 **Action:** Wrap custom clickable widgets like `GestureDetector` with `Semantics(button: true, label: ...)` to ensure proper screen reader accessibility.
+## 2024-05-19 - Missing Semantics in Custom Clickable Widgets
+**Learning:** In Flutter, using `GestureDetector` for custom interactive elements (like icon buttons or color swatches) without adding semantics makes them inaccessible to screen readers.
+**Action:** Wrap such custom interactive elements with `Semantics(button: true, label: ...)` to ensure proper screen reader accessibility.
 ## 2024-09-19 - Explicit Semantics for Custom Interactive Widgets
 **Learning:** Custom interactive widgets (like `GestureDetector`) used to build standard UI controls (like switches, swatches, or toggle buttons) lack implicit accessibility context. Relying solely on a parent `Tooltip` is insufficient as it does not communicate the control's role (e.g., as a button) or its current state (e.g., selected or unselected).
 **Action:** When implementing custom interactive elements, always explicitly wrap them in a `Semantics` widget. Define `button: true`, provide a descriptive `label`, and set interactive states like `selected: true/false` so screen readers correctly identify and announce their roles and states to users.
