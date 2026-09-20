@@ -62,9 +62,11 @@ void main() {
   });
 
   test('file store round-trips a session', () {
-    final file = File('${Directory.systemTemp.path}/studio_session_test.json');
+    final file = File(
+      '${Directory.systemTemp.createTempSync('studio-session').path}/studio_session_test.json',
+    );
     addTearDown(() {
-      if (file.existsSync()) file.deleteSync();
+      if (file.parent.existsSync()) file.parent.deleteSync(recursive: true);
     });
     const session = PlaybackSession(
       queueIds: [7, 8],
@@ -82,9 +84,11 @@ void main() {
 
   test('missing file loads empty', () {
     final file = File(
-      '${Directory.systemTemp.path}/studio_session_missing.json',
+      '${Directory.systemTemp.createTempSync('studio-session-missing').path}/studio_session_missing.json',
     );
-    if (file.existsSync()) file.deleteSync();
+    addTearDown(() {
+      if (file.parent.existsSync()) file.parent.deleteSync(recursive: true);
+    });
     expect(FilePlaybackSessionStore(file).load().isEmpty, isTrue);
   });
 }

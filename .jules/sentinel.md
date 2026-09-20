@@ -1,3 +1,7 @@
+## 2024-05-24 - Predictable Temp Files in Tests
+**Vulnerability:** Tests were writing directly to predictable files in the shared `Directory.systemTemp.path` (e.g., `/tmp/studio-close-pref-test.json`), introducing a risk of symlink attacks and race conditions on the host system.
+**Learning:** Dart's `Directory.systemTemp.path` resolves to a globally writable temporary directory (`/tmp` on Unix-like systems). Writing static filenames directly into it exposes the process to Time-of-Check to Time-of-Use (TOCTOU) file overwrite vulnerabilities if another user or process pre-creates a symlink with that name.
+**Prevention:** When testing or writing to temp files, always use `Directory.systemTemp.createTemp(prefix)` or `createTempSync(prefix)` to generate a secure, process-exclusive random subdirectory first. Ensure recursive deletion of that parent directory in tear-down.
 ## 2024-05-18 - Prevent DoS in Equalizer Import
 **Vulnerability:** Equalizer text files were read directly into memory without file size limits, allowing arbitrary sized files to be parsed, potentially causing Out Of Memory (OOM) Denial of Service.
 **Learning:** Dart's FilePicker gives a raw file path, but reading its contents via `readAsString()` on gigabyte-sized txt files can crash the app or block UI resources.
