@@ -4,3 +4,6 @@
 ## 2024-05-17 - Semantics for Color Swatches
 **Learning:** Custom interactive elements like color swatches (`GestureDetector`) inside `Tooltip` do not inherently provide button semantics to screen readers.
 **Action:** Always wrap custom interactive UI elements with a `Semantics` widget (e.g., `button: true`, `label`, `selected`) to ensure they are accessible.
+## 2024-09-19 - Explicit Semantics for Custom Interactive Widgets
+**Learning:** Custom interactive widgets (like `GestureDetector`) used to build standard UI controls (like switches, swatches, or toggle buttons) lack implicit accessibility context. Relying solely on a parent `Tooltip` is insufficient as it does not communicate the control's role (e.g., as a button) or its current state (e.g., selected or unselected).
+**Action:** When implementing custom interactive elements, always explicitly wrap them in a `Semantics` widget. Define `button: true`, provide a descriptive `label`, and set interactive states like `selected: true/false` so screen readers correctly identify and announce their roles and states to users.
