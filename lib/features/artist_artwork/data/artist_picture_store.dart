@@ -9,6 +9,7 @@ import 'package:studio/features/artist_artwork/domain/artist_picture.dart';
 abstract interface class ArtistPictureStore {
   Future<ArtistPicture> load(String key);
   Future<void> save(String key, ArtistPicture picture);
+  Future<void> saveBatch(Map<String, ArtistPicture> pictures);
   Future<String> saveImage(Uint8List bytes);
 }
 
@@ -20,6 +21,13 @@ class MemoryArtistPictureStore implements ArtistPictureStore {
   @override
   Future<void> save(String key, ArtistPicture picture) async {
     pictures[key] = picture;
+  }
+
+  @override
+  Future<void> saveBatch(Map<String, ArtistPicture> batch) async {
+    for (final entry in batch.entries) {
+      pictures[entry.key] = entry.value;
+    }
   }
 
   @override
@@ -110,6 +118,24 @@ class FileArtistPictureStore implements ArtistPictureStore {
     } on TypeError {
       return const ArtistPicture();
     }
+  }
+
+  @override
+  Future<void> saveBatch(Map<String, ArtistPicture> batch) async {
+    // Write multiple files concurrently but bound the concurrency to avoid Too Many Open Files.
+    // For small batches this is fast, for large it prevents blocking.
+    if (batch.isEmpty) return;
+    await directory.create(recursive: true);
+    final futures = <Future<void>>[];
+    for (final entry in batch.entries) {
+      futures.add(save(entry.key, entry.value));
+      // rudimentary throttle for very large batches
+      if (futures.length >= 20) {
+        await Future.wait(futures);
+        futures.clear();
+      }
+    }
+    if (futures.isNotEmpty) await Future.wait(futures);
   }
 
   @override
