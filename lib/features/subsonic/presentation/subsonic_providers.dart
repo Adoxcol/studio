@@ -377,26 +377,48 @@ class SubsonicPlaybackService {
     final db = ref.read(studioDatabaseProvider);
     final client = ref.read(subsonicClientProvider);
 
-    final trackIds = <int>[];
+    final companions = <TracksCompanion>[];
     for (final song in songs) {
-      final companion = TracksCompanion.insert(
-        source: const Value(TrackLocator.subsonic),
-        locator: song.id,
-        title: song.title,
-        artist: Value(song.artist),
-        album: Value(song.album),
-        durationMs: Value(song.durationSeconds * 1000),
-        fileSizeBytes: Value(song.sizeBytes),
-        year: Value(song.year),
-        trackNumber: Value(song.trackNumber),
-        genre: Value(song.genre),
-        artworkPath: Value(
-          client?.buildCoverArtUri(song.coverArtId)?.toString(),
+      companions.add(
+        TracksCompanion.insert(
+          source: const Value(TrackLocator.subsonic),
+          locator: song.id,
+          title: song.title,
+          artist: Value(song.artist),
+          album: Value(song.album),
+          durationMs: Value(song.durationSeconds * 1000),
+          fileSizeBytes: Value(song.sizeBytes),
+          year: Value(song.year),
+          trackNumber: Value(song.trackNumber),
+          genre: Value(song.genre),
+          artworkPath: Value(
+            client?.buildCoverArtUri(song.coverArtId)?.toString(),
+          ),
         ),
       );
-      final track = await db.getOrInsertTrack(companion);
-      trackIds.add(track.id);
     }
+
+    await db.upsertTracks(companions);
+
+    final locators = songs.map((s) => s.id).toList();
+
+    // Process in chunks to avoid sqlite variable limits (SQLITE_MAX_VARIABLE_NUMBER = 999 or 32766)
+    final Map<String, int> locatorToId = {};
+    for (var i = 0; i < locators.length; i += 900) {
+      final chunk = locators.skip(i).take(900).toList();
+      final tracks =
+          await (db.select(db.tracks)..where(
+                (t) =>
+                    t.locator.isIn(chunk) &
+                    t.source.equals(TrackLocator.subsonic),
+              ))
+              .get();
+      for (final t in tracks) {
+        locatorToId[t.locator] = t.id;
+      }
+    }
+
+    final trackIds = locators.map((loc) => locatorToId[loc]!).toList();
 
     final playback = ref.read(playbackControllerProvider.notifier);
     await playback.playTracks(trackIds, startIndex: startIndex);
