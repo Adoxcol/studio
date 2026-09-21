@@ -57,14 +57,18 @@ class FileLyricsCache implements LyricsCache {
   @override
   void write(LyricsQuery query, LrclibRecord? record) {
     directory.createSync(recursive: true);
-    _file(query).writeAsStringSync(
+    final file = _file(query);
+    final part = File('${file.path}.part');
+    part.writeAsStringSync(
       jsonEncode({
         'missing': record == null,
         'instrumental': record?.instrumental ?? false,
         'syncedLyrics': record?.syncedLyrics,
         'plainLyrics': record?.plainLyrics,
       }),
+      flush: true,
     );
+    part.renameSync(file.path);
   }
 
   File _file(LyricsQuery query) {
