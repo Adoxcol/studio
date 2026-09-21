@@ -158,41 +158,6 @@ class StudioDatabase extends _$StudioDatabase {
     return (await trackById(id))!;
   }
 
-  Future<void> insertTracksIfNotExists(List<TracksCompanion> companions) async {
-    if (companions.isEmpty) return;
-    await batch((b) {
-      b.insertAll(tracks, companions, mode: InsertMode.insertOrIgnore);
-    });
-  }
-
-  Future<List<Track>> getOrInsertTracks(
-    List<TracksCompanion> companions,
-  ) async {
-    if (companions.isEmpty) return [];
-
-    await insertTracksIfNotExists(companions);
-
-    final locators = companions.map((c) => c.locator.value).toList();
-
-    final result = <Track>[];
-
-    // Chunk size 500 to be safe with SQL variables limit
-    for (var i = 0; i < locators.length; i += 500) {
-      final chunk = locators.sublist(
-        i,
-        i + 500 > locators.length ? locators.length : i + 500,
-      );
-      final tracksInChunk = await (select(
-        tracks,
-      )..where((t) => t.locator.isIn(chunk))).get();
-      result.addAll(tracksInChunk);
-    }
-
-    // Reorder results to match the input order
-    final trackMap = {for (final t in result) t.locator: t};
-    return locators.map((loc) => trackMap[loc]).whereType<Track>().toList();
-  }
-
   Future<List<LibraryFolder>> allFolders() => select(libraryFolders).get();
 
   Stream<List<LibraryFolder>> watchFolders() {
@@ -494,24 +459,6 @@ class StudioDatabase extends _$StudioDatabase {
       ),
     );
   });
-
-  Future<void> replacePlaylistTracks(int playlistId, List<int> trackIds) =>
-      transaction(() async {
-        await (delete(
-          playlistEntries,
-        )..where((e) => e.playlistId.equals(playlistId))).go();
-        if (trackIds.isEmpty) return;
-        await batch((batch) {
-          batch.insertAll(playlistEntries, [
-            for (var i = 0; i < trackIds.length; i++)
-              PlaylistEntriesCompanion.insert(
-                playlistId: playlistId,
-                trackId: trackIds[i],
-                position: i,
-              ),
-          ]);
-        });
-      });
 
   Stream<List<Track>> watchPlaylistTracks(int playlistId) {
     return watchCoalescedQuery(
