@@ -3,13 +3,12 @@ import 'dart:async';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:studio/features/artist_artwork/data/artist_picture_repository.dart';
 import 'package:studio/features/artist_artwork/domain/artist_picture.dart';
 import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
 import 'package:studio/features/subsonic/data/subsonic_client.dart';
 import 'package:studio/features/subsonic/data/subsonic_settings_store.dart';
 import 'package:studio/features/subsonic/domain/subsonic_models.dart';
-import 'package:studio/features/artist_artwork/data/artist_picture_repository.dart';
-import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/providers/playable_resolver.dart';
 import 'package:studio/state/library_providers.dart';
@@ -494,9 +493,9 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
           }
           if (bytes != null && bytes.isNotEmpty) {
             try {
-              await artistRepo.saveRemoteImage(
-                artist: artist.name,
-                bytes: bytes,
+              await artistRepo.saveRemote(
+                artist.name,
+                bytes,
                 credit: const PictureCredit(
                   author: 'Navidrome',
                   license: 'Remote Library',
