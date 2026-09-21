@@ -154,9 +154,9 @@ class ArtistRequestScheduler {
       }
     }
     while (lane.queue.isNotEmpty && lane.active < lane.limit) {
-      final wait = lane.lastStart == null
+      final wait = lane.spacingClock == null
           ? Duration.zero
-          : lane.spacing - _clock().difference(lane.lastStart!);
+          : lane.spacing - lane.spacingClock!.elapsed;
       if (wait > Duration.zero) {
         lane.timer = Timer(wait, () => _pump(lane));
         return;
@@ -165,7 +165,9 @@ class ArtistRequestScheduler {
       if (index < 0) index = 0;
       final request = lane.queue.removeAt(index);
       lane.active++;
-      lane.lastStart = _clock();
+      (lane.spacingClock ??= Stopwatch())
+        ..reset()
+        ..start();
       unawaited(request.start());
     }
   }
@@ -194,7 +196,7 @@ class _Lane {
   final Duration spacing;
   final queue = <_Request>[];
   int active = 0;
-  DateTime? lastStart;
+  Stopwatch? spacingClock;
   Timer? timer;
 }
 

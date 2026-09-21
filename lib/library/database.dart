@@ -158,6 +158,36 @@ class StudioDatabase extends _$StudioDatabase {
     return (await trackById(id))!;
   }
 
+  Future<void> insertTracksIfNotExists(List<TracksCompanion> companions) async {
+    if (companions.isEmpty) return;
+    await batch((batch) {
+      batch.insertAll(tracks, companions, mode: InsertMode.insertOrIgnore);
+    });
+  }
+
+  Future<List<Track>> getOrInsertTracks(
+    List<TracksCompanion> companions,
+  ) async {
+    if (companions.isEmpty) return [];
+    await insertTracksIfNotExists(companions);
+
+    final locators = companions.map((row) => row.locator.value).toList();
+    final rows = <Track>[];
+    for (var offset = 0; offset < locators.length; offset += 500) {
+      final end = (offset + 500).clamp(0, locators.length);
+      final chunk = locators.sublist(offset, end);
+      rows.addAll(
+        await (select(tracks)..where((t) => t.locator.isIn(chunk))).get(),
+      );
+    }
+
+    final byLocator = {for (final row in rows) row.locator: row};
+    return locators
+        .map((locator) => byLocator[locator])
+        .whereType<Track>()
+        .toList();
+  }
+
   Future<List<LibraryFolder>> allFolders() => select(libraryFolders).get();
 
   Stream<List<LibraryFolder>> watchFolders() {

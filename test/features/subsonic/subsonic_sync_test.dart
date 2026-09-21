@@ -64,6 +64,32 @@ void main() {
       expect(items[0].track.id, t3.id);
       expect(items[1].track.id, t1.id);
     });
+
+    test('batch insert preserves existing tracks and input order', () async {
+      final existing = await db.getOrInsertTrack(
+        TracksCompanion.insert(
+          locator: 'song-2',
+          title: 'Existing title',
+          source: const Value(TrackLocator.subsonic),
+        ),
+      );
+      final rows = await db.getOrInsertTracks([
+        TracksCompanion.insert(
+          locator: 'song-1',
+          title: 'First',
+          source: const Value(TrackLocator.subsonic),
+        ),
+        TracksCompanion.insert(
+          locator: 'song-2',
+          title: 'Ignored replacement',
+          source: const Value(TrackLocator.subsonic),
+        ),
+      ]);
+
+      expect(rows.map((track) => track.locator), ['song-1', 'song-2']);
+      expect(rows.last.id, existing.id);
+      expect(rows.last.title, 'Existing title');
+    });
   });
 
   group('ArtistPictureRepository.saveRemote', () {

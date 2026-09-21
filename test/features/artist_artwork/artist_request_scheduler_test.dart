@@ -36,7 +36,8 @@ void main() {
     scheduler = ArtistRequestScheduler(
       metadataSpacing: const Duration(milliseconds: 25),
     );
-    final times = <DateTime>[];
+    final elapsed = Stopwatch()..start();
+    final starts = <Duration>[];
     var active = 0;
     var peak = 0;
     await Future.wait(
@@ -45,17 +46,19 @@ void main() {
         (_) => request('musicbrainz.org', () async {
           active++;
           if (active > peak) peak = active;
-          times.add(DateTime.now());
+          starts.add(elapsed.elapsed);
           await Future<void>.delayed(const Duration(milliseconds: 5));
           active--;
         }),
       ),
     );
     expect(peak, 1);
-    for (var i = 1; i < times.length; i++) {
+    for (var i = 1; i < starts.length; i++) {
       expect(
-        times[i].difference(times[i - 1]).inMilliseconds,
-        greaterThanOrEqualTo(24),
+        starts[i] - starts[i - 1],
+        // The scheduler measures immediately before invoking the operation;
+        // callback-entry overhead can differ by a few microseconds.
+        greaterThanOrEqualTo(const Duration(milliseconds: 24)),
       );
     }
   });

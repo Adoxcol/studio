@@ -369,25 +369,26 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
         final songs = await client.getAlbum(album.id);
         if (_isCancelled) break;
 
-        for (final song in songs) {
-          final companion = TracksCompanion.insert(
-            source: const Value(TrackLocator.subsonic),
-            locator: song.id,
-            title: song.title,
-            artist: Value(song.artist),
-            album: Value(song.album),
-            durationMs: Value(song.durationSeconds * 1000),
-            fileSizeBytes: Value(song.sizeBytes),
-            year: Value(song.year),
-            trackNumber: Value(song.trackNumber),
-            genre: Value(song.genre),
-            artworkPath: Value(
-              client.buildCoverArtUri(song.coverArtId)?.toString(),
+        final companions = [
+          for (final song in songs)
+            TracksCompanion.insert(
+              source: const Value(TrackLocator.subsonic),
+              locator: song.id,
+              title: song.title,
+              artist: Value(song.artist),
+              album: Value(song.album),
+              durationMs: Value(song.durationSeconds * 1000),
+              fileSizeBytes: Value(song.sizeBytes),
+              year: Value(song.year),
+              trackNumber: Value(song.trackNumber),
+              genre: Value(song.genre),
+              artworkPath: Value(
+                client.buildCoverArtUri(song.coverArtId)?.toString(),
+              ),
             ),
-          );
-          await db.getOrInsertTrack(companion);
-          scannedTracks++;
-        }
+        ];
+        await db.insertTracksIfNotExists(companions);
+        scannedTracks += companions.length;
 
         state = state.copyWith(totalTracks: scannedTracks);
       }
@@ -415,26 +416,25 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
         final playlistSongs = await client.getPlaylist(rp.id);
         if (_isCancelled) break;
 
-        final trackIds = <int>[];
-        for (final song in playlistSongs) {
-          final companion = TracksCompanion.insert(
-            source: const Value(TrackLocator.subsonic),
-            locator: song.id,
-            title: song.title,
-            artist: Value(song.artist),
-            album: Value(song.album),
-            durationMs: Value(song.durationSeconds * 1000),
-            fileSizeBytes: Value(song.sizeBytes),
-            year: Value(song.year),
-            trackNumber: Value(song.trackNumber),
-            genre: Value(song.genre),
-            artworkPath: Value(
-              client.buildCoverArtUri(song.coverArtId)?.toString(),
+        final playlistTracks = await db.getOrInsertTracks([
+          for (final song in playlistSongs)
+            TracksCompanion.insert(
+              source: const Value(TrackLocator.subsonic),
+              locator: song.id,
+              title: song.title,
+              artist: Value(song.artist),
+              album: Value(song.album),
+              durationMs: Value(song.durationSeconds * 1000),
+              fileSizeBytes: Value(song.sizeBytes),
+              year: Value(song.year),
+              trackNumber: Value(song.trackNumber),
+              genre: Value(song.genre),
+              artworkPath: Value(
+                client.buildCoverArtUri(song.coverArtId)?.toString(),
+              ),
             ),
-          );
-          final track = await db.getOrInsertTrack(companion);
-          trackIds.add(track.id);
-        }
+        ]);
+        final trackIds = [for (final track in playlistTracks) track.id];
 
         final existing = existingPlaylists
             .where((p) => p.name == rp.name && p.smartRules == null)
