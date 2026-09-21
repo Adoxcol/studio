@@ -170,14 +170,26 @@ class ArtistPictureRepository {
 
   /// Stores a server-provided artist image in the same local cache as other
   /// automatic artwork, without replacing a user's custom image.
-  Future<void> saveRemote(String artist, Uint8List bytes) async {
+  Future<void> saveRemote(
+    String artist,
+    Uint8List bytes, {
+    PictureCredit? credit,
+  }) async {
+    final key = artistKey(artist);
+    final old = await get(key);
+    if (old.isCustom || old.hidden || old.remotePath != null) return;
     final path = await store.saveImage(await _prepare(bytes));
     await _mutate(
-      artistKey(artist),
-      (old) => old.customPath == null
-          ? ArtistPicture(remotePath: path, credit: old.credit)
-          : old,
+      key,
+      (latest) => ArtistPicture(
+        customPath: latest.customPath,
+        hidden: latest.hidden,
+        remotePath: latest.remotePath ?? path,
+        credit: latest.credit ?? credit,
+        lookupState: PictureLookupState.idle,
+      ),
     );
+    log('Remote image saved from library source.', artist: artist);
   }
 
   /// Changing providers invalidates only negative results, never saved images.
@@ -190,14 +202,19 @@ class ArtistPictureRepository {
     _retry?.cancel();
     try {
       await Future.wait(_loads.values.toList());
+      final batch = <String, ArtistPicture Function(ArtistPicture)>{};
       for (final key in _cache.keys.toList()) {
         if (_disposed || epoch != _refreshEpoch) return;
-        await _mutate(
-          key,
-          (latest) => latest.needsLookup
-              ? latest.withLookup(PictureLookupState.idle)
-              : latest,
-        );
+        final latest = _cache[key];
+        if (latest != null &&
+            latest.needsLookup &&
+            latest.lookupState != PictureLookupState.idle) {
+          batch[key] = (old) =>
+              old.needsLookup ? old.withLookup(PictureLookupState.idle) : old;
+        }
+      }
+      if (batch.isNotEmpty) {
+        await _mutateBatch(batch);
       }
     } finally {
       if (epoch == _refreshEpoch) _refreshing = false;
@@ -270,6 +287,43 @@ class ArtistPictureRepository {
     // Failure must reach the caller, but not poison subsequent writes.
     _writes[key] = operation.then((_) {}, onError: (Object _, StackTrace _) {});
     return operation;
+  }
+
+  Future<void> _mutateBatch(
+    Map<String, ArtistPicture Function(ArtistPicture)> changes,
+  ) async {
+    if (changes.isEmpty) return;
+
+    final pending = changes.keys.map((k) => _writes[k] ?? Future<void>.value());
+    await Future.wait(pending);
+    if (_disposed) return;
+
+    final updates = <String, ArtistPicture>{};
+    for (final entry in changes.entries) {
+      final key = entry.key;
+      final change = entry.value;
+      final old = await get(key);
+      if (_disposed) return;
+      final next = change(old);
+      updates[key] = next;
+    }
+
+    // Do a single batch disk IO save
+    final batchSaveFuture = store.saveBatch(updates).then((_) {
+      if (_disposed) return;
+      for (final entry in updates.entries) {
+        _publish(entry.key, entry.value);
+      }
+    });
+
+    for (final key in updates.keys) {
+      _writes[key] = batchSaveFuture.then(
+        (_) {},
+        onError: (Object _, StackTrace _) {},
+      );
+    }
+
+    await batchSaveFuture;
   }
 
   void _publish(String key, ArtistPicture picture) {

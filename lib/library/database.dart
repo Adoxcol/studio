@@ -495,6 +495,24 @@ class StudioDatabase extends _$StudioDatabase {
     );
   });
 
+  Future<void> replacePlaylistTracks(int playlistId, List<int> trackIds) =>
+      transaction(() async {
+        await (delete(
+          playlistEntries,
+        )..where((e) => e.playlistId.equals(playlistId))).go();
+        if (trackIds.isEmpty) return;
+        await batch((batch) {
+          batch.insertAll(playlistEntries, [
+            for (var i = 0; i < trackIds.length; i++)
+              PlaylistEntriesCompanion.insert(
+                playlistId: playlistId,
+                trackId: trackIds[i],
+                position: i,
+              ),
+          ]);
+        });
+      });
+
   Stream<List<Track>> watchPlaylistTracks(int playlistId) {
     return watchCoalescedQuery(
       tableUpdates(

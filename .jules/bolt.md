@@ -11,3 +11,6 @@
 ## 2024-05-18 - Optimize Subsonic Track Sync with Bulk Database Inserts
 **Learning:** Sequential calls to `db.getOrInsertTrack` inside a loop iterating over thousands of songs causes severe N+1 database queries, halting sync progress by triggering a separate SQLite `SELECT` and `INSERT` transaction per track.
 **Action:** Use Drift's `batch` API and `insertAll` with `InsertMode.insertOrIgnore` to execute all assertions within a single SQLite transaction, dramatically reducing overhead (e.g., from ~2500ms down to ~125ms for 5k tracks).
+## 2024-06-25 - Batch File Storage Disk Operations
+**Learning:** Sequential disk writes inside a loop without debounce or batching can cause massive I/O overhead and UI jank in Flutter apps, especially when whole configurations or files are rewritten each time. Implementing a concurrent save bounded by a throttle limits OS open file descriptors and allows batched operations natively.
+**Action:** Always implement a dedicated batching interface in storage layers to process updates concurrently, grouping small disk operations effectively instead of spamming sequential calls that stall execution.
