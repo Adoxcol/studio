@@ -312,25 +312,28 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
         final songs = await client.getAlbum(album.id);
         if (_isCancelled) break;
 
+        final companions = <TracksCompanion>[];
         for (final song in songs) {
-          final companion = TracksCompanion.insert(
-            source: const Value(TrackLocator.subsonic),
-            locator: song.id,
-            title: song.title,
-            artist: Value(song.artist),
-            album: Value(song.album),
-            durationMs: Value(song.durationSeconds * 1000),
-            fileSizeBytes: Value(song.sizeBytes),
-            year: Value(song.year),
-            trackNumber: Value(song.trackNumber),
-            genre: Value(song.genre),
-            artworkPath: Value(
-              client.buildCoverArtUri(song.coverArtId)?.toString(),
+          companions.add(
+            TracksCompanion.insert(
+              source: const Value(TrackLocator.subsonic),
+              locator: song.id,
+              title: song.title,
+              artist: Value(song.artist),
+              album: Value(song.album),
+              durationMs: Value(song.durationSeconds * 1000),
+              fileSizeBytes: Value(song.sizeBytes),
+              year: Value(song.year),
+              trackNumber: Value(song.trackNumber),
+              genre: Value(song.genre),
+              artworkPath: Value(
+                client.buildCoverArtUri(song.coverArtId)?.toString(),
+              ),
             ),
           );
-          await db.getOrInsertTrack(companion);
-          scannedTracks++;
         }
+        await db.insertTracksIfNotExists(companions);
+        scannedTracks += companions.length;
 
         state = state.copyWith(totalTracks: scannedTracks);
       }
@@ -377,26 +380,29 @@ class SubsonicPlaybackService {
     final db = ref.read(studioDatabaseProvider);
     final client = ref.read(subsonicClientProvider);
 
-    final trackIds = <int>[];
+    final companions = <TracksCompanion>[];
     for (final song in songs) {
-      final companion = TracksCompanion.insert(
-        source: const Value(TrackLocator.subsonic),
-        locator: song.id,
-        title: song.title,
-        artist: Value(song.artist),
-        album: Value(song.album),
-        durationMs: Value(song.durationSeconds * 1000),
-        fileSizeBytes: Value(song.sizeBytes),
-        year: Value(song.year),
-        trackNumber: Value(song.trackNumber),
-        genre: Value(song.genre),
-        artworkPath: Value(
-          client?.buildCoverArtUri(song.coverArtId)?.toString(),
+      companions.add(
+        TracksCompanion.insert(
+          source: const Value(TrackLocator.subsonic),
+          locator: song.id,
+          title: song.title,
+          artist: Value(song.artist),
+          album: Value(song.album),
+          durationMs: Value(song.durationSeconds * 1000),
+          fileSizeBytes: Value(song.sizeBytes),
+          year: Value(song.year),
+          trackNumber: Value(song.trackNumber),
+          genre: Value(song.genre),
+          artworkPath: Value(
+            client?.buildCoverArtUri(song.coverArtId)?.toString(),
+          ),
         ),
       );
-      final track = await db.getOrInsertTrack(companion);
-      trackIds.add(track.id);
     }
+
+    final tracks = await db.getOrInsertTracks(companions);
+    final trackIds = tracks.map((t) => t.id).toList();
 
     final playback = ref.read(playbackControllerProvider.notifier);
     await playback.playTracks(trackIds, startIndex: startIndex);
