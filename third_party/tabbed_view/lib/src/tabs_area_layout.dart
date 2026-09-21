@@ -268,7 +268,7 @@ class _TabsAreaLayoutRenderBox extends RenderBox
                 minWidth: tab.size.width,
                 maxWidth: tab.size.width,
                 minHeight: tab.size.height,
-                maxHeight: tab.size.height),
+                maxHeight: height),
             parentUsesSize: true);
         parentData.offset =
             Offset(parentData.offset.dx, height - tab.size.height);
