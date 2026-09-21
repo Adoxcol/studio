@@ -127,12 +127,15 @@ class ArtistRequestScheduler {
   }
 
   bool _transient(Object error) {
-    if (error is ArtistServiceException) {
-      return error.status == 408 || error.status == 429 || error.status >= 500;
-    }
-    return error is http.ClientException ||
-        error is SocketException ||
-        error is TimeoutException;
+    return switch (error) {
+      ArtistServiceException(:final status) =>
+        status == 408 || status == 429 || status >= 500,
+      // RequestAbortedException and other transport failures are sibling
+      // ClientException types, not ArtistServiceException instances.
+      http.ClientException() => true,
+      SocketException() || TimeoutException() => true,
+      _ => false,
+    };
   }
 
   void _pump(_Lane lane) {
@@ -151,9 +154,9 @@ class ArtistRequestScheduler {
       }
     }
     while (lane.queue.isNotEmpty && lane.active < lane.limit) {
-      final wait = lane.lastStart == null
+      final wait = lane.spacingClock == null
           ? Duration.zero
-          : lane.spacing - _clock().difference(lane.lastStart!);
+          : lane.spacing - lane.spacingClock!.elapsed;
       if (wait > Duration.zero) {
         lane.timer = Timer(wait, () => _pump(lane));
         return;
@@ -162,7 +165,9 @@ class ArtistRequestScheduler {
       if (index < 0) index = 0;
       final request = lane.queue.removeAt(index);
       lane.active++;
-      lane.lastStart = _clock();
+      (lane.spacingClock ??= Stopwatch())
+        ..reset()
+        ..start();
       unawaited(request.start());
     }
   }
@@ -191,7 +196,7 @@ class _Lane {
   final Duration spacing;
   final queue = <_Request>[];
   int active = 0;
-  DateTime? lastStart;
+  Stopwatch? spacingClock;
   Timer? timer;
 }
 

@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:studio/features/artist_artwork/presentation/artist_portrait.dart';
 import 'package:studio/features/subsonic/domain/subsonic_models.dart';
 import 'package:studio/features/subsonic/presentation/subsonic_providers.dart';
 import 'package:studio/theming/studio_palette.dart';
@@ -90,7 +91,10 @@ class _ServerCard extends StatelessWidget {
             LinearProgressIndicator(value: scanState.progress),
             const SizedBox(height: 6),
             Text(
-              'Scanning album ${scanState.currentAlbum} of ${scanState.totalAlbums}',
+              scanState.statusMessage ??
+                  (scanState.totalAlbums > 0
+                      ? 'Scanning album ${scanState.currentAlbum} of ${scanState.totalAlbums}'
+                      : 'Scanning server...'),
               style: TextStyle(fontSize: 12, color: palette.inkMuted),
             ),
           ],
@@ -851,14 +855,7 @@ class _SubsonicPageState extends ConsumerState<SubsonicPage> {
           itemBuilder: (context, idx) {
             final artist = artists[idx];
             return ListTile(
-              leading: CircleAvatar(
-                backgroundColor: palette.hairlineSoft,
-                child: Icon(
-                  Icons.person_outline,
-                  color: palette.inkMuted,
-                  size: 20,
-                ),
-              ),
+              leading: ArtistPortrait(artist: artist.name, size: 40),
               title: Text(
                 artist.name,
                 style: TextStyle(fontSize: 14, color: palette.ink),

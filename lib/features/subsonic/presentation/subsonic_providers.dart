@@ -3,11 +3,12 @@ import 'dart:async';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:studio/features/artist_artwork/data/artist_picture_repository.dart';
+import 'package:studio/features/artist_artwork/domain/artist_picture.dart';
+import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
 import 'package:studio/features/subsonic/data/subsonic_client.dart';
 import 'package:studio/features/subsonic/data/subsonic_settings_store.dart';
 import 'package:studio/features/subsonic/domain/subsonic_models.dart';
-import 'package:studio/features/artist_artwork/data/artist_picture_repository.dart';
-import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/providers/playable_resolver.dart';
 import 'package:studio/state/library_providers.dart';
@@ -68,6 +69,58 @@ class SubsonicConnectionNotifier extends Notifier<SubsonicConnectionInfo> {
     );
     final info = await client.ping();
     state = info;
+    if (info.isConnected) {
+      Future.microtask(_autoScanIfEmpty);
+      Future.microtask(_syncArtistPictures);
+    }
+  }
+
+  Future<void> _autoScanIfEmpty() async {
+    final db = ref.read(studioDatabaseProvider);
+    final cached = await db.watchTracks(source: TrackLocator.subsonic).first;
+    if (cached.isEmpty) {
+      ref.read(subsonicScanProvider.notifier).startScan();
+    }
+  }
+
+  Future<void> _syncArtistPictures() async {
+    final client = ref.read(subsonicClientProvider);
+    if (client == null) return;
+
+    try {
+      final artists = await client.getArtists();
+      final repository = ref.read(artistPictureRepositoryProvider);
+      for (final artist in artists) {
+        final current = await repository.get(artist.name);
+        if (!current.needsLookup) continue;
+
+        Uint8List? bytes;
+        final coverArtId = artist.coverArtId;
+        if (coverArtId != null && coverArtId.isNotEmpty) {
+          bytes = await client.getCoverArtBytes(coverArtId);
+        }
+        final imageUrl = artist.artistImageUrl;
+        if (bytes == null && imageUrl != null && imageUrl.isNotEmpty) {
+          bytes = await client.fetchImageUrl(imageUrl);
+        }
+        if (bytes == null || bytes.isEmpty) continue;
+
+        await repository.saveRemote(
+          artist.name,
+          bytes,
+          credit: const PictureCredit(
+            author: 'Navidrome',
+            license: 'Remote Library',
+            pageUrl: '',
+            licenseUrl: '',
+            source: 'Navidrome',
+          ),
+        );
+      }
+    } catch (_) {
+      // Artist portraits are an optional background enhancement. Connection
+      // and library browsing must continue if one server response is invalid.
+    }
   }
 }
 
@@ -281,7 +334,10 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
     if (client == null) return;
 
     _isCancelled = false;
-    state = const SubsonicScanState(isScanning: true);
+    state = const SubsonicScanState(
+      isScanning: true,
+      statusMessage: 'Scanning albums...',
+    );
 
     try {
       // 1. Fetch all albums
@@ -307,32 +363,154 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
         state = state.copyWith(
           currentAlbum: i + 1,
           currentAlbumName: album.name,
+          statusMessage: 'Scanning album ${i + 1} of ${albums.length}',
         );
 
         final songs = await client.getAlbum(album.id);
         if (_isCancelled) break;
 
-        for (final song in songs) {
-          final companion = TracksCompanion.insert(
-            source: const Value(TrackLocator.subsonic),
-            locator: song.id,
-            title: song.title,
-            artist: Value(song.artist),
-            album: Value(song.album),
-            durationMs: Value(song.durationSeconds * 1000),
-            fileSizeBytes: Value(song.sizeBytes),
-            year: Value(song.year),
-            trackNumber: Value(song.trackNumber),
-            genre: Value(song.genre),
-            artworkPath: Value(
-              client.buildCoverArtUri(song.coverArtId)?.toString(),
+        final companions = [
+          for (final song in songs)
+            TracksCompanion.insert(
+              source: const Value(TrackLocator.subsonic),
+              locator: song.id,
+              title: song.title,
+              artist: Value(song.artist),
+              album: Value(song.album),
+              durationMs: Value(song.durationSeconds * 1000),
+              fileSizeBytes: Value(song.sizeBytes),
+              year: Value(song.year),
+              trackNumber: Value(song.trackNumber),
+              genre: Value(song.genre),
+              artworkPath: Value(
+                client.buildCoverArtUri(song.coverArtId)?.toString(),
+              ),
             ),
-          );
-          await db.getOrInsertTrack(companion);
-          scannedTracks++;
-        }
+        ];
+        await db.insertTracksIfNotExists(companions);
+        scannedTracks += companions.length;
 
         state = state.copyWith(totalTracks: scannedTracks);
+      }
+
+      if (_isCancelled) return;
+
+      // 3. Fetch playlists from Navidrome
+      state = state.copyWith(
+        statusMessage: 'Fetching playlists...',
+        currentAlbumName: '',
+      );
+      final remotePlaylists = await client.getPlaylists();
+      state = state.copyWith(totalPlaylists: remotePlaylists.length);
+
+      final existingPlaylists = await db.allPlaylists();
+      var syncedPlaylists = 0;
+
+      for (final rp in remotePlaylists) {
+        if (_isCancelled) break;
+        state = state.copyWith(
+          currentPlaylistName: rp.name,
+          statusMessage: 'Fetching playlist: ${rp.name}',
+        );
+
+        final playlistSongs = await client.getPlaylist(rp.id);
+        if (_isCancelled) break;
+
+        final playlistTracks = await db.getOrInsertTracks([
+          for (final song in playlistSongs)
+            TracksCompanion.insert(
+              source: const Value(TrackLocator.subsonic),
+              locator: song.id,
+              title: song.title,
+              artist: Value(song.artist),
+              album: Value(song.album),
+              durationMs: Value(song.durationSeconds * 1000),
+              fileSizeBytes: Value(song.sizeBytes),
+              year: Value(song.year),
+              trackNumber: Value(song.trackNumber),
+              genre: Value(song.genre),
+              artworkPath: Value(
+                client.buildCoverArtUri(song.coverArtId)?.toString(),
+              ),
+            ),
+        ]);
+        final trackIds = [for (final track in playlistTracks) track.id];
+
+        final existing = existingPlaylists
+            .where((p) => p.name == rp.name && p.smartRules == null)
+            .firstOrNull;
+        final int playlistId;
+        if (existing != null) {
+          playlistId = existing.id;
+        } else {
+          playlistId = await db.createPlaylist(rp.name);
+        }
+        await db.replacePlaylistTracks(playlistId, trackIds);
+        syncedPlaylists++;
+        state = state.copyWith(syncedPlaylists: syncedPlaylists);
+      }
+
+      if (_isCancelled) return;
+
+      // 4. Fetch artist portraits from Navidrome
+      state = state.copyWith(
+        statusMessage: 'Syncing artist portraits...',
+        currentPlaylistName: '',
+      );
+      final remoteArtists = await client.getArtists();
+      final artistRepo = ref.read(artistPictureRepositoryProvider);
+
+      final artistsWithImages = remoteArtists
+          .where(
+            (a) =>
+                (a.coverArtId != null && a.coverArtId!.isNotEmpty) ||
+                (a.artistImageUrl != null && a.artistImageUrl!.isNotEmpty),
+          )
+          .toList();
+      state = state.copyWith(totalArtists: artistsWithImages.length);
+
+      var syncedArtists = 0;
+      for (final artist in artistsWithImages) {
+        if (_isCancelled) break;
+        state = state.copyWith(
+          currentArtistName: artist.name,
+          statusMessage: 'Fetching portrait: ${artist.name}',
+        );
+
+        final key = artistKey(artist.name);
+        final existing = await artistRepo.get(key);
+        if (!existing.isCustom &&
+            !existing.hidden &&
+            existing.remotePath == null) {
+          Uint8List? bytes;
+          if (artist.coverArtId != null && artist.coverArtId!.isNotEmpty) {
+            bytes = await client.getCoverArtBytes(artist.coverArtId!);
+          }
+          if (bytes == null &&
+              artist.artistImageUrl != null &&
+              artist.artistImageUrl!.isNotEmpty) {
+            bytes = await client.fetchImageUrl(artist.artistImageUrl!);
+          }
+          if (bytes != null && bytes.isNotEmpty) {
+            try {
+              await artistRepo.saveRemote(
+                artist.name,
+                bytes,
+                credit: const PictureCredit(
+                  author: 'Navidrome',
+                  license: 'Remote Library',
+                  pageUrl: '',
+                  licenseUrl: '',
+                  source: 'Navidrome',
+                ),
+              );
+            } catch (_) {
+              // Ignore invalid image bytes or save error and proceed
+            }
+          }
+        }
+        syncedArtists++;
+        state = state.copyWith(syncedArtists: syncedArtists);
       }
 
       if (!_isCancelled) {
@@ -340,6 +518,9 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
           isScanning: false,
           isCompleted: true,
           currentAlbumName: '',
+          currentPlaylistName: '',
+          currentArtistName: '',
+          statusMessage: null,
         );
       }
     } catch (e) {
