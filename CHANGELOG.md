@@ -28,6 +28,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-21
+
 ### Added
 
 - Automatically fetch and sync playlists from Navidrome / Subsonic into Studio's playlist library.
@@ -42,6 +44,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   playback background, and vinyl presentation.
 - The Navidrome screen now manages connected servers and cache scanning; the
   server library is browsed from the main Library as a separate folder.
+- Windows desktop builds compile again with the current Flutter toolchain.
+- Artist-artwork request cancellation is treated as a retryable network failure,
+  and request pacing now uses a monotonic clock.
+- Settings, cache, and configuration writes use safer atomic replacement to
+  reduce the chance of file corruption.
+
+### Changed
+
+- Navidrome library and playlist synchronization batch database operations for
+  faster refreshes on large remote libraries.
+- Improved keyboard and screen-reader semantics across library, settings, and
+  navigation controls.
 
 ## [0.4.6] - 2026-09-11
 
