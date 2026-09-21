@@ -27,15 +27,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and reused by artist portraits, while custom artwork remains higher priority.
 
 ## [Unreleased]
-
-### Added
-
-- Automatically fetch and sync playlists from Navidrome / Subsonic into Studio's playlist library.
-- Automatically fetch and cache artist portraits from Navidrome / Subsonic into Studio's artist picture store.
-- Full multi-tab library browsing (All, Artists, Albums, Genres, Playlists) when Navidrome is the primary library source.
-
-### Fixed
-
 - Global playback shortcuts no longer intercept letters typed into search and
   other text fields.
 - Navidrome artwork now loads in the player bar, Now Playing, fullscreen

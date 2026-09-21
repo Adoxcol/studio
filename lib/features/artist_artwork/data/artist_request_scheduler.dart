@@ -127,15 +127,12 @@ class ArtistRequestScheduler {
   }
 
   bool _transient(Object error) {
-    return switch (error) {
-      ArtistServiceException(:final status) =>
-        status == 408 || status == 429 || status >= 500,
-      // RequestAbortedException and other transport failures are sibling
-      // ClientException types, not ArtistServiceException instances.
-      http.ClientException() => true,
-      SocketException() || TimeoutException() => true,
-      _ => false,
-    };
+    if (error is ArtistServiceException) {
+      return error.status == 408 || error.status == 429 || error.status >= 500;
+    }
+    return error is http.ClientException ||
+        error is SocketException ||
+        error is TimeoutException;
   }
 
   void _pump(_Lane lane) {

@@ -88,32 +88,5 @@ void main() {
       expect(updated.isCompleted, isTrue);
       expect(updated.isScanning, isFalse);
     });
-
-    test('SubsonicPlaylist deserializes from JSON correctly', () {
-      final json = {
-        'id': 'pl-1',
-        'name': 'Daft Punk Favorites',
-        'comment': 'Best of Daft Punk',
-        'owner': 'admin',
-        'public': true,
-        'songCount': 12,
-        'duration': 2880,
-        'created': '2026-01-01T12:00:00Z',
-        'changed': '2026-01-02T15:30:00Z',
-        'coverArt': 'pl-cover-1',
-      };
-
-      final playlist = SubsonicPlaylist.fromJson(json);
-      expect(playlist.id, 'pl-1');
-      expect(playlist.name, 'Daft Punk Favorites');
-      expect(playlist.comment, 'Best of Daft Punk');
-      expect(playlist.owner, 'admin');
-      expect(playlist.isPublic, isTrue);
-      expect(playlist.songCount, 12);
-      expect(playlist.durationSeconds, 2880);
-      expect(playlist.created, DateTime.parse('2026-01-01T12:00:00Z'));
-      expect(playlist.changed, DateTime.parse('2026-01-02T15:30:00Z'));
-      expect(playlist.coverArtId, 'pl-cover-1');
-    });
   });
 }

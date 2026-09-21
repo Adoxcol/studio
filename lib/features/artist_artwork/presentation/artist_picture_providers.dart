@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/features/artist_artwork/data/artist_picture_repository.dart';
 import 'package:studio/features/artist_artwork/data/artist_picture_store.dart';
 import 'package:studio/features/artist_artwork/domain/artist_picture.dart';
-import 'package:studio/features/subsonic/presentation/subsonic_providers.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/library/library_query.dart';
 import 'package:studio/state/library_providers.dart';
@@ -32,9 +31,7 @@ final artistPicturesBootstrapProvider = Provider<void>((ref) {
   final enabled = ref.watch(
     appearanceProvider.select((s) => s.fetchArtistPictures),
   );
-  final local = ref.watch(libraryTracksProvider).value ?? const <Track>[];
-  final remote = ref.watch(subsonicTracksProvider).value ?? const <Track>[];
-  final tracks = [...local, ...remote];
+  final tracks = ref.watch(libraryTracksProvider).value ?? const <Track>[];
   repository.configure(artistImageRequests(tracks), enabled: enabled);
 });
 
