@@ -352,25 +352,16 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       ...localFolders,
       ...?remoteFolder == null ? null : [remoteFolder],
     ];
-    if (localFolders.isEmpty &&
-        remoteFolder != null &&
-        _folderId == null &&
-        _history.isEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || _folderId != null || localFolders.isNotEmpty) return;
-        setState(() {
-          _tab = LibraryTab.folders;
-          _folderId = _remoteFolderId;
-        });
-      });
-    }
+    final isRemoteSource =
+        _folderId == _remoteFolderId ||
+        (localFolders.isEmpty && remoteFolder != null);
     final tracks = ref.watch(libraryTracksProvider);
 
     return tracks.when(
       data: (rows) => _body(
         context,
         palette,
-        _folderId == _remoteFolderId ? remoteTracks : rows,
+        isRemoteSource ? remoteTracks : rows,
         folders,
         localFolders,
         scanActive,
@@ -378,7 +369,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       loading: () => _body(
         context,
         palette,
-        _folderId == _remoteFolderId ? remoteTracks : const <Track>[],
+        isRemoteSource ? remoteTracks : const <Track>[],
         folders,
         localFolders,
         scanActive,
