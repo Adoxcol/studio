@@ -207,6 +207,55 @@ class SubsonicSong {
   }
 }
 
+@immutable
+class SubsonicPlaylist {
+  const SubsonicPlaylist({
+    required this.id,
+    required this.name,
+    this.comment,
+    this.owner,
+    this.isPublic = false,
+    this.songCount = 0,
+    this.durationSeconds = 0,
+    this.created,
+    this.changed,
+    this.coverArtId,
+  });
+
+  final String id;
+  final String name;
+  final String? comment;
+  final String? owner;
+  final bool isPublic;
+  final int songCount;
+  final int durationSeconds;
+  final DateTime? created;
+  final DateTime? changed;
+  final String? coverArtId;
+
+  factory SubsonicPlaylist.fromJson(Map<String, dynamic> json) {
+    DateTime? parseDate(dynamic val) {
+      if (val is String) {
+        return DateTime.tryParse(val);
+      }
+      return null;
+    }
+
+    return SubsonicPlaylist(
+      id: json['id']?.toString() ?? '',
+      name: json['name'] as String? ?? 'Untitled Playlist',
+      comment: json['comment'] as String?,
+      owner: json['owner'] as String?,
+      isPublic: json['public'] == true,
+      songCount: (json['songCount'] as num?)?.toInt() ?? 0,
+      durationSeconds: (json['duration'] as num?)?.toInt() ?? 0,
+      created: parseDate(json['created']),
+      changed: parseDate(json['changed']),
+      coverArtId: json['coverArt']?.toString(),
+    );
+  }
+}
+
 enum SubsonicAlbumSort {
   alphabeticalByName('alphabeticalByName', 'A–Z'),
   recent('recent', 'Recently Added'),
@@ -227,6 +276,13 @@ class SubsonicScanState {
     this.totalAlbums = 0,
     this.totalTracks = 0,
     this.currentAlbumName = '',
+    this.totalPlaylists = 0,
+    this.syncedPlaylists = 0,
+    this.currentPlaylistName = '',
+    this.totalArtists = 0,
+    this.syncedArtists = 0,
+    this.currentArtistName = '',
+    this.statusMessage,
     this.error,
     this.isCompleted = false,
   });
@@ -236,11 +292,42 @@ class SubsonicScanState {
   final int totalAlbums;
   final int totalTracks;
   final String currentAlbumName;
+  final int totalPlaylists;
+  final int syncedPlaylists;
+  final String currentPlaylistName;
+  final int totalArtists;
+  final int syncedArtists;
+  final String currentArtistName;
+  final String? statusMessage;
   final String? error;
   final bool isCompleted;
 
-  double get progress =>
-      totalAlbums > 0 ? (currentAlbum / totalAlbums).clamp(0.0, 1.0) : 0.0;
+  double get progress {
+    if (totalAlbums == 0 && totalPlaylists == 0 && totalArtists == 0) {
+      return 0.0;
+    }
+    final albumWeight = totalAlbums > 0 ? 0.7 : 0.0;
+    final playlistWeight = totalPlaylists > 0 ? 0.15 : 0.0;
+    final artistWeight = totalArtists > 0 ? 0.15 : 0.0;
+    final totalWeight = albumWeight + playlistWeight + artistWeight;
+    if (totalWeight == 0) return 0.0;
+
+    final albumProgress = totalAlbums > 0
+        ? (currentAlbum / totalAlbums).clamp(0.0, 1.0)
+        : 0.0;
+    final playlistProgress = totalPlaylists > 0
+        ? (syncedPlaylists / totalPlaylists).clamp(0.0, 1.0)
+        : 0.0;
+    final artistProgress = totalArtists > 0
+        ? (syncedArtists / totalArtists).clamp(0.0, 1.0)
+        : 0.0;
+
+    return ((albumProgress * albumWeight +
+                playlistProgress * playlistWeight +
+                artistProgress * artistWeight) /
+            totalWeight)
+        .clamp(0.0, 1.0);
+  }
 
   SubsonicScanState copyWith({
     bool? isScanning,
@@ -248,6 +335,13 @@ class SubsonicScanState {
     int? totalAlbums,
     int? totalTracks,
     String? currentAlbumName,
+    int? totalPlaylists,
+    int? syncedPlaylists,
+    String? currentPlaylistName,
+    int? totalArtists,
+    int? syncedArtists,
+    String? currentArtistName,
+    String? statusMessage,
     String? error,
     bool? isCompleted,
   }) {
@@ -257,6 +351,13 @@ class SubsonicScanState {
       totalAlbums: totalAlbums ?? this.totalAlbums,
       totalTracks: totalTracks ?? this.totalTracks,
       currentAlbumName: currentAlbumName ?? this.currentAlbumName,
+      totalPlaylists: totalPlaylists ?? this.totalPlaylists,
+      syncedPlaylists: syncedPlaylists ?? this.syncedPlaylists,
+      currentPlaylistName: currentPlaylistName ?? this.currentPlaylistName,
+      totalArtists: totalArtists ?? this.totalArtists,
+      syncedArtists: syncedArtists ?? this.syncedArtists,
+      currentArtistName: currentArtistName ?? this.currentArtistName,
+      statusMessage: statusMessage ?? this.statusMessage,
       error: error,
       isCompleted: isCompleted ?? this.isCompleted,
     );
