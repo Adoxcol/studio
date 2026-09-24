@@ -13,3 +13,9 @@
 ## 2026-09-21 - Explicit Selected State for Custom Interactive Widgets
 **Learning:** Custom interactive widgets (like `InkWell` or `GestureDetector`) used to build standard UI controls (like navigation rails) lack implicit accessibility context for their interactive states. Relying solely on a parent `Tooltip` is insufficient as it does not communicate the control's current state (e.g., selected or unselected).
 **Action:** When implementing custom interactive elements that have selection states, always explicitly wrap them in a `Semantics` widget. Define `button: true`, provide a descriptive `label`, and importantly set interactive states like `selected: true/false` so screen readers correctly identify and announce their roles and states to users.
+## 2026-09-24 - Semantics Wrappers for Custom Clickable Widgets
+**Learning:** Custom interactive elements built with  or  in Flutter are not automatically announced as buttons by screen readers unless explicitly marked.
+**Action:** Always wrap custom interactive widgets with `Semantics(button: true, label: ...)` to ensure they are accessible and correctly interpreted by assistive technologies.
+## 2024-05-24 - Semantics Wrappers for Custom Clickable Widgets
+**Learning:** Custom interactive elements built with `GestureDetector` or `InkWell` in Flutter are not automatically announced as buttons by screen readers unless explicitly marked.
+**Action:** Always wrap custom interactive widgets with `Semantics(button: true, label: ...)` to ensure they are accessible and correctly interpreted by assistive technologies.
