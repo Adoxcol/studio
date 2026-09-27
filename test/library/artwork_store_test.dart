@@ -91,4 +91,31 @@ void main() {
     expect(File(path).existsSync(), isTrue);
     expect(dir.listSync(), hasLength(1));
   });
+
+  test('concurrent saves of the same bytes all succeed', () async {
+    final dir = Directory.systemTemp.createTempSync('studio-art');
+    addTearDown(() {
+      if (dir.existsSync()) dir.deleteSync(recursive: true);
+    });
+    final store = ArtworkStore(dir);
+    final paths = await Future.wait([
+      for (var i = 0; i < 8; i++) store.save(_png, mime: 'image/png'),
+    ]);
+    expect(paths.toSet(), hasLength(1));
+    expect(File(paths.first!).readAsBytesSync(), _png);
+    expect(dir.listSync(), hasLength(1), reason: 'no .part files left behind');
+  });
+
+  test('keeps an existing file and leaves no temp files', () async {
+    final dir = Directory.systemTemp.createTempSync('studio-art');
+    addTearDown(() {
+      if (dir.existsSync()) dir.deleteSync(recursive: true);
+    });
+    final store = ArtworkStore(dir);
+    final path = (await store.save(_png, mime: 'image/png'))!;
+    final before = File(path).lastModifiedSync();
+    await store.save(_png, mime: 'image/png');
+    expect(File(path).lastModifiedSync(), before);
+    expect(dir.listSync().where((e) => e.path.endsWith('.part')), isEmpty);
+  });
 }

@@ -1,7 +1,7 @@
 import 'package:studio/providers/local_file_provider.dart';
 import 'package:studio/providers/playable_resolver.dart';
 
-/// Looks up a resolver by source id. Spotify would register here later.
+/// Looks up a resolver by source id (`local`, `subsonic`, ...).
 class ResolverRegistry {
   ResolverRegistry({List<PlayableResolver>? resolvers})
     : _bySource = {
