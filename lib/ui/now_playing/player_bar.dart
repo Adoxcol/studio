@@ -8,6 +8,7 @@ import 'package:studio/state/playback_mode_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/now_playing/cover_art.dart';
 import 'package:studio/ui/track_actions/track_actions_menu.dart';
+import 'package:studio/features/mini_player/presentation/mini_player_providers.dart';
 
 class PlayerBar extends StatelessWidget {
   const PlayerBar({super.key});
@@ -70,6 +71,7 @@ class _PlayerBarBody extends ConsumerWidget {
               children: [
                 _TrackInfo(),
                 Spacer(),
+                _MiniPlayerButton(),
                 _PlaybackModeButton(),
                 SizedBox(width: 12),
                 SizedBox(width: 130, child: _VolumeCluster()),
@@ -79,6 +81,20 @@ class _PlayerBarBody extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MiniPlayerButton extends ConsumerWidget {
+  const _MiniPlayerButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = StudioPalette.of(context);
+    return IconButton(
+      tooltip: 'Mini player',
+      onPressed: () => ref.read(miniPlayerProvider.notifier).enter(),
+      icon: Icon(Icons.picture_in_picture_alt, color: palette.inkMuted),
     );
   }
 }

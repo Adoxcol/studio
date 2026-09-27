@@ -121,6 +121,7 @@ Local library first with remote OpenSubsonic & Navidrome streaming support.
 ### 🖥️ System Integration
 
 - Custom frameless titlebar with minimize / maximize / close
+- Mini player that can stay on top of other windows (Ctrl+Shift+M)
 - System tray with Play/Pause/Next/Previous; close-to-tray with "don't ask again"
 - Global media keys and configurable hotkeys
 - Discord Rich Presence with custom templates and artwork upload

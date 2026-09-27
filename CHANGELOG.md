@@ -18,6 +18,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   saves the original file and plays it instead of streaming, including when
   the server is unreachable. The Navidrome screen shows storage used and can
   cancel or remove downloads.
+- Mini player: a compact window with cover, track, transport and progress
+  that can stay on top of other windows. Open it from the player bar or with
+  Ctrl+Shift+M (⌘⇧M on macOS); Escape or the expand button restores the full
+  window at its previous size and position.
 
 ### Fixed
 
