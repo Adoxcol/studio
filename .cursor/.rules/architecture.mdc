@@ -17,7 +17,7 @@ don't have to re-derive it or suggest an alternative stack.
 | Audio engine | `media_kit` (libmpv-backed) | gapless, broad format support, exposes low-level mpv property/filter access for EQ/ReplayGain |
 | State management | Riverpod | |
 | Local database | `drift` over `sqlite3` | reactive queries — UI subscribes directly to e.g. "tracks in this album" |
-| Dynamic color | `palette_generator` + `material_color_utilities` | seed color → tonal palette, same pipeline for auto (from art) and custom (user hue) — see design-system rule |
+| Dynamic color | `material_color_utilities` | seed color → tonal palette, same pipeline for auto (from art) and custom (user hue) — see design-system rule |
 | Dockable layout | `docking` | VS Code–style resizable/drag panels |
 | Frameless window | `bitsdojo_window` or `window_manager` | fully custom titlebar, no native chrome |
 | Tray / hotkeys | `tray_manager`, `hotkey_manager` | OS media keys, tray mini-controls |

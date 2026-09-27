@@ -69,7 +69,7 @@ background.
 
 ### Dynamic color / custom accent — the formula, not just the hue
 
-Every accent — whether auto-extracted from album art (via `palette_generator` /
+Every accent — whether auto-extracted from album art (via
 `material_color_utilities`) or picked by the user in Settings → Appearance — plugs into the
 **same** tonal formula. Only the hue changes:
 

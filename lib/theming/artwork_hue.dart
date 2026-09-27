@@ -1,8 +1,9 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:palette_generator/palette_generator.dart';
+import 'package:material_color_utilities/material_color_utilities.dart';
 import 'package:studio/theming/oklch.dart';
 
 /// Hue of the most chromatic color in [path], or null if none is usable.
@@ -23,25 +24,9 @@ Future<double?> hueFromArtwork(String path) async {
       targetHeight: (descriptor.height * scale).round().clamp(1, 64),
     );
     image = (await codec.getNextFrame()).image;
-    final generator = await PaletteGenerator.fromImage(
-      image,
-      maximumColorCount: 12,
-    );
-    final candidates = <Color>[
-      if (generator.vibrantColor != null) generator.vibrantColor!.color,
-      if (generator.lightVibrantColor != null)
-        generator.lightVibrantColor!.color,
-      if (generator.darkVibrantColor != null) generator.darkVibrantColor!.color,
-      if (generator.dominantColor != null) generator.dominantColor!.color,
-      ...generator.colors,
-    ];
-    Oklch? best;
-    for (final color in candidates) {
-      final oklch = Oklch.fromColor(color);
-      if (oklch.c < 0.04) continue;
-      if (best == null || oklch.c > best.c) best = oklch;
-    }
-    return best?.h;
+    final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    if (data == null) return null;
+    return await hueFromRgba(data.buffer.asUint8List());
   } on Object {
     return null;
   } finally {
@@ -50,6 +35,27 @@ Future<double?> hueFromArtwork(String path) async {
     descriptor?.dispose();
     buffer?.dispose();
   }
+}
+
+/// Hue of the most chromatic cluster in raw RGBA [pixels], or null when every
+/// cluster is near-grey. Quantizes to a handful of clusters first so a few
+/// stray pixels cannot outvote the artwork's actual colors.
+@visibleForTesting
+Future<double?> hueFromRgba(Uint8List pixels) async {
+  final argb = <int>[
+    for (var i = 0; i + 3 < pixels.length; i += 4)
+      if (pixels[i + 3] >= 128)
+        0xff000000 | pixels[i] << 16 | pixels[i + 1] << 8 | pixels[i + 2],
+  ];
+  if (argb.isEmpty) return null;
+  final clusters = await QuantizerCelebi().quantize(argb, 12);
+  Oklch? best;
+  for (final color in clusters.colorToCount.keys) {
+    final oklch = Oklch.fromColor(Color(color));
+    if (oklch.c < 0.04) continue;
+    if (best == null || oklch.c > best.c) best = oklch;
+  }
+  return best?.h;
 }
 
 /// Artwork paths are content-addressed. Cache small scalar results, never image

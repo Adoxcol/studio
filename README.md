@@ -212,7 +212,7 @@ flutter build linux   --release   # build\linux\x64\release\bundle\
 | State management | Riverpod |
 | Database | drift + sqlite3 |
 | Audio engine | media_kit (libmpv) |
-| Dynamic colour | palette_generator + material_color_utilities |
+| Dynamic colour | material_color_utilities |
 | Panel layout | docking |
 | Window chrome | window_manager |
 | Tray + hotkeys | tray_manager · hotkey_manager |

@@ -14,7 +14,7 @@ local catalogue. Solo-maintained and open source, run with production-grade proc
 - Riverpod for state management
 - drift + sqlite3 for the local library database
 - media_kit (libmpv-backed) for audio playback
-- palette_generator + material_color_utilities for dynamic color from album art
+- material_color_utilities for dynamic color from album art
 - docking for the dockable panel layout
 - window_manager for the custom titlebar
 - tray_manager / hotkey_manager for system tray + global hotkeys

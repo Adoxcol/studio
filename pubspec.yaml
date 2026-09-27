@@ -42,7 +42,6 @@ dependencies:
   # libmpv bundle with the realtime FFmpeg equalizer filter. libmpv keeps
   # ownership of the platform audio output (WASAPI on Windows).
   media_kit_libs_video: ^1.0.7
-  palette_generator: ^0.3.3+7
   material_color_utilities: ^0.13.0
   docking: ^1.16.2
   window_manager: ^0.5.2

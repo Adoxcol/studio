@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui' show Color;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studio/theming/artwork_hue.dart';
+import 'package:studio/theming/oklch.dart';
 
 void main() {
   test('hue cache is bounded LRU and reuses repeated artwork', () async {
@@ -54,5 +57,34 @@ void main() {
     cache.dispose();
     expect(await cache.read('b'), isNull);
     expect(calls, 2);
+  });
+
+  Uint8List rgba(List<(int, int, int, int, int)> runs) {
+    final bytes = BytesBuilder();
+    for (final (count, r, g, b, a) in runs) {
+      for (var i = 0; i < count; i++) {
+        bytes.add([r, g, b, a]);
+      }
+    }
+    return bytes.toBytes();
+  }
+
+  test('picks the hue of the most chromatic color', () async {
+    final hue = await hueFromRgba(
+      rgba([(3000, 90, 90, 90, 255), (600, 40, 90, 200, 255)]),
+    );
+    final blue = Oklch.fromColor(const Color(0xff285ac8)).h;
+    expect(hue, closeTo(blue, 10));
+  });
+
+  test('greyscale and fully transparent artwork yield no hue', () async {
+    expect(
+      await hueFromRgba(
+        rgba([(2000, 20, 20, 20, 255), (2000, 230, 230, 230, 255)]),
+      ),
+      isNull,
+    );
+    expect(await hueFromRgba(rgba([(500, 255, 0, 0, 0)])), isNull);
+    expect(await hueFromRgba(Uint8List(0)), isNull);
   });
 }
