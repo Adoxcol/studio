@@ -15,6 +15,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   mid-scan can no longer leave a truncated cover image, and parallel scan
   workers saving the same cover no longer fail.
 
+### Changed
+
+- Album-art accent colors are extracted with `material_color_utilities`
+  instead of the discontinued `palette_generator` package; some covers may
+  pick a slightly different accent hue.
+
 ## [0.5.0] - 2026-09-21
 
 ### Added

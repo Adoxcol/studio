@@ -17,9 +17,9 @@ don't have to re-derive it or suggest an alternative stack.
 | Audio engine | `media_kit` (libmpv-backed) | gapless, broad format support, exposes low-level mpv property/filter access for EQ/ReplayGain |
 | State management | Riverpod | |
 | Local database | `drift` over `sqlite3` | reactive queries — UI subscribes directly to e.g. "tracks in this album" |
-| Dynamic color | `palette_generator` + `material_color_utilities` | seed color → tonal palette, same pipeline for auto (from art) and custom (user hue) — see design-system rule |
+| Dynamic color | `material_color_utilities` | seed color → tonal palette, same pipeline for auto (from art) and custom (user hue) — see design-system rule |
 | Dockable layout | `docking` | VS Code–style resizable/drag panels |
-| Frameless window | `bitsdojo_window` or `window_manager` | fully custom titlebar, no native chrome |
+| Frameless window | `window_manager` | fully custom titlebar, no native chrome |
 | Tray / hotkeys | `tray_manager`, `hotkey_manager` | OS media keys, tray mini-controls |
 | Tag I/O | pure-Dart tag lib for now; `lofty` (Rust) via `flutter_rust_bridge` only if that's outgrown | don't reach for the Rust bridge prematurely |
 
@@ -31,7 +31,7 @@ lib/
   playback/dsp/   # ReplayGain, equalizer (mpv af/filter passthrough), crossfade engine
   library/        # scanner, tag I/O, Drift schema + queries
   lyrics/         # LRCLIB client, .lrc parsing/cache, sync timing
-  providers/      # LocalFileProvider, SpotifyMetadataProvider, resolver — pluggable interface
+  providers/      # PlayableResolver interface, LocalFileProvider, resolver registry
   theming/        # skin definitions, palette pipeline (auto + custom seed), ThemeExtensions
   ui/
     layout/           # docking panel setup, custom titlebar
@@ -40,8 +40,16 @@ lib/
     lyrics/
     visualizer/
     settings/         # appearance, playback & sound (EQ/ReplayGain/crossfade)
-  state/          # Riverpod providers tying it together
+  discord/        # Discord Rich Presence
+  state/          # app-wide Riverpod providers tying the core subsystems together
+  core/           # small shared helpers (desktop integration, window, formatting)
+  features/<feature>/{data,domain,presentation}/
+                  # self-contained features: subsonic, artist_artwork, metadata_editor,
+                  # smart_playlists, playlist_management, library_folders, track_details, updates
 ```
+
+New self-contained features go under `features/`. Code that extends a core subsystem goes in
+that subsystem's folder. Providers used by only one feature live in that feature.
 
 This is feature-first: a feature's data/domain/UI live together under its own folder rather than
 split across global `models/`, `screens/`, `widgets/` buckets.
@@ -49,11 +57,11 @@ split across global `models/`, `screens/`, `widgets/` buckets.
 ## The one architectural rule that matters most
 
 **The Playback Core only ever talks to a URI — it never branches on "is this local or
-Spotify."** `LocalFileProvider` and `SpotifyMetadataProvider` (+ its audio resolver) both resolve
-down to a playable URI before `media_kit` ever sees them. Don't add `if (source == local)`
+remote."** `LocalFileProvider` and `SubsonicPlayableProvider` both implement `PlayableResolver`
+and resolve down to a playable URI before `media_kit` ever sees them. Don't add `if (source == local)`
 branching inside playback, theming, or the visualizer — that logic belongs entirely in the
-provider layer. This is the split that makes the later streaming linkup a bolt-on instead of a
-rewrite (same pattern as the open-source Spotube app).
+provider layer. This split is what let OpenSubsonic / Navidrome streaming land as a bolt-on
+instead of a rewrite, and any future source should plug in the same way.
 
 ## Advanced audio features — effort/approach per feature
 
@@ -84,8 +92,8 @@ whole app; budget it as its own project, not a routine task.
 2. **Look and feel** — full theming/skin engine, dynamic-color pipeline (auto + custom seed),
    `docking` layout, visualizer v1.
 3. **Sound quality and lyrics** — ReplayGain, equalizer, LRCLIB lyrics.
-4. **Streaming linkup** — Spotify metadata provider + swappable audio resolver behind the
-   provider interface.
+4. **Streaming linkup** — shipped as OpenSubsonic / Navidrome streaming through
+   `SubsonicPlayableProvider`, kept separate from the local catalogue.
 5. **Depth** — real FFT visualizer, dual-player crossfade engine, skin/plugin marketplace format.
 
 If asked to build something from a later phase before an earlier one is solid, flag that rather

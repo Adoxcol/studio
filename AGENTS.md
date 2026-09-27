@@ -14,7 +14,7 @@ local catalogue. Solo-maintained and open source, run with production-grade proc
 - Riverpod for state management
 - drift + sqlite3 for the local library database
 - media_kit (libmpv-backed) for audio playback
-- palette_generator + material_color_utilities for dynamic color from album art
+- material_color_utilities for dynamic color from album art
 - docking for the dockable panel layout
 - window_manager for the custom titlebar
 - tray_manager / hotkey_manager for system tray + global hotkeys
@@ -65,9 +65,12 @@ chore: bootstrap CI and PR templates
 
 - `dart format .` must produce zero diff — enforced in CI.
 - `flutter analyze` must produce zero warnings, using the lint set in `analysis_options.yaml`.
-- Feature-first structure: `lib/features/<feature>/{data,domain,presentation}`, shared code in
-  `lib/core/`.
-- Riverpod providers live with the feature that owns them — no global provider dumping ground.
+- Folder layout follows `.cursor/.rules/architecture.mdc`. Core subsystems keep their top-level
+  folders (`lib/playback`, `lib/library`, `lib/lyrics`, `lib/providers`, `lib/theming`,
+  `lib/discord`, `lib/ui`); self-contained features go in
+  `lib/features/<feature>/{data,domain,presentation}`; small shared helpers go in `lib/core/`.
+- `lib/state/` holds only app-wide providers that tie core subsystems together. Providers for a
+  single feature live with that feature — `lib/state/` is not a dumping ground.
 
 ## Testing
 
