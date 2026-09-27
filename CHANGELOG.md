@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-27
+
 ### Added
 
 - Scrobbling to Last.fm and ListenBrainz. Connect either account in
@@ -49,6 +51,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Library database upgrade.** The first launch of 0.6.0 upgrades the
+  library database to schema version 10 to store listening history. Earlier
+  versions of Studio cannot open the upgraded library, so back up
+  `studio.sqlite` in Studio's app-support folder before trying 0.6.0 if you
+  may need to go back.
 - Album-art accent colors are extracted with `material_color_utilities`
   instead of the discontinued `palette_generator` package; some covers may
   pick a slightly different accent hue.
