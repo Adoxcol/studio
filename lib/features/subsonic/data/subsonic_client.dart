@@ -62,6 +62,11 @@ class SubsonicClient {
     return buildEndpointUri('stream', {'id': songId});
   }
 
+  /// The original file, without transcoding, for offline copies.
+  Uri buildDownloadUri(String songId) {
+    return buildEndpointUri('download', {'id': songId});
+  }
+
   Uri? buildCoverArtUri(String? coverArtId, {int size = 300}) {
     if (coverArtId == null || coverArtId.isEmpty) return null;
     return buildEndpointUri('getCoverArt', {

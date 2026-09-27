@@ -10,6 +10,8 @@ import 'package:studio/state/nav_provider.dart';
 import 'package:studio/state/nav_state.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
+import 'package:studio/providers/playable_resolver.dart';
+import 'package:studio/features/subsonic/presentation/subsonic_offline_providers.dart';
 
 sealed class _TrackAction {
   const _TrackAction();
@@ -50,6 +52,15 @@ Future<void> showTrackActions({
   final hasAlbum =
       album != LibraryQuery.unknownAlbum &&
       leadArtist != LibraryQuery.unknownArtist;
+  final remote = track.source == TrackLocator.subsonic;
+  final offline = ref.read(offlineDownloadsProvider);
+  final offlineAction = !remote || !offline.available
+      ? null
+      : offline.downloaded.contains(track.locator)
+      ? ('offline-remove', 'Remove download')
+      : offline.active.containsKey(track.locator)
+      ? ('offline-cancel', 'Cancel download')
+      : ('offline-download', 'Download for offline');
   final palette = StudioPalette.of(context);
   final overlay = Overlay.of(context).context.findRenderObject()! as RenderBox;
   final anchor = overlay.globalToLocal(position);
@@ -99,6 +110,8 @@ Future<void> showTrackActions({
         value: _NamedAction('details'),
         child: Text('Track details'),
       ),
+      if (offlineAction case (final name, final label))
+        PopupMenuItem(value: _NamedAction(name), child: Text(label)),
       const PopupMenuDivider(),
       for (final playlist in playlists)
         PopupMenuItem(
@@ -146,6 +159,12 @@ Future<void> showTrackActions({
       await db.addTrackToPlaylist(playlistId: id, trackId: track.id);
     case _NamedAction(name: 'remove'):
       onRemove?.call();
+    case _NamedAction(name: 'offline-download'):
+      ref.read(offlineDownloadsProvider.notifier).download([track.locator]);
+    case _NamedAction(name: 'offline-cancel'):
+      ref.read(offlineDownloadsProvider.notifier).cancel(track.locator);
+    case _NamedAction(name: 'offline-remove'):
+      ref.read(offlineDownloadsProvider.notifier).remove([track.locator]);
     case _ArtistAction(:final artist):
       ref.read(libraryNavigationProvider.notifier).openArtist(artist);
       ref.read(studioNavProvider.notifier).select(StudioDestination.library);

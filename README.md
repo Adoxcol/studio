@@ -30,6 +30,7 @@ Local library first with remote OpenSubsonic & Navidrome streaming support.
 - **Strictly separated from local catalogues**: remote collections live in their own dedicated workspace destination
 - Browse remote albums, artist directories, and search across track titles with instant results
 - Native lossless/transcoded audio streaming with full EQ, visualizer, volume, and playback queue integration
+- Offline downloads: keep original files on disk and play them without a connection
 
 ---
 

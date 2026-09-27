@@ -1,13 +1,22 @@
+import 'dart:io';
+
 import 'package:studio/features/subsonic/data/subsonic_client.dart';
 import 'package:studio/providers/playable_resolver.dart';
 
-/// Resolves a Subsonic / Navidrome track to an authenticated streaming HTTP(S) URI.
+/// Resolves a Subsonic / Navidrome track to its offline copy when one exists,
+/// otherwise to an authenticated streaming HTTP(S) URI.
 class SubsonicPlayableProvider implements PlayableResolver {
-  SubsonicPlayableProvider({SubsonicClient? client, this.clientGetter})
-    : _client = client;
+  SubsonicPlayableProvider({
+    SubsonicClient? client,
+    this.clientGetter,
+    this.offlineFile,
+  }) : _client = client;
 
   final SubsonicClient? _client;
   final SubsonicClient? Function()? clientGetter;
+
+  /// Looks up a downloaded copy by song id; works without a connection.
+  final File? Function(String songId)? offlineFile;
 
   @override
   String get sourceId => TrackLocator.subsonic;
@@ -27,6 +36,9 @@ class SubsonicPlayableProvider implements PlayableResolver {
     if (loc.startsWith('http://') || loc.startsWith('https://')) {
       return Uri.parse(loc);
     }
+
+    final offline = offlineFile?.call(loc);
+    if (offline != null) return offline.absolute.uri;
 
     final client = _client ?? clientGetter?.call();
     if (client == null) {

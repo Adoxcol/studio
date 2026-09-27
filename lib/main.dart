@@ -20,6 +20,8 @@ import 'package:studio/core/desktop/close_preference_store.dart';
 import 'package:studio/features/scrobbling/data/scrobble_queue_store.dart';
 import 'package:studio/features/scrobbling/data/scrobble_settings_store.dart';
 import 'package:studio/features/scrobbling/presentation/scrobble_providers.dart';
+import 'package:studio/features/subsonic/data/subsonic_offline_store.dart';
+import 'package:studio/features/subsonic/presentation/subsonic_offline_providers.dart';
 import 'package:studio/features/subsonic/data/subsonic_settings_store.dart';
 import 'package:studio/features/subsonic/presentation/subsonic_providers.dart';
 import 'package:studio/features/updates/update_provider.dart';
@@ -160,6 +162,9 @@ Future<void> main(List<String> args) async {
         discordArtworkUploaderProvider.overrideWithValue(discordArtwork),
         scrobbleSettingsStoreProvider.overrideWithValue(scrobbleSettings),
         scrobbleQueueStoreProvider.overrideWithValue(scrobbleQueue),
+        subsonicOfflineStoreProvider.overrideWithValue(
+          SubsonicOfflineStore(Directory(p.join(support.path, 'offline'))),
+        ),
         lyricsCacheProvider.overrideWithValue(
           FileLyricsCache(Directory(p.join(support.path, 'lyrics'))),
         ),

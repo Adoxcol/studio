@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/features/subsonic/domain/subsonic_models.dart';
+import 'package:studio/features/subsonic/presentation/subsonic_offline_panel.dart';
 import 'package:studio/features/subsonic/presentation/subsonic_providers.dart';
 import 'package:studio/theming/studio_palette.dart';
 
@@ -419,6 +420,8 @@ class _SubsonicPageState extends ConsumerState<SubsonicPage> {
                   .read(subsonicPlaybackServiceProvider)
                   .clearSubsonicCache(),
             ),
+          const SizedBox(height: 24),
+          const SubsonicOfflinePanel(),
           const SizedBox(height: 24),
           Text(
             'This server is available as a folder in the main Library. Open Library > Folders to browse it with the same search, sorting, filters, and playback controls as local folders.',

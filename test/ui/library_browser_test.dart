@@ -1,9 +1,20 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:studio/features/subsonic/data/subsonic_offline_store.dart';
+import 'package:studio/features/subsonic/data/subsonic_settings_store.dart';
+import 'package:studio/features/subsonic/domain/subsonic_models.dart';
+import 'package:studio/features/subsonic/presentation/subsonic_offline_providers.dart';
+import 'package:studio/features/subsonic/presentation/subsonic_providers.dart';
+import 'package:studio/providers/playable_resolver.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/library/scan_progress.dart';
 import 'package:studio/state/library_providers.dart';
@@ -270,6 +281,66 @@ void main() {
     expect(engine.lastUri, isA<Uri>());
     expect(engine.lastUri!.scheme, 'file');
   });
+
+  testWidgets(
+    'Navidrome tracks can be downloaded and cancelled from the menu',
+    (tester) async {
+      final root = Directory.systemTemp.createTempSync('studio-offline-ui');
+      addTearDown(() => root.deleteSync(recursive: true));
+      final gate = Completer<http.StreamedResponse>();
+      final requests = <Uri>[];
+      final remote = testTrack(
+        id: 9,
+        title: 'Remote Signal',
+        locator: 'nd-42',
+        source: TrackLocator.subsonic,
+      );
+      await pumpLibrary(
+        tester,
+        tracks: [remote],
+        extraOverrides: [
+          subsonicTracksProvider.overrideWith((ref) => Stream.value([remote])),
+          subsonicSettingsStoreProvider.overrideWithValue(
+            MemorySubsonicSettingsStore(
+              const SubsonicServerConfig(
+                serverUrl: 'https://music.example.com',
+                username: 'rob',
+                password: 'pw',
+              ),
+            ),
+          ),
+          subsonicOfflineStoreProvider.overrideWithValue(
+            SubsonicOfflineStore(root),
+          ),
+          subsonicDownloadHttpClientProvider.overrideWithValue(
+            MockClient.streaming((request, _) {
+              requests.add(request.url);
+              return gate.future;
+            }),
+          ),
+        ],
+      );
+
+      await tester.tap(
+        find.text('Remote Signal'),
+        buttons: kSecondaryMouseButton,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Download for offline'));
+      await tester.pumpAndSettle();
+      expect(requests.single.path, '/rest/download');
+      expect(requests.single.queryParameters['id'], 'nd-42');
+
+      await tester.tap(
+        find.text('Remote Signal'),
+        buttons: kSecondaryMouseButton,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Cancel download'), findsOneWidget);
+      await tester.tap(find.text('Cancel download'));
+      await tester.pumpAndSettle();
+    },
+  );
 
   testWidgets('track actions queue tracks and navigate individual credits', (
     tester,

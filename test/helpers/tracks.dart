@@ -17,10 +17,11 @@ Track testTrack({
   int? fileModifiedMs,
   int? folderId = 1,
   DateTime? indexedAt,
+  String source = TrackLocator.local,
 }) {
   return Track(
     id: id,
-    source: TrackLocator.local,
+    source: source,
     locator: locator ?? '/music/$id.flac',
     title: title,
     artist: artist,
