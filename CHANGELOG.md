@@ -24,6 +24,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   runs. Scanned tracks are saved in batches instead of once per album, scan
   progress updates at most about eight times a second, and changes to server
   tracks no longer make the local library reload.
+- Navidrome / Subsonic library scans finish several times faster on large
+  libraries: albums are now fetched four at a time instead of one by one.
 
 ## [0.6.0] - 2026-09-27
 
