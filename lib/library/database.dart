@@ -143,6 +143,8 @@ class StudioDatabase extends _$StudioDatabase {
     return {for (final row in rows) row.read<String>('name')};
   }
 
+  /// Emits only when the rows actually change: a write to one source (for
+  /// example a Navidrome scan) must not rebuild everything built on another.
   Stream<List<Track>> watchTracks({String source = 'local'}) {
     return watchCoalescedQuery(
       tableUpdates(TableUpdateQuery.onTable(tracks)),
@@ -155,7 +157,16 @@ class StudioDatabase extends _$StudioDatabase {
                   (t) => OrderingTerm(expression: t.title),
                 ]))
               .get(),
-    );
+    ).distinct(_sameTracks);
+  }
+
+  static bool _sameTracks(List<Track> a, List<Track> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   Future<List<Track>> allTracks({String source = 'local'}) =>
