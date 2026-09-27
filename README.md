@@ -123,6 +123,7 @@ Local library first with remote OpenSubsonic & Navidrome streaming support.
 - System tray with Play/Pause/Next/Previous; close-to-tray with "don't ask again"
 - Global media keys and configurable hotkeys
 - Discord Rich Presence with custom templates and artwork upload
+- Scrobbling to Last.fm and ListenBrainz, with an offline queue
 - Single-instance: second launch focuses the running window
 - Session restore — queue, playhead, and current track survive quit
 
