@@ -4,9 +4,9 @@ Read this before making any change. It applies to every contributor, human or AI
 
 ## Project
 
-Studio is a fast, responsive, highly customizable desktop music player. Local library first;
-a Spotify (or similar) streaming linkup is planned as a later phase. Solo-maintained and open
-source, run with production-grade process: protected `main`, feature branches, PRs, CI, SemVer.
+Studio is a fast, responsive, highly customizable desktop music player. Local library first,
+with remote streaming from OpenSubsonic / Navidrome servers kept strictly separate from the
+local catalogue. Solo-maintained and open source, run with production-grade process: protected `main`, feature branches, PRs, CI, SemVer.
 
 ## Tech stack
 
@@ -16,7 +16,7 @@ source, run with production-grade process: protected `main`, feature branches, P
 - media_kit (libmpv-backed) for audio playback
 - palette_generator + material_color_utilities for dynamic color from album art
 - docking for the dockable panel layout
-- bitsdojo_window / window_manager for the custom titlebar
+- window_manager for the custom titlebar
 - tray_manager / hotkey_manager for system tray + global hotkeys
 
 ## Non-negotiable git workflow
@@ -48,8 +48,8 @@ chore: bootstrap CI and PR templates
 ## Pull requests
 
 - Every PR uses `.github/PULL_REQUEST_TEMPLATE.md` and stays scoped to one concern.
-- CI (`.github/workflows/ci.yml`) must be green before merge: format check, analyze, tests,
-  desktop build matrix.
+- CI (`.github/workflows/ci.yml`) must be green before merge: format check, analyze, and tests
+  run on every PR; the macOS / Windows / Linux desktop build matrix runs on pushes to `main`.
 - Self-review is mandatory even solo: re-read the whole diff before merging, as if reviewing
   someone else's code.
 - Link the issue with `Closes #N` when one exists.

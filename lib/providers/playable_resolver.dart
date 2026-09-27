@@ -3,7 +3,7 @@
 class TrackLocator {
   const TrackLocator({required this.source, required this.locator});
 
-  /// e.g. `local`. Spotify would be a different source id later.
+  /// e.g. `local` or `subsonic`.
   final String source;
 
   /// Source-specific id: a filesystem path for [kLocalSource].
