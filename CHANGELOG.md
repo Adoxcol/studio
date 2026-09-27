@@ -22,6 +22,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   that can stay on top of other windows. Open it from the player bar or with
   Ctrl+Shift+M (⌘⇧M on macOS); Escape or the expand button restores the full
   window at its previous size and position.
+- Command palette: press Ctrl+K (⌘K on macOS) to jump to any artist, album,
+  playlist, track, screen or playback action. Matching is fuzzy and ignores
+  accents, so "bjork" finds Björk; arrow keys and Enter work throughout.
 
 ### Fixed
 
