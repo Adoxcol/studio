@@ -53,6 +53,31 @@ void main() {
     return [for (final title in titles) byTitle[title]!];
   }
 
+  test('position ticks do not notify the position-free view', () async {
+    final ids = await insertTitles(['First']);
+    await controller().playTracks(ids);
+    await pumpEventQueue();
+
+    var updates = 0;
+    final sub = container.listen(
+      playbackWithoutPositionProvider,
+      (_, _) => updates++,
+    );
+    addTearDown(sub.close);
+
+    for (var ms = 100; ms <= 500; ms += 100) {
+      engine.emitPosition(Duration(milliseconds: ms));
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+    }
+    expect(ui().position, const Duration(milliseconds: 500));
+    expect(updates, 0);
+
+    controller().setVolume(0.3);
+    await pumpEventQueue();
+    expect(updates, 1);
+    expect(container.read(playbackWithoutPositionProvider).volume, 0.3);
+  });
+
   test('pause flips playing before the engine returns', () async {
     final ids = await insertTitles(['First']);
     await controller().playTracks(ids);
