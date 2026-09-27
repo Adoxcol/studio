@@ -40,3 +40,19 @@ class PlaylistEntries extends Table {
       integer().references(Tracks, #id, onDelete: KeyAction.cascade)();
   IntColumn get position => integer()();
 }
+
+/// One completed listen, kept after its track is removed so history holds.
+@TableIndex(name: 'play_events_played_at', columns: {#playedAt})
+class PlayEvents extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get trackId => integer().nullable().references(
+    Tracks,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
+  TextColumn get title => text()();
+  TextColumn get artist => text().nullable()();
+  TextColumn get album => text().nullable()();
+  IntColumn get durationMs => integer().nullable()();
+  DateTimeColumn get playedAt => dateTime()();
+}

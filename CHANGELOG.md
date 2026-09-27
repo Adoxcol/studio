@@ -25,6 +25,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Command palette: press Ctrl+K (⌘K on macOS) to jump to any artist, album,
   playlist, track, screen or playback action. Matching is fuzzy and ignores
   accents, so "bjork" finds Björk; arrow keys and Enter work throughout.
+- Listening stats: Studio now keeps a local play history (a play counts after
+  half the track or four minutes, like scrobbling) and shows plays, listening
+  time and top artists, albums and tracks for the last week, month, year or
+  all time. A yearly review adds top artist and track, longest streak,
+  busiest day and plays per month. History can be cleared at any time.
 
 ### Fixed
 

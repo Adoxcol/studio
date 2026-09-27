@@ -46,6 +46,12 @@ List<PaletteCommand> buildPaletteCommands(WidgetRef ref) {
       'offline',
       'downloads',
     ]),
+    screen(StudioDestination.stats, 'Listening stats', [
+      'history',
+      'wrapped',
+      'year in review',
+      'top artists',
+    ]),
     screen(StudioDestination.settings, 'Settings', [
       'preferences',
       'options',

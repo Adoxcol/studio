@@ -10,7 +10,9 @@ import 'package:studio/features/smart_playlists/domain/smart_playlist.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [LibraryFolders, Tracks, Playlists, PlaylistEntries])
+@DriftDatabase(
+  tables: [LibraryFolders, Tracks, Playlists, PlaylistEntries, PlayEvents],
+)
 class StudioDatabase extends _$StudioDatabase {
   StudioDatabase(super.e);
 
@@ -21,7 +23,7 @@ class StudioDatabase extends _$StudioDatabase {
   }
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -67,6 +69,19 @@ class StudioDatabase extends _$StudioDatabase {
         if (!columns.contains('smart_rules')) {
           await m.addColumn(playlists, playlists.smartRules);
         }
+      }
+      if (from < 10) {
+        await customStatement(
+          'CREATE TABLE IF NOT EXISTS play_events ('
+          'id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, '
+          'track_id INTEGER NULL REFERENCES tracks (id) ON DELETE SET NULL, '
+          'title TEXT NOT NULL, artist TEXT NULL, album TEXT NULL, '
+          'duration_ms INTEGER NULL, played_at INTEGER NOT NULL)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS play_events_played_at '
+          'ON play_events (played_at)',
+        );
       }
     },
     beforeOpen: (details) async {
@@ -187,6 +202,46 @@ class StudioDatabase extends _$StudioDatabase {
         .whereType<Track>()
         .toList();
   }
+
+  Future<void> recordPlay({
+    int? trackId,
+    required String title,
+    String? artist,
+    String? album,
+    int? durationMs,
+    required DateTime playedAt,
+  }) async {
+    await into(playEvents).insert(
+      PlayEventsCompanion.insert(
+        trackId: Value(trackId),
+        title: title,
+        artist: Value(artist),
+        album: Value(album),
+        durationMs: Value(durationMs),
+        playedAt: playedAt,
+      ),
+    );
+  }
+
+  /// Plays in `[from, to)`, oldest first; null bounds are open.
+  Future<List<PlayEvent>> playEventsBetween({DateTime? from, DateTime? to}) {
+    final query = select(playEvents)
+      ..orderBy([(e) => OrderingTerm.asc(e.playedAt)]);
+    if (from != null) {
+      query.where((e) => e.playedAt.isBiggerOrEqualValue(from));
+    }
+    if (to != null) query.where((e) => e.playedAt.isSmallerThanValue(to));
+    return query.get();
+  }
+
+  Stream<int> watchPlayCount() {
+    final count = playEvents.id.count();
+    return (selectOnly(
+      playEvents,
+    )..addColumns([count])).map((row) => row.read(count) ?? 0).watchSingle();
+  }
+
+  Future<void> clearPlayHistory() => delete(playEvents).go();
 
   Future<List<LibraryFolder>> allFolders() => select(libraryFolders).get();
 

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
 import 'package:studio/features/mini_player/presentation/mini_player_providers.dart';
+import 'package:studio/features/listening_stats/presentation/stats_page.dart';
 import 'package:studio/features/mini_player/presentation/mini_player_view.dart';
 import 'package:studio/state/library_providers.dart';
 import 'package:studio/state/nav_provider.dart';
@@ -61,13 +62,16 @@ class StudioShell extends ConsumerWidget {
                                         destination ==
                                             StudioDestination.settings ||
                                         destination ==
-                                            StudioDestination.subsonic,
+                                            StudioDestination.subsonic ||
+                                        destination == StudioDestination.stats,
                                     child: const StudioWorkspace(),
                                   ),
                                   if (destination == StudioDestination.settings)
                                     const SettingsPage(),
                                   if (destination == StudioDestination.subsonic)
                                     const SubsonicPage(),
+                                  if (destination == StudioDestination.stats)
+                                    const StatsPage(),
                                   const Positioned(
                                     right: 20,
                                     bottom: 72,
