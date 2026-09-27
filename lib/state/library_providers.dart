@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:studio/features/subsonic/presentation/subsonic_offline_providers.dart';
 import 'package:studio/features/subsonic/data/subsonic_playable_provider.dart';
 import 'package:studio/features/subsonic/presentation/subsonic_providers.dart';
 import 'package:studio/library/artwork_store.dart';
@@ -35,6 +36,7 @@ final resolverRegistryProvider = Provider<ResolverRegistry>((ref) {
       const LocalFileProvider(),
       SubsonicPlayableProvider(
         clientGetter: () => ref.read(subsonicClientProvider),
+        offlineFile: (songId) => subsonicOfflineFile(ref, songId),
       ),
     ],
   );
