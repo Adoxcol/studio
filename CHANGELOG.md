@@ -7,6 +7,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Scrobbling to Last.fm and ListenBrainz. Connect either account in
+  Settings → Scrobbling; tracks longer than 30 seconds are scrobbled after
+  half their length or four minutes of actual listening, with now-playing
+  updates. Scrobbles made while offline are queued and sent later.
+
 ### Fixed
 
 - Screen readers now announce the clickable tiles and links in the library

@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:studio/features/artist_artwork/presentation/fanart_settings.dart';
 import 'package:studio/features/library_folders/presentation/library_folders_panel.dart';
+import 'package:studio/features/scrobbling/presentation/scrobbling_settings_panel.dart';
 import 'package:studio/features/updates/update_provider.dart';
 import 'package:studio/core/app_info.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,6 +49,10 @@ class SettingsPage extends StatelessWidget {
           const _PlaybackSection(),
           const SizedBox(height: 32),
           const _DiscordSection(),
+          const SizedBox(height: 32),
+          const _SectionLabel(text: 'SCROBBLING'),
+          const SizedBox(height: 16),
+          const ScrobblingSettingsPanel(),
           const SizedBox(height: 32),
           const _WindowSection(),
         ],

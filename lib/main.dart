@@ -17,6 +17,9 @@ import 'package:studio/features/artist_artwork/data/musicbrainz_artist_picture_l
 import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
 import 'package:studio/core/desktop/close_preference_provider.dart';
 import 'package:studio/core/desktop/close_preference_store.dart';
+import 'package:studio/features/scrobbling/data/scrobble_queue_store.dart';
+import 'package:studio/features/scrobbling/data/scrobble_settings_store.dart';
+import 'package:studio/features/scrobbling/presentation/scrobble_providers.dart';
 import 'package:studio/features/subsonic/data/subsonic_settings_store.dart';
 import 'package:studio/features/subsonic/presentation/subsonic_providers.dart';
 import 'package:studio/features/updates/update_provider.dart';
@@ -78,6 +81,12 @@ Future<void> main(List<String> args) async {
   );
   final discordArtwork = FreeImageArtworkUploader(
     cacheFile: File(p.join(support.path, 'discord-art.json')),
+  );
+  final scrobbleSettings = FileScrobbleSettingsStore(
+    File(p.join(support.path, 'scrobbling.json')),
+  );
+  final scrobbleQueue = FileScrobbleQueueStore(
+    File(p.join(support.path, 'scrobble-queue.json')),
   );
   final subsonicSettings = FileSubsonicSettingsStore(
     File(p.join(support.path, 'subsonic.json')),
@@ -149,6 +158,8 @@ Future<void> main(List<String> args) async {
         closePreferenceStoreProvider.overrideWithValue(closePreference),
         discordSettingsStoreProvider.overrideWithValue(discordSettings),
         discordArtworkUploaderProvider.overrideWithValue(discordArtwork),
+        scrobbleSettingsStoreProvider.overrideWithValue(scrobbleSettings),
+        scrobbleQueueStoreProvider.overrideWithValue(scrobbleQueue),
         lyricsCacheProvider.overrideWithValue(
           FileLyricsCache(Directory(p.join(support.path, 'lyrics'))),
         ),

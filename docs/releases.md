@@ -28,6 +28,13 @@ Required repository configuration:
 - `WINDOWS_SIGNTOOL_PATH`: runner path to Microsoft's `signtool.exe`.
 - `WINDOWS_SIGN_TIMESTAMP_URL`: trusted RFC3161 timestamp endpoint.
 
+Optional, for built-in Last.fm scrobbling:
+
+- `LASTFM_API_KEY` and `LASTFM_SECRET`: a Last.fm API account's key and
+  shared secret, passed to every desktop build as `STUDIO_LASTFM_API_KEY` /
+  `STUDIO_LASTFM_SECRET`. Without them, users enter their own key and secret
+  in Settings → Scrobbling. ListenBrainz needs no build configuration.
+
 The certificate and password must only exist in GitHub Actions secrets. Never
 commit them or print them in logs. If signing configuration is absent, the
 workflow publishes an explicitly unsigned installer for testing and reports a
