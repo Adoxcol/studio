@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
+import 'package:studio/features/mini_player/presentation/mini_player_providers.dart';
+import 'package:studio/features/mini_player/presentation/mini_player_view.dart';
 import 'package:studio/state/library_providers.dart';
 import 'package:studio/state/nav_provider.dart';
 import 'package:studio/state/nav_state.dart';
@@ -31,7 +33,10 @@ class StudioShell extends ConsumerWidget {
     ref.listen(playbackModeProvider, (_, enabled) {
       unawaited(_setNativeFullscreen(enabled));
     });
-    final content = playbackMode
+    final mini = ref.watch(miniPlayerProvider.select((s) => s.active));
+    final content = mini
+        ? const Scaffold(body: MiniPlayerView())
+        : playbackMode
         ? const Scaffold(body: PlaybackModePage())
         : Scaffold(
             body: Column(

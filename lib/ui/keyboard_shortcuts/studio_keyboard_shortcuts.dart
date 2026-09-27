@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:studio/features/mini_player/presentation/mini_player_providers.dart';
 import 'package:studio/state/playback_mode_provider.dart';
 import 'package:studio/state/playback_provider.dart';
 
@@ -50,10 +51,25 @@ class StudioKeyboardShortcuts extends ConsumerWidget {
         const SingleActivator(LogicalKeyboardKey.arrowDown): () =>
             run(() => controller.setVolume(playback.volume - 0.05)),
         const SingleActivator(LogicalKeyboardKey.escape): () {
-          if (!_editingText() && ref.read(playbackModeProvider)) {
+          if (_editingText()) return;
+          if (ref.read(miniPlayerProvider).active) {
+            ref.read(miniPlayerProvider.notifier).exit();
+          } else if (ref.read(playbackModeProvider)) {
             ref.read(playbackModeProvider.notifier).exit();
           }
         },
+        const SingleActivator(
+          LogicalKeyboardKey.keyM,
+          control: true,
+          shift: true,
+        ): () =>
+            run(ref.read(miniPlayerProvider.notifier).toggle),
+        const SingleActivator(
+          LogicalKeyboardKey.keyM,
+          meta: true,
+          shift: true,
+        ): () =>
+            run(ref.read(miniPlayerProvider.notifier).toggle),
       },
       child: Focus(autofocus: true, child: child),
     );
