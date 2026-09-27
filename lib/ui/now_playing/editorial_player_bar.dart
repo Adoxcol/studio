@@ -1,38 +1,37 @@
 part of 'editorial_stage.dart';
 
-class _EditorialScrubberWithHover extends StatefulWidget {
+/// Watches the position itself so only the scrubber redraws on every tick.
+class _EditorialScrubberWithHover extends ConsumerStatefulWidget {
   const _EditorialScrubberWithHover({
-    required this.playback,
     required this.palette,
     required this.isDark,
     required this.onSeek,
   });
 
-  final PlaybackUiState playback;
   final StudioPalette palette;
   final bool isDark;
   final ValueChanged<double> onSeek;
 
   @override
-  State<_EditorialScrubberWithHover> createState() =>
+  ConsumerState<_EditorialScrubberWithHover> createState() =>
       _EditorialScrubberWithHoverState();
 }
 
 class _EditorialScrubberWithHoverState
-    extends State<_EditorialScrubberWithHover> {
+    extends ConsumerState<_EditorialScrubberWithHover> {
   double? _hoverFraction;
   double? _hoverDx;
   bool _isHovering = false;
 
   @override
   Widget build(BuildContext context) {
-    final durationMs = widget.playback.duration.inMilliseconds;
+    final (position, duration) = ref.watch(
+      playbackControllerProvider.select((s) => (s.position, s.duration)),
+    );
+    final durationMs = duration.inMilliseconds;
     final progress = durationMs <= 0
         ? 0.0
-        : (widget.playback.position.inMilliseconds / durationMs).clamp(
-            0.0,
-            1.0,
-          );
+        : (position.inMilliseconds / durationMs).clamp(0.0, 1.0);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -191,7 +190,6 @@ class _EditorialPlayerBar extends ConsumerWidget {
         children: [
           // Edge-to-edge Scrubber Slider with Hover Timestamp
           _EditorialScrubberWithHover(
-            playback: playback,
             palette: palette,
             isDark: isDark,
             onSeek: controller.seekFraction,
@@ -326,13 +324,24 @@ class _EditorialPlayerBar extends ConsumerWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          '${formatDuration(playback.position)} / ${formatDuration(playback.duration)}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: palette.inkMuted,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
+                        Consumer(
+                          builder: (context, ref, _) {
+                            final (position, duration) = ref.watch(
+                              playbackControllerProvider.select(
+                                (s) => (s.position, s.duration),
+                              ),
+                            );
+                            return Text(
+                              '${formatDuration(position)} / ${formatDuration(duration)}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: palette.inkMuted,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                            );
+                          },
                         ),
                         const SizedBox(width: 8),
 

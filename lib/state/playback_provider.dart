@@ -719,3 +719,31 @@ final playbackControllerProvider =
     NotifierProvider<PlaybackController, PlaybackUiState>(
       PlaybackController.new,
     );
+
+/// [playbackControllerProvider] without the position, which changes about 20
+/// times a second while music plays. Large widgets that never draw the
+/// position watch this so they rebuild only when something else changes.
+final playbackWithoutPositionProvider = Provider<PlaybackUiState>((ref) {
+  ref.watch(playbackControllerProvider.select(_everythingButPosition));
+  return ref.read(playbackControllerProvider);
+});
+
+Object _everythingButPosition(PlaybackUiState s) => (
+  s.trackId,
+  s.title,
+  s.locator,
+  s.artist,
+  s.album,
+  s.genre,
+  s.year,
+  s.fileSizeBytes,
+  s.sampleRateHz,
+  s.artworkPath,
+  s.playing,
+  s.duration,
+  s.volume,
+  s.repeat,
+  s.shuffle,
+  s.queueIds,
+  s.historyIds,
+);

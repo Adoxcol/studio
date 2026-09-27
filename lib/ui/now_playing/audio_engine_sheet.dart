@@ -27,7 +27,9 @@ class AudioEngineSheet extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final settings = ref.watch(playbackSettingsProvider);
     final notifier = ref.read(playbackSettingsProvider.notifier);
-    final playback = ref.watch(playbackControllerProvider);
+    final sampleRateHz = ref.watch(
+      playbackControllerProvider.select((s) => s.sampleRateHz),
+    );
 
     final platformEngine = Platform.isWindows
         ? 'WASAPI (Direct Audio)'
@@ -260,8 +262,8 @@ class AudioEngineSheet extends ConsumerWidget {
                             ),
                           ),
                           Text(
-                            playback.sampleRateHz != null
-                                ? '${(playback.sampleRateHz! / 1000).toStringAsFixed(1)} kHz · Lossless Stream'
+                            sampleRateHz != null
+                                ? '${(sampleRateHz / 1000).toStringAsFixed(1)} kHz · Lossless Stream'
                                 : 'Bit-Perfect Output Stream',
                             style: TextStyle(
                               fontSize: 11,

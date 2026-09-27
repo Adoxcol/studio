@@ -9,6 +9,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Space now types a space in the search bar and other text fields instead of
+  being swallowed by the play/pause shortcut (previously only Shift+Space
+  worked). Arrow keys and Escape also go to the focused text field.
+- The Now Playing screen and the app-wide keyboard shortcuts no longer
+  rebuild about 20 times a second while music plays; only the progress bar
+  and time readout update with the playback position.
+
+### Fixed
+
 - The app no longer slows down while a Navidrome / Subsonic library scan
   runs. Scanned tracks are saved in batches instead of once per album, scan
   progress updates at most about eight times a second, and changes to server
