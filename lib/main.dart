@@ -22,6 +22,8 @@ import 'package:studio/features/mini_player/presentation/mini_player_providers.d
 import 'package:studio/features/scrobbling/data/scrobble_queue_store.dart';
 import 'package:studio/features/scrobbling/data/scrobble_settings_store.dart';
 import 'package:studio/features/scrobbling/presentation/scrobble_providers.dart';
+import 'package:studio/features/skins/data/skin_store.dart';
+import 'package:studio/features/skins/presentation/skins_provider.dart';
 import 'package:studio/features/subsonic/data/subsonic_offline_store.dart';
 import 'package:studio/features/subsonic/presentation/subsonic_offline_providers.dart';
 import 'package:studio/features/subsonic/data/subsonic_settings_store.dart';
@@ -64,8 +66,15 @@ Future<void> main(List<String> args) async {
   final appearance = FileAppearanceStore(
     File(p.join(support.path, 'appearance.json')),
   );
+  final skins = FileSkinStore(Directory(p.join(support.path, 'skins')));
+  final activeSkinId = skins.loadActive();
   await bootstrapWindow(
-    backgroundColor: StudioTheme.windowBackground(appearance.load().themeMode),
+    backgroundColor: StudioTheme.windowBackground(
+      appearance.load().themeMode,
+      skin: activeSkinId == null
+          ? null
+          : skins.load().where((s) => s.id == activeSkinId).firstOrNull,
+    ),
   );
   discardStaleMediaKitReferenceHolder();
   MediaKit.ensureInitialized();
@@ -164,6 +173,7 @@ Future<void> main(List<String> args) async {
         discordArtworkUploaderProvider.overrideWithValue(discordArtwork),
         scrobbleSettingsStoreProvider.overrideWithValue(scrobbleSettings),
         scrobbleQueueStoreProvider.overrideWithValue(scrobbleQueue),
+        skinStoreProvider.overrideWithValue(skins),
         miniPlayerStoreProvider.overrideWithValue(
           FileMiniPlayerStore(File(p.join(support.path, 'mini_player.json'))),
         ),
