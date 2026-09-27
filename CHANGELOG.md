@@ -30,6 +30,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   time and top artists, albums and tracks for the last week, month, year or
   all time. A yearly review adds top artist and track, longest streak,
   busiest day and plays per month. History can be cleared at any time.
+- Shareable skins: import a `.studioskin` file in Settings → Skins to
+  recolour surfaces and text in light and dark mode, switch back to the
+  built-in Editorial look, remove skins, or export the current look to share.
+  Skins with unreadable text contrast are refused. See `docs/skins.md`.
 
 ### Fixed
 

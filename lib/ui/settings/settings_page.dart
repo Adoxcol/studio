@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:studio/features/artist_artwork/presentation/fanart_settings.dart';
 import 'package:studio/features/library_folders/presentation/library_folders_panel.dart';
 import 'package:studio/features/scrobbling/presentation/scrobbling_settings_panel.dart';
+import 'package:studio/features/skins/presentation/skins_panel.dart';
 import 'package:studio/features/updates/update_provider.dart';
 import 'package:studio/core/app_info.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,6 +44,10 @@ class SettingsPage extends StatelessWidget {
           const _AppearanceSection(),
           const SizedBox(height: 32),
           const _PreviewSection(),
+          const SizedBox(height: 32),
+          const _SectionLabel(text: 'SKINS'),
+          const SizedBox(height: 16),
+          const SkinsPanel(),
           const SizedBox(height: 32),
           const _LibrarySection(),
           const SizedBox(height: 32),

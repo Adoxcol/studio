@@ -113,6 +113,7 @@ Local library first with remote OpenSubsonic & Navidrome streaming support.
 - Auto accent colour derived from album art (OKLCH) or a custom hue wheel
 - Dockable workspace — drag, split, resize, or maximize any panel
 - Right-click any tab strip to add, move, or hide widgets
+- Shareable `.studioskin` skins for light and dark mode ([format](docs/skins.md))
 
 ![Settings](docs/screenshots/settings.png)
 

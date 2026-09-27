@@ -12,6 +12,7 @@ import 'package:studio/core/desktop/close_window_dialog.dart';
 import 'package:studio/core/desktop/desktop_transport.dart';
 import 'package:studio/discord/discord_presence_controller.dart';
 import 'package:studio/discord/discord_settings_provider.dart';
+import 'package:studio/features/skins/presentation/skins_provider.dart';
 import 'package:studio/state/playback_provider.dart';
 import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/studio_theme.dart';
@@ -258,6 +259,7 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
   Future<void> _syncWindowBackground() async {
     final color = StudioTheme.windowBackground(
       ref.read(appearanceProvider).themeMode,
+      skin: ref.read(activeSkinProvider),
     );
     try {
       await windowManager.setBackgroundColor(color);
@@ -417,6 +419,9 @@ class _StudioDesktopHostState extends ConsumerState<StudioDesktopHost>
       unawaited(_syncDiscord());
     });
     ref.listen(appearanceProvider.select((s) => s.themeMode), (_, _) {
+      unawaited(_syncWindowBackground());
+    });
+    ref.listen(activeSkinProvider, (_, _) {
       unawaited(_syncWindowBackground());
     });
     return widget.child;
