@@ -326,6 +326,10 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
   static const flushTracks = 2000;
   static const flushEvery = Duration(seconds: 2);
 
+  /// Albums fetched at once. Servers handle a few parallel requests well,
+  /// and waiting on one round trip per album made big libraries slow.
+  static const albumConcurrency = 4;
+
   /// Progress is published at most this often; the final state always lands.
   static const progressEvery = Duration(milliseconds: 120);
 
@@ -398,47 +402,62 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
         await db.insertTracksIfNotExists(batch);
       }
 
-      // 2. Fetch tracks for each album; write them in batches
-      for (var i = 0; i < albums.length; i++) {
+      // 2. Fetch tracks for each album, a few at a time; write in batches
+      for (var start = 0; start < albums.length; start += albumConcurrency) {
         if (_isCancelled) break;
-        final album = albums[i];
+        final window = albums.sublist(
+          start,
+          (start + albumConcurrency).clamp(0, albums.length),
+        );
         _progress(
           _latest.copyWith(
-            currentAlbum: i + 1,
-            currentAlbumName: album.name,
-            statusMessage: 'Scanning album ${i + 1} of ${albums.length}',
+            currentAlbum: start + 1,
+            currentAlbumName: window.first.name,
+            statusMessage: 'Scanning album ${start + 1} of ${albums.length}',
           ),
         );
 
-        final songs = await client.getAlbum(album.id);
+        final results = await Future.wait([
+          for (final album in window) client.getAlbum(album.id),
+        ]);
         if (_isCancelled) break;
 
-        final companions = [
-          for (final song in songs)
-            TracksCompanion.insert(
-              source: const Value(TrackLocator.subsonic),
-              locator: song.id,
-              title: song.title,
-              artist: Value(song.artist),
-              album: Value(song.album),
-              durationMs: Value(song.durationSeconds * 1000),
-              fileSizeBytes: Value(song.sizeBytes),
-              year: Value(song.year),
-              trackNumber: Value(song.trackNumber),
-              genre: Value(song.genre),
-              artworkPath: Value(
-                client.buildCoverArtUri(song.coverArtId)?.toString(),
+        for (final songs in results) {
+          for (final song in songs) {
+            buffer.add(
+              TracksCompanion.insert(
+                source: const Value(TrackLocator.subsonic),
+                locator: song.id,
+                title: song.title,
+                artist: Value(song.artist),
+                album: Value(song.album),
+                durationMs: Value(song.durationSeconds * 1000),
+                fileSizeBytes: Value(song.sizeBytes),
+                year: Value(song.year),
+                trackNumber: Value(song.trackNumber),
+                genre: Value(song.genre),
+                artworkPath: Value(
+                  client.buildCoverArtUri(song.coverArtId)?.toString(),
+                ),
               ),
-            ),
-        ];
-        buffer.addAll(companions);
-        scannedTracks += companions.length;
+            );
+          }
+          scannedTracks += songs.length;
+        }
         if (buffer.length >= flushTracks ||
             _clock.elapsed - lastFlush >= flushEvery) {
           await flush();
         }
 
-        _progress(_latest.copyWith(totalTracks: scannedTracks));
+        final done = start + window.length;
+        _progress(
+          _latest.copyWith(
+            currentAlbum: done,
+            currentAlbumName: window.last.name,
+            statusMessage: 'Scanning album $done of ${albums.length}',
+            totalTracks: scannedTracks,
+          ),
+        );
       }
 
       // Keep what was fetched even when the scan is cancelled part-way.

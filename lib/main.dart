@@ -16,6 +16,7 @@ import 'package:studio/features/artist_artwork/data/artist_picture_store.dart';
 import 'package:studio/features/artist_artwork/data/musicbrainz_artist_picture_lookup.dart';
 import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
 import 'package:studio/core/desktop/close_preference_provider.dart';
+import 'package:studio/core/network_artwork.dart';
 import 'package:studio/core/desktop/close_preference_store.dart';
 import 'package:studio/features/mini_player/data/mini_player_store.dart';
 import 'package:studio/features/mini_player/presentation/mini_player_providers.dart';
@@ -63,6 +64,10 @@ Future<void> main(List<String> args) async {
     exit(0);
   }
   final support = await getApplicationSupportDirectory();
+  NetworkArtworkCache.instance = NetworkArtworkCache(
+    directory: Directory(p.join(support.path, 'artwork_cache')),
+  );
+  unawaited(NetworkArtworkCache.instance.prune());
   final appearance = FileAppearanceStore(
     File(p.join(support.path, 'appearance.json')),
   );

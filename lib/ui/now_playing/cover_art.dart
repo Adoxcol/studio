@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:studio/core/network_artwork.dart';
 import 'package:studio/theming/studio_palette.dart';
 
 class CoverArt extends StatelessWidget {
@@ -24,8 +25,14 @@ class CoverArt extends StatelessWidget {
     final palette = StudioPalette.of(context);
     final artwork = path;
     if (artwork != null && _isNetworkUri(artwork)) {
-      return Image.network(
-        artwork,
+      final extent = decodeExtent(size, MediaQuery.devicePixelRatioOf(context));
+      return Image(
+        image: ResizeImage(
+          NetworkArtworkImage(artwork),
+          width: extent,
+          height: extent,
+          policy: ResizeImagePolicy.fit,
+        ),
         width: size,
         height: size,
         fit: BoxFit.cover,

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:studio/core/network_artwork.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/state/playback_mode_provider.dart';
@@ -486,8 +487,8 @@ class _VinylCenterLabel extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             if (isNetwork)
-              Image.network(
-                artwork!,
+              Image(
+                image: NetworkArtworkImage(artwork!),
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) =>
                     const ColoredBox(color: Color(0xFF2E2A27)),

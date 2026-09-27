@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:studio/core/network_artwork.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
@@ -295,7 +296,7 @@ class _ArtworkBackground extends StatelessWidget {
     final isNetwork =
         uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
     final image = isNetwork
-        ? Image.network(path, fit: BoxFit.cover)
+        ? Image(image: NetworkArtworkImage(path), fit: BoxFit.cover)
         : Image.file(File(path), fit: BoxFit.cover);
     return ColorFiltered(
       colorFilter: const ColorFilter.mode(

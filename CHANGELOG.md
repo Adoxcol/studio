@@ -9,6 +9,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Navidrome / Subsonic cover art loads faster and scrolls smoothly. Tracks
+  that share a cover now share one download instead of fetching it once per
+  track, covers are decoded at the size they are shown, and they are kept in
+  a disk cache (up to 256 MB) so they don't download again on every launch.
 - Space now types a space in the search bar and other text fields instead of
   being swallowed by the play/pause shortcut (previously only Shift+Space
   worked). Arrow keys and Escape also go to the focused text field.
@@ -16,12 +20,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   rebuild about 20 times a second while music plays; only the progress bar
   and time readout update with the playback position.
 
-### Fixed
-
 - The app no longer slows down while a Navidrome / Subsonic library scan
   runs. Scanned tracks are saved in batches instead of once per album, scan
   progress updates at most about eight times a second, and changes to server
   tracks no longer make the local library reload.
+- Navidrome / Subsonic library scans finish several times faster on large
+  libraries: albums are now fetched four at a time instead of one by one.
 
 ## [0.6.0] - 2026-09-27
 
