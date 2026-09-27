@@ -7,6 +7,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- The app no longer slows down while a Navidrome / Subsonic library scan
+  runs. Scanned tracks are saved in batches instead of once per album, scan
+  progress updates at most about eight times a second, and changes to server
+  tracks no longer make the local library reload.
+
 ## [0.6.0] - 2026-09-27
 
 ### Added
