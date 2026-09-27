@@ -320,8 +320,36 @@ final subsonicAlbumsProvider = Provider<AsyncValue<List<SubsonicAlbum>>>((ref) {
 class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
   bool _isCancelled = false;
 
+  /// Tracks are written in batches: each write makes every live tracks query
+  /// (the whole local library included) re-run, so per-album writes kept the
+  /// UI busy for the entire scan.
+  static const flushTracks = 2000;
+  static const flushEvery = Duration(seconds: 2);
+
+  /// Progress is published at most this often; the final state always lands.
+  static const progressEvery = Duration(milliseconds: 120);
+
+  final _clock = Stopwatch();
+  var _lastProgress = Duration.zero;
+
   @override
   SubsonicScanState build() => const SubsonicScanState();
+
+  /// Publishes progress unless one went out within [progressEvery].
+  void _progress(SubsonicScanState next, {bool force = false}) {
+    final now = _clock.elapsed;
+    if (!force && now - _lastProgress < progressEvery) {
+      _pending = next;
+      return;
+    }
+    _pending = null;
+    _lastProgress = now;
+    state = next;
+  }
+
+  SubsonicScanState? _pending;
+
+  SubsonicScanState get _latest => _pending ?? state;
 
   void cancelScan() {
     _isCancelled = true;
@@ -334,6 +362,11 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
     if (client == null) return;
 
     _isCancelled = false;
+    _pending = null;
+    _clock
+      ..reset()
+      ..start();
+    _lastProgress = -progressEvery;
     state = const SubsonicScanState(
       isScanning: true,
       statusMessage: 'Scanning albums...',
@@ -355,15 +388,26 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
       state = state.copyWith(totalAlbums: albums.length);
 
       var scannedTracks = 0;
+      final buffer = <TracksCompanion>[];
+      var lastFlush = _clock.elapsed;
+      Future<void> flush() async {
+        if (buffer.isEmpty) return;
+        final batch = List.of(buffer);
+        buffer.clear();
+        lastFlush = _clock.elapsed;
+        await db.insertTracksIfNotExists(batch);
+      }
 
-      // 2. Fetch tracks for each album and insert into db
+      // 2. Fetch tracks for each album; write them in batches
       for (var i = 0; i < albums.length; i++) {
         if (_isCancelled) break;
         final album = albums[i];
-        state = state.copyWith(
-          currentAlbum: i + 1,
-          currentAlbumName: album.name,
-          statusMessage: 'Scanning album ${i + 1} of ${albums.length}',
+        _progress(
+          _latest.copyWith(
+            currentAlbum: i + 1,
+            currentAlbumName: album.name,
+            statusMessage: 'Scanning album ${i + 1} of ${albums.length}',
+          ),
         );
 
         final songs = await client.getAlbum(album.id);
@@ -387,13 +431,20 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
               ),
             ),
         ];
-        await db.insertTracksIfNotExists(companions);
+        buffer.addAll(companions);
         scannedTracks += companions.length;
+        if (buffer.length >= flushTracks ||
+            _clock.elapsed - lastFlush >= flushEvery) {
+          await flush();
+        }
 
-        state = state.copyWith(totalTracks: scannedTracks);
+        _progress(_latest.copyWith(totalTracks: scannedTracks));
       }
 
+      // Keep what was fetched even when the scan is cancelled part-way.
+      await flush();
       if (_isCancelled) return;
+      _progress(_latest, force: true);
 
       // 3. Fetch playlists from Navidrome
       state = state.copyWith(
@@ -472,9 +523,11 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
       var syncedArtists = 0;
       for (final artist in artistsWithImages) {
         if (_isCancelled) break;
-        state = state.copyWith(
-          currentArtistName: artist.name,
-          statusMessage: 'Fetching portrait: ${artist.name}',
+        _progress(
+          _latest.copyWith(
+            currentArtistName: artist.name,
+            statusMessage: 'Fetching portrait: ${artist.name}',
+          ),
         );
 
         final key = artistKey(artist.name);
@@ -510,11 +563,12 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
           }
         }
         syncedArtists++;
-        state = state.copyWith(syncedArtists: syncedArtists);
+        _progress(_latest.copyWith(syncedArtists: syncedArtists));
       }
 
       if (!_isCancelled) {
-        state = state.copyWith(
+        _pending = null;
+        state = _latest.copyWith(
           isScanning: false,
           isCompleted: true,
           currentAlbumName: '',
