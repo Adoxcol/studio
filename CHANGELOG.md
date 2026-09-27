@@ -13,6 +13,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Settings → Scrobbling; tracks longer than 30 seconds are scrobbled after
   half their length or four minutes of actual listening, with now-playing
   updates. Scrobbles made while offline are queued and sent later.
+- Offline downloads for Navidrome / Subsonic. Right-click a server track, or
+  select several in the Library, and choose Download for offline. Studio
+  saves the original file and plays it instead of streaming, including when
+  the server is unreachable. The Navidrome screen shows storage used and can
+  cancel or remove downloads.
 
 ### Fixed
 

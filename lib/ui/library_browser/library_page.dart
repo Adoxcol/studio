@@ -21,6 +21,8 @@ import 'package:studio/features/smart_playlists/presentation/smart_playlist_edit
 import 'package:studio/ui/library_browser/library_text_action.dart';
 import 'package:studio/ui/library_browser/library_track_table.dart';
 import 'package:studio/ui/track_actions/track_actions_menu.dart';
+import 'package:studio/providers/playable_resolver.dart';
+import 'package:studio/features/subsonic/presentation/subsonic_offline_providers.dart';
 
 part 'library_page_chrome.dart';
 part 'library_filter_dialog.dart';
@@ -98,6 +100,13 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       }
     });
   }
+
+  List<String> _selectedRemoteLocators(List<Track> visibleTracks) => [
+    for (final track in visibleTracks)
+      if (_selectedTrackIds.contains(track.id) &&
+          track.source == TrackLocator.subsonic)
+        track.locator,
+  ];
 
   Future<void> _editSelected(List<Track> visibleTracks) async {
     final selected = visibleTracks
@@ -611,6 +620,23 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                 LibraryTextAction(
                                   label: 'Edit metadata',
                                   onTap: () => _editSelected(tableTracks),
+                                ),
+                              if (_selectionMode &&
+                                  _selectedRemoteLocators(
+                                    tableTracks,
+                                  ).isNotEmpty &&
+                                  ref.watch(
+                                    offlineDownloadsProvider.select(
+                                      (s) => s.available,
+                                    ),
+                                  ))
+                                LibraryTextAction(
+                                  label: 'Download for offline',
+                                  onTap: () => ref
+                                      .read(offlineDownloadsProvider.notifier)
+                                      .download(
+                                        _selectedRemoteLocators(tableTracks),
+                                      ),
                                 ),
                               if (showTable)
                                 LibraryTextAction(
