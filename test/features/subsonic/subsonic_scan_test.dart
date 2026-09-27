@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -153,13 +154,34 @@ void main() {
     expect(container!.read(subsonicScanProvider).totalTracks, 180);
   });
 
+  test('scan fetches a few albums at once', () async {
+    var inFlight = 0;
+    var peak = 0;
+    final inner = _handler(albums: 20);
+    container = containerFor(
+      MockClient((request) async {
+        if (!request.url.path.endsWith('/getAlbum')) return inner(request);
+        peak = max(peak, ++inFlight);
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        inFlight--;
+        return inner(request);
+      }),
+    );
+
+    await container!.read(subsonicScanProvider.notifier).startScan();
+
+    expect(peak, SubsonicScanNotifier.albumConcurrency);
+    expect(await db.allTracks(source: TrackLocator.subsonic), hasLength(60));
+    expect(container!.read(subsonicScanProvider).currentAlbum, 20);
+  });
+
   test('a cancelled scan keeps the tracks it already fetched', () async {
     final gate = Completer<void>();
     var albumsServed = 0;
     final inner = _handler(albums: 10);
     container = containerFor(
       MockClient((request) async {
-        if (request.url.path.endsWith('/getAlbum') && ++albumsServed == 4) {
+        if (request.url.path.endsWith('/getAlbum') && ++albumsServed == 6) {
           await gate.future;
         }
         return inner(request);
@@ -168,7 +190,7 @@ void main() {
 
     final notifier = container!.read(subsonicScanProvider.notifier);
     final scan = notifier.startScan();
-    while (albumsServed < 4) {
+    while (albumsServed < 6) {
       await Future<void>.delayed(Duration.zero);
     }
     notifier.cancelScan();
@@ -176,7 +198,8 @@ void main() {
     await scan;
 
     final stored = await db.allTracks(source: TrackLocator.subsonic);
-    expect(stored, hasLength(9));
+    // The first window of four albums landed; the cancelled one did not.
+    expect(stored, hasLength(12));
     expect(container!.read(subsonicScanProvider).isScanning, isFalse);
   });
 
