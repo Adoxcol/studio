@@ -1,11 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class LibraryNavigationRequest {
-  const LibraryNavigationRequest({this.revision = 0, this.artist, this.album});
+  const LibraryNavigationRequest({
+    this.revision = 0,
+    this.artist,
+    this.album,
+    this.playlistId,
+  });
 
   final int revision;
   final String? artist;
   final String? album;
+  final int? playlistId;
 }
 
 class LibraryNavigationNotifier extends Notifier<LibraryNavigationRequest> {
@@ -29,6 +35,13 @@ class LibraryNavigationNotifier extends Notifier<LibraryNavigationRequest> {
       revision: state.revision + 1,
       artist: artistName,
       album: albumName,
+    );
+  }
+
+  void openPlaylist(int id) {
+    state = LibraryNavigationRequest(
+      revision: state.revision + 1,
+      playlistId: id,
     );
   }
 }

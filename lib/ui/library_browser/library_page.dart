@@ -340,6 +340,19 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   @override
   Widget build(BuildContext context) {
     ref.listen(libraryNavigationProvider, (_, request) {
+      final playlistId = request.playlistId;
+      if (playlistId != null) {
+        _open(() {
+          _tab = LibraryTab.playlists;
+          _playlistId = playlistId;
+          _artistFilter = null;
+          _albumFilter = null;
+          _genreFilter = null;
+          _folderId = null;
+          _trackFilters = const LibraryTrackFilters();
+        });
+        return;
+      }
       final artist = request.artist;
       if (artist == null) return;
       final album = request.album;
