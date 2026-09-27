@@ -84,6 +84,13 @@ class StudioIconRail extends StatelessWidget {
             ),
             const Spacer(),
             _RailButton(
+              icon: Icons.insights_outlined,
+              selectedIcon: Icons.insights,
+              tooltip: 'Listening stats',
+              selected: selected == StudioDestination.stats,
+              onTap: () => onSelect(StudioDestination.stats),
+            ),
+            _RailButton(
               icon: Icons.settings_outlined,
               selectedIcon: Icons.settings,
               tooltip: 'Settings',

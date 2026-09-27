@@ -208,7 +208,8 @@ class _StudioWorkspaceState extends ConsumerState<StudioWorkspace> {
   @override
   Widget build(BuildContext context) {
     ref.listen(studioNavProvider, (_, destination) {
-      if (destination != StudioDestination.settings) {
+      if (destination != StudioDestination.settings &&
+          destination != StudioDestination.stats) {
         _activate(destination.name);
       }
     });

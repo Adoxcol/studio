@@ -7,5 +7,6 @@ enum StudioDestination {
   artist,
   album,
   track,
+  stats,
   settings,
 }
