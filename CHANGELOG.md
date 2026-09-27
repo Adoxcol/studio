@@ -37,6 +37,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Check for updates no longer looks stuck: "Checking…" now covers only the
+  release-server request, which gives up after 20 seconds with a clear
+  message, and a found update shows as "Downloading Studio x.y" with a
+  progress bar. Settings also says when you are already up to date.
 - Screen readers now announce the clickable tiles and links in the library
   browse view as buttons with descriptive labels.
 - Cached album artwork is written atomically, so a crash or power loss

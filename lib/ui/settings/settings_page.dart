@@ -7,6 +7,7 @@ import 'package:studio/features/library_folders/presentation/library_folders_pan
 import 'package:studio/features/scrobbling/presentation/scrobbling_settings_panel.dart';
 import 'package:studio/features/skins/presentation/skins_panel.dart';
 import 'package:studio/features/updates/update_provider.dart';
+import 'package:studio/features/updates/update_service.dart';
 import 'package:studio/core/app_info.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/core/desktop/close_preference.dart';
@@ -66,6 +67,26 @@ class SettingsPage extends StatelessWidget {
   }
 }
 
+String _updateStatus(UpdateState state) {
+  if (state.ready) {
+    return 'Studio ${state.version} is downloaded and ready to install.';
+  }
+  if (state.downloading) {
+    return 'Downloading Studio ${state.version}. You can keep listening; it installs when you restart.';
+  }
+  if (state.checking) {
+    return 'Checking the release server…';
+  }
+  if (state.upToDate) {
+    final at = state.lastChecked;
+    final time = at == null
+        ? ''
+        : ' (checked ${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')})';
+    return 'You have the latest version$time.';
+  }
+  return 'Updates are checked in the background when available.';
+}
+
 class _UpdatesSection extends ConsumerWidget {
   const _UpdatesSection();
 
@@ -85,9 +106,8 @@ class _UpdatesSection extends ConsumerWidget {
             Text('$kAppName $kAppVersion'),
             const SizedBox(height: 6),
             Text(
-              state.ready
-                  ? 'An update to ${state.version} is ready.'
-                  : 'Updates are checked in the background when available.',
+              _updateStatus(state),
+              key: const ValueKey('update-status'),
               style: TextStyle(color: palette.inkMuted),
             ),
             const SizedBox(height: 12),
@@ -95,14 +115,14 @@ class _UpdatesSection extends ConsumerWidget {
               spacing: 12,
               children: [
                 OutlinedButton(
-                  onPressed: state.checking || state.downloading
+                  onPressed: state.busy || state.ready
                       ? null
                       : () => service.check(),
                   child: Text(
                     state.checking
-                        ? 'Checking...'
+                        ? 'Checking…'
                         : state.downloading
-                        ? 'Downloading...'
+                        ? 'Downloading…'
                         : 'Check for updates',
                   ),
                 ),
@@ -113,10 +133,17 @@ class _UpdatesSection extends ConsumerWidget {
                   ),
               ],
             ),
+            if (state.downloading) ...[
+              const SizedBox(height: 12),
+              const SizedBox(width: 240, child: LinearProgressIndicator()),
+            ],
             if (state.error != null) ...[
               const SizedBox(height: 8),
               Text(
-                'Unable to check for updates right now.',
+                state.timedOut
+                    ? 'The update server did not answer within 20 seconds. Check your connection and try again.'
+                    : 'Unable to check for updates right now.',
+                key: const ValueKey('update-error'),
                 style: TextStyle(color: palette.inkMuted, fontSize: 12),
               ),
             ],
