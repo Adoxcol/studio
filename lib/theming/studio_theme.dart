@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:studio/features/skins/domain/skin.dart';
 import 'package:studio/theming/accent_seed.dart';
 import 'package:studio/theming/studio_palette.dart';
 
 abstract final class StudioTheme {
-  static ThemeData light({double hue = AccentSeed.defaultHue}) =>
-      _build(StudioPalette.light(hue: hue), Brightness.light);
+  static ThemeData light({
+    double hue = AccentSeed.defaultHue,
+    SkinPalette? skin,
+  }) => _build(_skinned(StudioPalette.light(hue: hue), skin), Brightness.light);
 
-  static ThemeData dark({double hue = AccentSeed.defaultHue}) =>
-      _build(StudioPalette.dark(hue: hue), Brightness.dark);
+  static ThemeData dark({
+    double hue = AccentSeed.defaultHue,
+    SkinPalette? skin,
+  }) => _build(_skinned(StudioPalette.dark(hue: hue), skin), Brightness.dark);
+
+  static StudioPalette _skinned(StudioPalette base, SkinPalette? skin) =>
+      skin == null ? base : skin.applyTo(base);
 
   static ThemeMode materialMode(AppThemeMode mode) => switch (mode) {
     AppThemeMode.light => ThemeMode.light,
@@ -23,8 +31,11 @@ abstract final class StudioTheme {
       WidgetsBinding.instance.platformDispatcher.platformBrightness,
   };
 
-  static Color windowBackground(AppThemeMode mode) {
-    return StudioPalette.forBrightness(resolveBrightness(mode)).bg;
+  static Color windowBackground(AppThemeMode mode, {Skin? skin}) {
+    final brightness = resolveBrightness(mode);
+    final base = StudioPalette.forBrightness(brightness);
+    final overrides = brightness == Brightness.dark ? skin?.dark : skin?.light;
+    return _skinned(base, overrides).bg;
   }
 
   static ThemeData _build(StudioPalette palette, Brightness brightness) {
