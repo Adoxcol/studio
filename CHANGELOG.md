@@ -7,6 +7,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- GitHub release pages now show that version's notes from this changelog,
+  followed by the list of merged pull requests.
+
 ## [0.7.0] - 2026-09-28
 
 ### Added
