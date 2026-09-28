@@ -263,7 +263,7 @@ class _Actions extends StatelessWidget {
             showChevron: true,
           ),
           LibraryTextAction(
-            label: 'Order: ${order.label}',
+            label: 'Order: ${order.labelFor(sort)}',
             onTap: onToggleOrder,
             muted: true,
             showChevron: true,

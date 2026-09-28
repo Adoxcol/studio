@@ -167,6 +167,21 @@ void main() {
     );
   });
 
+  test('Date added sorts newest first by default', () {
+    expect(LibrarySort.added.defaultOrder, LibraryOrder.descending);
+    expect(LibrarySort.title.defaultOrder, LibraryOrder.ascending);
+    expect(
+      LibraryQuery.sorted(
+        tracks: tracks,
+        sort: LibrarySort.added,
+        order: LibrarySort.added.defaultOrder,
+      ).map((t) => t.id),
+      [4, 2, 3, 1],
+    );
+    expect(LibraryOrder.descending.labelFor(LibrarySort.added), 'Newest');
+    expect(LibraryOrder.ascending.labelFor(LibrarySort.title), 'A–Z');
+  });
+
   test('recently added sorts by indexedAt descending', () {
     expect(
       LibraryQuery.sorted(
@@ -355,7 +370,8 @@ void main() {
   test('sort and order cycle', () {
     expect(LibraryQuery.nextSort(LibrarySort.album), LibrarySort.track);
     expect(LibraryQuery.nextSort(LibrarySort.track), LibrarySort.time);
-    expect(LibraryQuery.nextSort(LibrarySort.time), LibrarySort.title);
+    expect(LibraryQuery.nextSort(LibrarySort.time), LibrarySort.added);
+    expect(LibraryQuery.nextSort(LibrarySort.added), LibrarySort.title);
     expect(
       LibraryQuery.toggleOrder(LibraryOrder.ascending),
       LibraryOrder.descending,
