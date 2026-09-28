@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:studio/features/listening_stats/presentation/listening_stats_providers.dart';
 import 'package:studio/features/listening_stats/presentation/stats_page.dart';
 import 'package:studio/library/database.dart';
+import 'package:studio/features/subsonic/presentation/subsonic_providers.dart';
 import 'package:studio/state/library_providers.dart';
 import 'package:studio/theming/studio_theme.dart';
 
@@ -26,6 +27,9 @@ void main() {
           studioDatabaseProvider.overrideWithValue(db),
           statsClockProvider.overrideWithValue(() => DateTime(2026, 9, 27, 12)),
           playCountProvider.overrideWith((ref) => Stream.value(0)),
+          // Live library streams never settle; the page only needs a lookup.
+          libraryTracksProvider.overrideWith((ref) => Stream.value([])),
+          subsonicTracksProvider.overrideWith((ref) => Stream.value([])),
         ],
         child: MaterialApp(
           theme: StudioTheme.light(),
@@ -84,6 +88,42 @@ void main() {
     await tester.tap(find.byTooltip('Previous year'));
     await tester.pumpAndSettle();
     expect(find.text('Nothing recorded in 2025.'), findsOneWidget);
+    semantics.dispose();
+  });
+
+  testWidgets('shows top 10 lists, new artists and changes', (tester) async {
+    final semantics = tester.ensureSemantics();
+    // A month earlier: one play from an artist already known.
+    await db.recordPlay(
+      title: 'Before',
+      artist: 'Known',
+      durationMs: 60000,
+      playedAt: DateTime(2026, 8, 20, 9).toUtc(),
+    );
+    for (var i = 0; i < 12; i++) {
+      await db.recordPlay(
+        title: 'Song $i',
+        artist: i.isEven ? 'Known' : 'Newcomer $i',
+        album: 'Album $i',
+        durationMs: 120000,
+        playedAt: DateTime(2026, 9, 20 + i % 5, 9 + i).toUtc(),
+      );
+    }
+    await pump(tester);
+
+    expect(find.bySemanticsLabel('Plays: 12'), findsOneWidget);
+    expect(find.text('+1100% vs previous 30 days'), findsOneWidget);
+    expect(find.bySemanticsLabel('Artists: 7, 6 new to you'), findsOneWidget);
+    expect(find.text('Top tracks'), findsOneWidget);
+    // Ten entries per list, not twelve.
+    expect(find.bySemanticsLabel(RegExp(r'^10\. Song')), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'^11\. ')), findsNothing);
+    expect(find.text('New to you'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Most played artist: Known, 6 plays'),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel('9 am: 1 play'), findsOneWidget);
     semantics.dispose();
   });
 

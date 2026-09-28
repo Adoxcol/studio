@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A redesigned Listening stats page. Top 10 artists, albums and tracks now
+  show artist pictures and album covers, with a bar for how each compares
+  with number one; the period's most played artist, album and track get
+  large spotlight cards. New figures: albums and tracks heard, average
+  listening per day, change against the previous period, artists that are
+  new to you, when you listen (by hour and by weekday) and top genres.
 - Genres have their own colours. The Genres tab shows each genre as a
   coloured card with a bar for how much of your library it makes up, and
   track and artist details show genres as coloured chips. Familiar genres
