@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:studio/theming/genre_color.dart';
 import 'package:studio/features/artist_artwork/presentation/artist_portrait.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/library/library_query.dart';
@@ -203,6 +204,9 @@ class _GenreGrid extends StatelessWidget {
     if (groups.isEmpty) {
       return const _EmptyCopy(text: 'No genres yet.');
     }
+    final largest = groups
+        .map((g) => g.trackCount)
+        .fold(1, (a, b) => a > b ? a : b);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -211,23 +215,128 @@ class _GenreGrid extends StatelessWidget {
           child: GridView.builder(
             padding: const EdgeInsets.only(top: 12, bottom: 16),
             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 240,
-              mainAxisExtent: 72,
-              crossAxisSpacing: 24,
-              mainAxisSpacing: 8,
+              maxCrossAxisExtent: 260,
+              mainAxisExtent: 84,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
             ),
             itemCount: groups.length,
             itemBuilder: (context, index) {
               final group = groups[index];
-              return _NameTile(
+              return _GenreTile(
                 name: group.name,
                 detail: _plural(group.trackCount, 'track'),
+                share: group.trackCount / largest,
                 onTap: () => onSelect(group.name),
               );
             },
           ),
         ),
       ],
+    );
+  }
+}
+
+/// A genre card in the genre's own colour, with a bar showing its share of
+/// the library relative to the largest genre.
+class _GenreTile extends StatefulWidget {
+  const _GenreTile({
+    required this.name,
+    required this.detail,
+    required this.share,
+    required this.onTap,
+  });
+
+  final String name;
+  final String detail;
+  final double share;
+  final VoidCallback onTap;
+
+  @override
+  State<_GenreTile> createState() => _GenreTileState();
+}
+
+class _GenreTileState extends State<_GenreTile> {
+  var _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StudioPalette.of(context);
+    final colors = genreColors(widget.name, Theme.of(context).brightness);
+    return Semantics(
+      button: true,
+      label: '${widget.name}, ${widget.detail}',
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: _hovered ? colors.accent : colors.border,
+              ),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [colors.surface, palette.bg],
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(width: 4, color: colors.accent),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          widget.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: palette.ink,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.detail,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: palette.inkMuted),
+                        ),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(2),
+                          child: LinearProgressIndicator(
+                            value: widget.share.clamp(0.04, 1.0),
+                            minHeight: 3,
+                            color: colors.accent,
+                            backgroundColor: colors.border.withValues(
+                              alpha: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
