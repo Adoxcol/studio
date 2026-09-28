@@ -191,6 +191,29 @@ class StudioDatabase extends _$StudioDatabase {
     });
   }
 
+  /// Adds server tracks that are new and brings the date added of known ones
+  /// in line with the server, in one batch. Rows without an [indexedAt] (the
+  /// server sent no date) are only inserted.
+  Future<void> syncRemoteTracks(List<TracksCompanion> companions) async {
+    if (companions.isEmpty) return;
+    await batch((b) {
+      for (final row in companions) {
+        if (row.indexedAt.present) {
+          b.insert(
+            tracks,
+            row,
+            onConflict: DoUpdate(
+              (old) => TracksCompanion(indexedAt: row.indexedAt),
+              target: [tracks.locator],
+            ),
+          );
+        } else {
+          b.insert(tracks, row, mode: InsertMode.insertOrIgnore);
+        }
+      }
+    });
+  }
+
   Future<List<Track>> getOrInsertTracks(
     List<TracksCompanion> companions,
   ) async {

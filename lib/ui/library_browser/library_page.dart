@@ -599,9 +599,16 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                     shuffle: true,
                                   );
                             },
-                            onCycleSort: () => setState(
-                              () => _sort = LibraryQuery.nextSort(_sort),
-                            ),
+                            onCycleSort: () => setState(() {
+                              final next = LibraryQuery.nextSort(_sort);
+                              // Date added starts newest first; leaving it
+                              // returns to A–Z.
+                              if (next == LibrarySort.added ||
+                                  _sort == LibrarySort.added) {
+                                _order = next.defaultOrder;
+                              }
+                              _sort = next;
+                            }),
                             onToggleOrder: () => setState(
                               () => _order = LibraryQuery.toggleOrder(_order),
                             ),

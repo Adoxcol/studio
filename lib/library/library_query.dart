@@ -2,7 +2,9 @@ import 'package:studio/library/database.dart';
 
 enum LibraryTab { all, artists, albums, genres, playlists, folders }
 
-enum LibrarySort { title, artist, album, track, time }
+/// [added] is when a track entered the library: when it was first scanned
+/// for local files, and the server's own date added for Navidrome tracks.
+enum LibrarySort { title, artist, album, track, time, added }
 
 enum LibraryOrder { ascending, descending }
 
@@ -262,7 +264,7 @@ abstract final class LibraryQuery {
           }).toLowerCase(),
     };
     copy.sort((a, b) {
-      final cmp = byIndexedAt
+      final cmp = byIndexedAt || sort == LibrarySort.added
           ? a.indexedAt.compareTo(b.indexedAt)
           : switch (sort) {
               LibrarySort.title ||
@@ -276,6 +278,7 @@ abstract final class LibraryQuery {
                 a.durationMs,
                 b.durationMs,
               ),
+              LibrarySort.added => a.indexedAt.compareTo(b.indexedAt),
             };
       final directed = order == LibraryOrder.ascending ? cmp : -cmp;
       if (directed != 0) return directed;
@@ -455,7 +458,13 @@ extension LibrarySortX on LibrarySort {
     LibrarySort.album => 'Album',
     LibrarySort.track => 'Track',
     LibrarySort.time => 'Time',
+    LibrarySort.added => 'Date added',
   };
+
+  /// The order a new pick of this sort starts in: newest first for dates.
+  LibraryOrder get defaultOrder => this == LibrarySort.added
+      ? LibraryOrder.descending
+      : LibraryOrder.ascending;
 }
 
 extension LibraryOrderX on LibraryOrder {
@@ -463,4 +472,9 @@ extension LibraryOrderX on LibraryOrder {
     LibraryOrder.ascending => 'A–Z',
     LibraryOrder.descending => 'Z–A',
   };
+
+  /// [label] worded for [sort]: dates read as newest/oldest, not letters.
+  String labelFor(LibrarySort sort) => sort == LibrarySort.added
+      ? (this == LibraryOrder.descending ? 'Newest' : 'Oldest')
+      : label;
 }
