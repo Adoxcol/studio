@@ -107,18 +107,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Keep build outputs apart from the checkout: globs over the workspace
+      # also matched repo files (package.json, Contents.json) and attached
+      # them to the release.
       - uses: actions/download-artifact@v4
         with:
           pattern: studio-*
           merge-multiple: true
+          path: release-assets
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
-            **/RELEASES
-            **/*.nupkg
-            **/*.json
-            **/*.exe
-            studio-macos.zip
-            studio-linux-x64.tar.gz
+            release-assets/**/RELEASES
+            release-assets/**/*.nupkg
+            release-assets/**/*.json
+            release-assets/**/*.exe
+            release-assets/studio-macos.zip
+            release-assets/studio-linux-x64.tar.gz

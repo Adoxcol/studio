@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-28
+
 ### Added
 
 - Album-art accent colours now work for Navidrome / Subsonic tracks too,
@@ -31,13 +33,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The Now Playing screen and the app-wide keyboard shortcuts no longer
   rebuild about 20 times a second while music plays; only the progress bar
   and time readout update with the playback position.
-
 - The app no longer slows down while a Navidrome / Subsonic library scan
   runs. Scanned tracks are saved in batches instead of once per album, scan
   progress updates at most about eight times a second, and changes to server
   tracks no longer make the local library reload.
 - Navidrome / Subsonic library scans finish several times faster on large
   libraries: albums are now fetched four at a time instead of one by one.
+- Release pages no longer list unrelated `.json` files from the source tree
+  next to the downloads.
 
 ### Security
 
