@@ -44,7 +44,12 @@ List<ArtistImageRequest> artistImageRequests(List<Track> tracks) {
   for (final track in tracks) {
     for (final name in LibraryQuery.creditedArtists(track.artist)) {
       final key = artistKey(name);
-      names.putIfAbsent(key, () => name);
+      // ⚡ Bolt Optimization:
+      // Replaced `names.putIfAbsent(key, () => name)` with the `??=` operator.
+      // Using `putIfAbsent` inside this O(N) loop over all tracks forces an
+      // anonymous closure `() => name` allocation on every iteration, even if
+      // the key is already present. This avoids unnecessary GC pressure.
+      names[key] ??= name;
       final album = track.album?.trim();
       if (album != null && album.isNotEmpty) (albums[key] ??= {}).add(album);
     }
