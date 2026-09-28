@@ -7,11 +7,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-28
+
 ### Added
 
-- The website has a "What's new" section listing every release with its
-  notes, newest first, and download buttons for each version, so older
-  builds are one click away.
 - A redesigned Listening stats page. Top 10 artists, albums and tracks now
   show artist pictures and album covers, with a bar for how each compares
   with number one; the period's most played artist, album and track get
@@ -27,6 +26,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   newest first. Navidrome / Subsonic tracks use the date they were added to
   the server, so it matches Navidrome's Recently Added; tracks scanned by
   earlier versions get their server date on the next scan.
+- The website has a "What's new" section listing every release with its
+  notes, newest first, and download buttons for each version, so older
+  builds are one click away.
 
 ### Fixed
 
