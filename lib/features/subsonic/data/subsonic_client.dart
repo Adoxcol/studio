@@ -75,27 +75,6 @@ class SubsonicClient {
     });
   }
 
-  Future<Uint8List> fetchArtistImage(String imageUrl) async {
-    final parsed = Uri.parse(imageUrl);
-    final uri =
-        (parsed.hasScheme
-                ? parsed
-                : Uri.parse(config.normalizedUrl).resolve(imageUrl))
-            .replace(
-              queryParameters: {
-                ...parsed.queryParameters,
-                ..._buildAuthParams(),
-              },
-            );
-    final response = await _httpClient
-        .get(uri)
-        .timeout(const Duration(seconds: 20));
-    if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
-      throw Exception('Artist image returned HTTP ${response.statusCode}');
-    }
-    return response.bodyBytes;
-  }
-
   Future<Map<String, dynamic>> _getJson(
     String endpoint, [
     Map<String, String>? params,
@@ -324,32 +303,65 @@ class SubsonicClient {
   }) async {
     final uri = buildCoverArtUri(coverArtId, size: size);
     if (uri == null) return null;
-    try {
-      final response = await _httpClient
-          .get(uri)
-          .timeout(const Duration(seconds: 15));
-      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
-        return response.bodyBytes;
-      }
-    } catch (_) {
-      return null;
-    }
-    return null;
+    return _imageBytes(uri);
   }
 
   Future<Uint8List?> fetchImageUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return null;
+    return _imageBytes(uri);
+  }
+
+  /// The server's portrait for [artist], or null when it has none.
+  ///
+  /// Prefers `getCoverArt`, which is what the server itself shows. Falls back
+  /// to `artistImageUrl`; that may point at another host (Last.fm, Spotify),
+  /// which never gets this server's credentials.
+  Future<Uint8List?> artistPictureBytes(SubsonicArtist artist) async {
+    final coverArtId = artist.coverArtId;
+    if (coverArtId != null && coverArtId.isNotEmpty) {
+      final bytes = await getCoverArtBytes(coverArtId);
+      if (bytes != null) return bytes;
+    }
+    final imageUrl = artist.artistImageUrl;
+    if (imageUrl == null || imageUrl.isEmpty) return null;
+    final parsed = Uri.tryParse(imageUrl);
+    if (parsed == null) return null;
+    final server = Uri.parse(config.normalizedUrl);
+    final resolved = parsed.hasScheme ? parsed : server.resolveUri(parsed);
+    final sameServer =
+        resolved.host == server.host && resolved.port == server.port;
+    return _imageBytes(
+      sameServer
+          ? resolved.replace(
+              queryParameters: {
+                ...resolved.queryParameters,
+                ..._buildAuthParams(),
+              },
+            )
+          : resolved,
+    );
+  }
+
+  /// Body of a successful image response. Subsonic reports errors as JSON,
+  /// sometimes with HTTP 200, so the content type is checked too.
+  Future<Uint8List?> _imageBytes(Uri uri) async {
     try {
-      final uri = Uri.parse(url);
       final response = await _httpClient
           .get(uri)
           .timeout(const Duration(seconds: 15));
-      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
-        return response.bodyBytes;
+      final type = response.headers['content-type'] ?? '';
+      if (response.statusCode != 200 ||
+          response.bodyBytes.isEmpty ||
+          type.contains('json') ||
+          type.contains('xml') ||
+          type.startsWith('text/')) {
+        return null;
       }
-    } catch (_) {
+      return response.bodyBytes;
+    } on Object {
       return null;
     }
-    return null;
   }
 
   void dispose() {

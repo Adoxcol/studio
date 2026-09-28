@@ -192,6 +192,26 @@ class ArtistPictureRepository {
     log('Remote image saved from library source.', artist: artist);
   }
 
+  /// Forgets a downloaded image when [when] accepts its credit, for example
+  /// once a library source turns out to have served a generic placeholder.
+  /// Custom images and the placeholder choice are kept; the artist becomes
+  /// eligible for the online lookup again.
+  Future<void> clearRemote(
+    String artist, {
+    required bool Function(PictureCredit? credit) when,
+  }) async {
+    var cleared = false;
+    await _mutate(artistKey(artist), (old) {
+      if (old.remotePath == null || !when(old.credit)) return old;
+      cleared = true;
+      return ArtistPicture(customPath: old.customPath, hidden: old.hidden);
+    });
+    if (cleared) {
+      log('Library image was a placeholder; removed.', artist: artist);
+      retry(artist);
+    }
+  }
+
   /// Changing providers invalidates only negative results, never saved images.
   /// Keep the repository alive so widgets and manual imports retain ownership.
   Future<void> refreshSources() async {
