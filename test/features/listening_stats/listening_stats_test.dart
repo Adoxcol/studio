@@ -100,6 +100,46 @@ void main() {
       expect(stats.busiestDayPlays, 3);
     });
 
+    test('hours, weekdays, genres, counts and artwork', () {
+      // 2026-03-02 is a Monday.
+      final stats = ListeningStats.from(
+        [
+          play(DateTime(2026, 3, 2, 8), title: 'A', trackId: 1),
+          play(DateTime(2026, 3, 2, 8, 30), title: 'A', trackId: 1),
+          play(DateTime(2026, 3, 8, 22), title: 'B', trackId: 2),
+          play(DateTime(2026, 3, 8, 23), title: 'C', album: 'Other'),
+        ],
+        genreOf: (e) => switch (e.trackId) {
+          1 => 'Jazz',
+          2 => ' jazz ',
+          _ => null,
+        },
+      );
+      expect(stats.playsByHour[8], 2);
+      expect(stats.playsByHour[22], 1);
+      expect(stats.playsByWeekday.first, 2); // Monday
+      expect(stats.playsByWeekday.last, 2); // Sunday
+      expect(stats.topGenres.single.label, 'Jazz');
+      expect(stats.topGenres.single.plays, 3);
+      expect(stats.albums, 2);
+      expect(stats.tracks, 3);
+      expect(stats.topTracks.first.trackId, 1);
+      expect(stats.topAlbums.first.trackId, 1);
+      expect(stats.perDay, const Duration(minutes: 6));
+      expect(stats.newArtists, isEmpty);
+    });
+
+    test('new artists are those not heard before', () {
+      final earlier = [play(DateTime(2026, 1, 1), artist: 'Old Friend')];
+      final stats = ListeningStats.from([
+        play(DateTime(2026, 3, 1), artist: 'Old Friend'),
+        play(DateTime(2026, 3, 2), artist: 'Fresh Face'),
+        play(DateTime(2026, 3, 3), artist: 'Fresh Face'),
+      ], knownArtists: ListeningStats.artistsIn(earlier));
+      expect(stats.newArtists.map((a) => a.label), ['Fresh Face']);
+      expect(stats.newArtists.single.plays, 2);
+    });
+
     test('limits rankings to the requested size', () {
       final stats = ListeningStats.from([
         for (var i = 0; i < 20; i++)

@@ -20,11 +20,20 @@ enum StatsPeriod {
 }
 
 class RankedItem {
-  const RankedItem({required this.label, required this.plays, this.detail});
+  const RankedItem({
+    required this.label,
+    required this.plays,
+    this.detail,
+    this.trackId,
+  });
 
   final String label;
   final String? detail;
   final int plays;
+
+  /// A library track behind this entry, for its artwork. Null when every
+  /// play came from a track that has since been removed.
+  final int? trackId;
 
   @override
   String toString() => '$label ($plays)';
@@ -44,6 +53,15 @@ class ListeningStats {
     required this.longestStreak,
     this.busiestDay,
     this.busiestDayPlays = 0,
+    this.albums = 0,
+    this.tracks = 0,
+    this.playsByHour = const [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    ],
+    this.playsByWeekday = const [0, 0, 0, 0, 0, 0, 0],
+    this.topGenres = const [],
+    this.newArtists = const [],
   });
 
   static const empty = ListeningStats(
@@ -78,14 +96,45 @@ class ListeningStats {
   final DateTime? busiestDay;
   final int busiestDayPlays;
 
-  static ListeningStats from(Iterable<PlayEvent> events, {int top = 10}) {
+  /// Distinct albums and tracks heard.
+  final int albums;
+  final int tracks;
+
+  /// Plays by local hour, midnight first.
+  final List<int> playsByHour;
+
+  /// Plays by local weekday, Monday first.
+  final List<int> playsByWeekday;
+  final List<RankedItem> topGenres;
+
+  /// Artists first heard in these plays, most played first. Empty unless
+  /// earlier history was given.
+  final List<RankedItem> newArtists;
+
+  /// Mean listening per day with at least one play.
+  Duration get perDay => days == 0
+      ? Duration.zero
+      : Duration(milliseconds: listening.inMilliseconds ~/ days);
+
+  /// [genreOf] names a play's genre (from its library track), and
+  /// [knownArtists] holds the lowercased artists heard before these plays,
+  /// for [newArtists].
+  static ListeningStats from(
+    Iterable<PlayEvent> events, {
+    int top = 10,
+    String? Function(PlayEvent event)? genreOf,
+    Set<String>? knownArtists,
+  }) {
     var plays = 0;
     var listeningMs = 0;
     final artists = <String, (String, int)>{};
-    final albums = <(String, String), (String, String, int)>{};
-    final tracks = <String, (String, String?, int)>{};
+    final albums = <(String, String), (String, String, int, int?)>{};
+    final tracks = <String, (String, String?, int, int?)>{};
+    final genres = <String, (String, int)>{};
     final perDay = <DateTime, int>{};
     final byMonth = List<int>.filled(12, 0);
+    final byHour = List<int>.filled(24, 0);
+    final byWeekday = List<int>.filled(7, 0);
 
     void bump<K>(Map<K, (String, int)> map, K key, String label) {
       final seen = map[key];
@@ -99,6 +148,12 @@ class ListeningStats {
       final day = DateTime(local.year, local.month, local.day);
       perDay[day] = (perDay[day] ?? 0) + 1;
       byMonth[local.month - 1]++;
+      byHour[local.hour]++;
+      byWeekday[local.weekday - 1]++;
+      final genre = genreOf?.call(event)?.trim();
+      if (genre != null && genre.isNotEmpty) {
+        bump(genres, genre.toLowerCase(), genre);
+      }
 
       final credits = LibraryQuery.creditedArtists(
         event.artist,
@@ -115,6 +170,7 @@ class ListeningStats {
           seen?.$1 ?? album,
           seen?.$2 ?? lead,
           (seen?.$3 ?? 0) + 1,
+          seen?.$4 ?? event.trackId,
         );
       }
       final trackKey =
@@ -125,6 +181,7 @@ class ListeningStats {
         seenTrack?.$1 ?? event.title,
         seenTrack?.$2 ?? lead,
         (seenTrack?.$3 ?? 0) + 1,
+        seenTrack?.$4 ?? event.trackId,
       );
     }
 
@@ -159,19 +216,52 @@ class ListeningStats {
           RankedItem(label: label, plays: count),
       ]),
       topAlbums: rank([
-        for (final (album, artist, count) in albums.values)
-          RankedItem(label: album, detail: artist, plays: count),
+        for (final (album, artist, count, trackId) in albums.values)
+          RankedItem(
+            label: album,
+            detail: artist,
+            plays: count,
+            trackId: trackId,
+          ),
       ]),
       topTracks: rank([
-        for (final (title, artist, count) in tracks.values)
-          RankedItem(label: title, detail: artist, plays: count),
+        for (final (title, artist, count, trackId) in tracks.values)
+          RankedItem(
+            label: title,
+            detail: artist,
+            plays: count,
+            trackId: trackId,
+          ),
       ]),
       playsByMonth: byMonth,
       longestStreak: _longestStreak(perDay.keys),
       busiestDay: busiest,
       busiestDayPlays: busiestPlays,
+      albums: albums.length,
+      tracks: tracks.length,
+      playsByHour: byHour,
+      playsByWeekday: byWeekday,
+      topGenres: rank([
+        for (final (label, count) in genres.values)
+          RankedItem(label: label, plays: count),
+      ]),
+      newArtists: knownArtists == null
+          ? const []
+          : rank([
+              for (final MapEntry(:key, value: (label, count))
+                  in artists.entries)
+                if (!knownArtists.contains(key))
+                  RankedItem(label: label, plays: count),
+            ]),
     );
   }
+
+  /// Lowercased credited artists across [events], for `knownArtists`.
+  static Set<String> artistsIn(Iterable<PlayEvent> events) => {
+    for (final event in events)
+      for (final credit in LibraryQuery.creditedArtists(event.artist))
+        if (credit != LibraryQuery.unknownArtist) credit.toLowerCase(),
+  };
 
   static int _longestStreak(Iterable<DateTime> days) {
     final sorted = days.toList()..sort();
