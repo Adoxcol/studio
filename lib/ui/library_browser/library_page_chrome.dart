@@ -30,11 +30,13 @@ class _Header extends StatelessWidget {
     required this.controller,
     required this.onSearch,
     this.hint = 'Search your library',
+    this.trailing,
   });
 
   final TextEditingController controller;
   final VoidCallback onSearch;
   final String hint;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +74,17 @@ class _Header extends StatelessWidget {
                 ),
               ),
             ),
+            if (trailing case final trailing?) ...[
+              const SizedBox(width: 16),
+              // Shrinks rather than overflowing in a narrow Library pane.
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: trailing,
+                ),
+              ),
+            ],
           ],
         );
       },
@@ -80,10 +93,15 @@ class _Header extends StatelessWidget {
 }
 
 class _Tabs extends StatelessWidget {
-  const _Tabs({required this.selected, required this.onSelect});
+  const _Tabs({
+    required this.selected,
+    required this.onSelect,
+    this.tabs = LibraryTab.values,
+  });
 
   final LibraryTab selected;
   final ValueChanged<LibraryTab> onSelect;
+  final List<LibraryTab> tabs;
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +112,7 @@ class _Tabs extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            for (final tab in LibraryTab.values)
+            for (final tab in tabs)
               Padding(
                 padding: const EdgeInsets.only(right: 20),
                 child: Semantics(
@@ -122,6 +140,70 @@ class _Tabs extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Picks the catalogue the whole Library shows. It sits apart from the tabs
+/// so the choice holds while moving between Songs, Artists, Genres, etc.
+class _SourceSwitch extends StatelessWidget {
+  const _SourceSwitch({required this.selected, required this.onSelect});
+
+  final LibrarySource selected;
+  final ValueChanged<LibrarySource> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StudioPalette.of(context);
+    final style = Theme.of(context).textTheme.bodySmall;
+    return Container(
+      height: 28,
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: palette.hairline),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final source in LibrarySource.values)
+            Semantics(
+              button: true,
+              selected: source == selected,
+              label: 'Library source: ${source.label}',
+              excludeSemantics: true,
+              child: GestureDetector(
+                key: ValueKey('library-source-${source.name}'),
+                onTap: () => onSelect(source),
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: source == selected
+                          ? palette.accent.withValues(alpha: 0.18)
+                          : null,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      source.label,
+                      style: style?.copyWith(
+                        color: source == selected
+                            ? palette.ink
+                            : palette.inkMuted,
+                        fontWeight: source == selected
+                            ? FontWeight.w500
+                            : FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

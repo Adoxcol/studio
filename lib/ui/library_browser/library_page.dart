@@ -13,6 +13,7 @@ import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
 import 'package:studio/ui/library_browser/library_browse_view.dart';
 import 'package:studio/features/library_folders/presentation/library_folders_panel.dart';
+import 'package:studio/features/library_source/presentation/library_source_provider.dart';
 import 'package:studio/features/metadata_editor/presentation/batch_metadata_editor_dialog.dart';
 import 'package:studio/features/subsonic/presentation/subsonic_providers.dart';
 import 'package:studio/features/playlist_management/presentation/playlist_dialogs.dart';
@@ -49,7 +50,6 @@ typedef _LibraryLocation = ({
 });
 
 class _LibraryPageState extends ConsumerState<LibraryPage> {
-  static const _remoteFolderId = -1;
   final _search = TextEditingController();
   Timer? _searchTimer;
   String _query = '';
@@ -189,6 +189,28 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       _artistFilter = null;
       _albumFilter = null;
       _genreFilter = null;
+      _clearSelection();
+    });
+  }
+
+  /// The source stays picked across tabs and launches; switching it starts
+  /// that catalogue fresh, since artists and folders differ between them.
+  void _selectSource(LibrarySource source) {
+    ref.read(librarySourceProvider.notifier).select(source);
+    setState(() {
+      _scrollStorage = PageStorageBucket();
+      _search.clear();
+      _syncSearch();
+      _history.clear();
+      if (source == LibrarySource.navidrome && _tab == LibraryTab.folders) {
+        _tab = LibraryTab.all;
+      }
+      _folderId = null;
+      _playlistId = null;
+      _artistFilter = null;
+      _albumFilter = null;
+      _genreFilter = null;
+      _trackFilters = const LibraryTrackFilters();
       _clearSelection();
     });
   }
@@ -366,20 +388,15 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     final scanActive = ref.watch(libraryScanProvider.select((s) => s.active));
     final localFolders = ref.watch(libraryFoldersProvider).value ?? const [];
     final remoteTracks = ref.watch(subsonicTracksProvider).value ?? const [];
-    final config = ref.watch(subsonicConfigProvider);
-    final remoteFolder = config == null
-        ? null
-        : LibraryFolder(
-            id: _remoteFolderId,
-            path: 'Navidrome / ${config.serverName}',
-          );
-    final folders = [
-      ...localFolders,
-      ...?remoteFolder == null ? null : [remoteFolder],
-    ];
-    final isRemoteSource =
-        _folderId == _remoteFolderId ||
-        (localFolders.isEmpty && remoteFolder != null);
+    final hasNavidrome = ref.watch(subsonicConfigProvider) != null;
+    final source = effectiveLibrarySource(
+      chosen: ref.watch(librarySourceProvider),
+      hasLocalFolders: localFolders.isNotEmpty,
+      hasNavidrome: hasNavidrome,
+    );
+    final isRemoteSource = source == LibrarySource.navidrome;
+    // Folders belong to this computer; a Navidrome library has none here.
+    final folders = isRemoteSource ? const <LibraryFolder>[] : localFolders;
     final tracks = ref.watch(libraryTracksProvider);
 
     return tracks.when(
@@ -390,6 +407,8 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         folders,
         localFolders,
         scanActive,
+        source,
+        hasNavidrome,
       ),
       loading: () => _body(
         context,
@@ -398,6 +417,8 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         folders,
         localFolders,
         scanActive,
+        source,
+        hasNavidrome,
       ),
       error: (error, _) => Padding(
         padding: const EdgeInsets.all(32),
@@ -413,13 +434,17 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     List<LibraryFolder> folders,
     List<LibraryFolder> localFolders,
     bool scanning,
+    LibrarySource source,
+    bool hasNavidrome,
   ) {
     final index = LibraryIndex(allTracks);
-    final folder = _tab == LibraryTab.folders
+    final remote = source == LibrarySource.navidrome;
+    final tab = remote && _tab == LibraryTab.folders ? LibraryTab.all : _tab;
+    final folder = tab == LibraryTab.folders
         ? folders.where((f) => f.id == _folderId).firstOrNull
         : null;
     final viewingFolder = folder != null;
-    final folderFilterId = folder?.id == _remoteFolderId ? null : folder?.id;
+    final folderFilterId = folder?.id;
     final key = (
       index,
       _query,
@@ -452,7 +477,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     }
     final view = _view!;
     final playlists = ref.watch(playlistsProvider).value ?? const [];
-    final viewingPlaylist = _tab == LibraryTab.playlists && _playlistId != null;
+    final viewingPlaylist = tab == LibraryTab.playlists && _playlistId != null;
     final selectedPlaylist = viewingPlaylist
         ? ref.watch(playlistsByIdProvider)[_playlistId]
         : null;
@@ -464,8 +489,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     final filteredPlaylistTracks = viewingPlaylist
         ? playlistTracks.where(_trackFilters.matches).toList()
         : const <Track>[];
-    final showTable =
-        _tab == LibraryTab.all || viewingFolder || viewingPlaylist;
+    final showTable = tab == LibraryTab.all || viewingFolder || viewingPlaylist;
     // Catalogue Play All resolves sorting only when clicked.
     List<Track> tracksToPlay() =>
         viewingPlaylist ? filteredPlaylistTracks : view.sorted;
@@ -496,12 +520,25 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                         _Header(
                           controller: _search,
                           onSearch: _onSearch,
-                          hint: _tab == LibraryTab.folders && !viewingFolder
+                          hint: tab == LibraryTab.folders && !viewingFolder
                               ? 'Search folders'
                               : 'Search your library',
+                          trailing: hasNavidrome
+                              ? _SourceSwitch(
+                                  selected: source,
+                                  onSelect: _selectSource,
+                                )
+                              : null,
                         ),
                         const SizedBox(height: 16),
-                        _Tabs(selected: _tab, onSelect: _selectTab),
+                        _Tabs(
+                          selected: tab,
+                          tabs: [
+                            for (final t in LibraryTab.values)
+                              if (!remote || t != LibraryTab.folders) t,
+                          ],
+                          onSelect: _selectTab,
+                        ),
                         const SizedBox(height: 12),
                         if (viewingPlaylist && selectedPlaylist != null) ...[
                           Align(
@@ -536,12 +573,12 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                           ),
                           const SizedBox(height: 12),
                         ],
-                        if (_tab != LibraryTab.folders || viewingFolder)
+                        if (tab != LibraryTab.folders || viewingFolder)
                           _Actions(
                             sort: _sort,
                             order: _order,
                             canPlay: canPlay,
-                            showSort: _tab != LibraryTab.playlists,
+                            showSort: tab != LibraryTab.playlists,
                             showView: showTable,
                             trackLayout: ref
                                 .watch(appearanceProvider)
@@ -599,7 +636,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                         ),
                                   ),
                                 ),
-                              if (_tab == LibraryTab.playlists &&
+                              if (tab == LibraryTab.playlists &&
                                   !viewingPlaylist)
                                 LibraryTextAction(
                                   label: 'New smart playlist',
@@ -665,7 +702,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                   }),
                                   muted: _selectionMode,
                                 ),
-                              if (_tab == LibraryTab.all &&
+                              if (tab == LibraryTab.all &&
                                   (_artistFilter != null ||
                                       _albumFilter != null ||
                                       _genreFilter != null))
@@ -673,7 +710,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                   label: 'All tracks',
                                   onTap: () => _selectTab(LibraryTab.all),
                                 ),
-                              if (_tab == LibraryTab.playlists)
+                              if (tab == LibraryTab.playlists)
                                 LibraryTextAction(
                                   label: 'New playlist',
                                   onTap: _createPlaylist,
@@ -729,25 +766,19 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                             bucket: _scrollStorage,
                             child: KeyedSubtree(
                               key: const PageStorageKey('library-content'),
-                              child:
-                                  _tab == LibraryTab.folders && !viewingFolder
+                              child: tab == LibraryTab.folders && !viewingFolder
                                   ? LibraryFoldersPanel(
                                       query: _query,
-                                      additionalFolders: [
-                                        for (final extra in folders)
-                                          if (!localFolders.contains(extra))
-                                            extra,
-                                      ],
                                       onOpen: (selected) {
                                         _open(() {
                                           _folderId = selected.id;
                                         });
                                       },
                                     )
-                                  : _tab == LibraryTab.playlists &&
+                                  : tab == LibraryTab.playlists &&
                                         !viewingPlaylist
                                   ? LibraryBrowseView(
-                                      tab: _tab,
+                                      tab: tab,
                                       artists: const [],
                                       albums: const [],
                                       genres: const [],
@@ -802,14 +833,14 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                             onTrackMenu: _showTrackMenu,
                                           )
                                   : LibraryBrowseView(
-                                      tab: _tab,
-                                      artists: _tab == LibraryTab.artists
+                                      tab: tab,
+                                      artists: tab == LibraryTab.artists
                                           ? view.artists
                                           : const [],
-                                      albums: _tab == LibraryTab.albums
+                                      albums: tab == LibraryTab.albums
                                           ? view.albums
                                           : const [],
-                                      genres: _tab == LibraryTab.genres
+                                      genres: tab == LibraryTab.genres
                                           ? view.genres
                                           : const [],
                                       playlists: playlists,
@@ -839,7 +870,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                     right: 20,
                     bottom: 20,
                     child: _RefreshButton(
-                      enabled: !scanning && folders.isNotEmpty,
+                      enabled: !scanning && !remote && folders.isNotEmpty,
                       onTap: () {
                         ref.read(libraryScanProvider.notifier).rescanKnown();
                       },
