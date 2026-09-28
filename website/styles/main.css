@@ -1678,6 +1678,224 @@ h1, h2, h3, .font-serif {
 /* ==========================================================================
    RESPONSIVE DESIGN BREAKPOINTS
    ========================================================================== */
+/* ==========================================================================
+   CHANGELOG & PREVIOUS VERSIONS
+   ========================================================================== */
+.changelog-list {
+  margin-top: 2.5rem;
+  max-width: 880px;
+}
+
+.release-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.release-older {
+  margin-top: 0.75rem;
+}
+
+.release-older[hidden] {
+  display: none;
+}
+
+.release {
+  background: var(--bg-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.release:hover,
+.release[open] {
+  border-color: var(--hairline-strong);
+}
+
+.release.is-latest {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.release-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  padding: 1.1rem 1.4rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.release-summary::-webkit-details-marker {
+  display: none;
+}
+
+.release-summary::after {
+  content: '+';
+  margin-left: auto;
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+}
+
+.release[open] > .release-summary::after {
+  content: '−';
+}
+
+.release-summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--radius-md);
+}
+
+.release-version {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.release-badge {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  color: var(--accent);
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-glow);
+}
+
+.release-date,
+.release-count {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
+.release-body {
+  padding: 0 1.4rem 1.4rem;
+  border-top: 1px solid var(--hairline-soft);
+}
+
+.release-group {
+  margin-top: 1.2rem;
+}
+
+.release-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  margin-bottom: 0.5rem;
+}
+
+.release-kind::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-dim);
+}
+
+.release-kind.kind-added::before,
+.release-kind.kind-faster::before {
+  background: var(--accent);
+}
+
+.release-kind.kind-security::before {
+  background: var(--ink);
+}
+
+.release-group ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.release-group li {
+  color: var(--ink);
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+
+.release-group li::marker {
+  color: var(--ink-dim);
+}
+
+.release-group code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+  background: var(--bg-elevated);
+}
+
+.release-group a,
+.changelog-status a,
+.changelog-footnote a {
+  color: var(--accent);
+}
+
+.release-empty,
+.changelog-status,
+.changelog-footnote {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+.release-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.4rem;
+}
+
+.release-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--hairline-strong);
+  color: var(--ink);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.release-download:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.release-page-link {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  text-decoration: none;
+}
+
+.release-page-link:hover {
+  color: var(--ink);
+}
+
+.changelog-more {
+  margin-top: 1rem;
+}
+
+.changelog-footnote {
+  margin-top: 1.5rem;
+}
+
 @media (max-width: 1024px) {
   .hero-stage {
     height: 520px;

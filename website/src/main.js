@@ -7,6 +7,7 @@ import { StudioVinylStage } from './three-vinyl.js';
 import { StudioAudioEngine } from './audio-visualizer.js';
 import { StudioEqualizer } from './equalizer.js';
 import { StudioDockingDemo } from './docking-demo.js';
+import { initChangelog } from './changelog.js';
 
 class StudioApp {
   constructor() {
@@ -16,6 +17,7 @@ class StudioApp {
     this.initPlayerControls();
     this.initSpotlightTour();
     this.detectPlatform();
+    initChangelog();
   }
 
   initTheme() {
