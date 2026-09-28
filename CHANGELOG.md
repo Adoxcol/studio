@@ -7,8 +7,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Album-art accent colours now work for Navidrome / Subsonic tracks too,
+  not only local files.
+
 ### Fixed
 
+- Navidrome / Subsonic artist pictures are now consistent. Three separate
+  background jobs used to fetch them with different rules and raced each
+  other, so which picture an artist got depended on timing, and one bad
+  image could stop the rest. They now share one job. The server's generic
+  "no picture" placeholder is recognised and no longer saved as an artist's
+  photo (placeholders saved by earlier versions are removed), so the online
+  lookup can still find a real one.
 - Navidrome / Subsonic cover art loads faster and scrolls smoothly. Tracks
   that share a cover now share one download instead of fetching it once per
   track, covers are decoded at the size they are shown, and they are kept in
@@ -26,6 +38,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   tracks no longer make the local library reload.
 - Navidrome / Subsonic library scans finish several times faster on large
   libraries: albums are now fetched four at a time instead of one by one.
+
+### Security
+
+- Artist pictures hosted outside your Navidrome server (for example on
+  Last.fm) are now fetched without sending your server login along.
 
 ## [0.6.0] - 2026-09-27
 

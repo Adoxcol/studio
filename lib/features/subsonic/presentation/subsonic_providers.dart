@@ -3,9 +3,8 @@ import 'dart:async';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:studio/features/artist_artwork/data/artist_picture_repository.dart';
-import 'package:studio/features/artist_artwork/domain/artist_picture.dart';
 import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
+import 'package:studio/features/subsonic/data/subsonic_artist_pictures.dart';
 import 'package:studio/features/subsonic/data/subsonic_client.dart';
 import 'package:studio/features/subsonic/data/subsonic_settings_store.dart';
 import 'package:studio/features/subsonic/domain/subsonic_models.dart';
@@ -85,41 +84,14 @@ class SubsonicConnectionNotifier extends Notifier<SubsonicConnectionInfo> {
 
   Future<void> _syncArtistPictures() async {
     final client = ref.read(subsonicClientProvider);
-    if (client == null) return;
-
+    final sync = ref.read(subsonicArtistPictureSyncProvider);
+    if (client == null || sync == null) return;
     try {
-      final artists = await client.getArtists();
-      final repository = ref.read(artistPictureRepositoryProvider);
-      for (final artist in artists) {
-        final current = await repository.get(artist.name);
-        if (!current.needsLookup) continue;
-
-        Uint8List? bytes;
-        final coverArtId = artist.coverArtId;
-        if (coverArtId != null && coverArtId.isNotEmpty) {
-          bytes = await client.getCoverArtBytes(coverArtId);
-        }
-        final imageUrl = artist.artistImageUrl;
-        if (bytes == null && imageUrl != null && imageUrl.isNotEmpty) {
-          bytes = await client.fetchImageUrl(imageUrl);
-        }
-        if (bytes == null || bytes.isEmpty) continue;
-
-        await repository.saveRemote(
-          artist.name,
-          bytes,
-          credit: const PictureCredit(
-            author: 'Navidrome',
-            license: 'Remote Library',
-            pageUrl: '',
-            licenseUrl: '',
-            source: 'Navidrome',
-          ),
-        );
-      }
-    } catch (_) {
+      await sync.sync(await client.getArtists());
+    } on Object catch (error) {
       // Artist portraits are an optional background enhancement. Connection
-      // and library browsing must continue if one server response is invalid.
+      // and library browsing must continue if the server response is invalid.
+      debugPrint('Navidrome artist portraits unavailable: $error');
     }
   }
 }
@@ -137,31 +109,22 @@ final subsonicArtistsProvider = FutureProvider<List<SubsonicArtist>>((
   final client = ref.watch(subsonicClientProvider);
   if (client == null) return const [];
   final artists = await client.getArtists();
-  final artwork = ref.read(artistPictureRepositoryProvider);
-  unawaited(_cacheArtistArtwork(client, artwork, artists));
+  unawaited(ref.read(subsonicArtistPictureSyncProvider)?.sync(artists));
   return artists;
 });
 
-Future<void> _cacheArtistArtwork(
-  SubsonicClient client,
-  ArtistPictureRepository artwork,
-  List<SubsonicArtist> artists,
-) async {
-  for (final artist in artists) {
-    final imageUrl =
-        artist.artistImageUrl ??
-        client.buildCoverArtUri(artist.coverArtId)?.toString();
-    if (imageUrl == null || (await artwork.get(artist.name)).path != null) {
-      continue;
-    }
-    try {
-      final bytes = await client.fetchArtistImage(imageUrl);
-      await artwork.saveRemote(artist.name, bytes);
-    } catch (error) {
-      debugPrint('Studio Navidrome artist artwork unavailable: $error');
-    }
-  }
-}
+/// Shared by the connect-time sync, the artists list and the library scan so
+/// every artist gets its portrait by the same rules, one run at a time.
+final subsonicArtistPictureSyncProvider = Provider<SubsonicArtistPictureSync?>((
+  ref,
+) {
+  final client = ref.watch(subsonicClientProvider);
+  if (client == null) return null;
+  return SubsonicArtistPictureSync(
+    repository: ref.watch(artistPictureRepositoryProvider),
+    fetch: client.artistPictureBytes,
+  );
+});
 
 class SubsonicAlbumSortNotifier extends Notifier<SubsonicAlbumSort> {
   @override
@@ -528,62 +491,19 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
         currentPlaylistName: '',
       );
       final remoteArtists = await client.getArtists();
-      final artistRepo = ref.read(artistPictureRepositoryProvider);
-
-      final artistsWithImages = remoteArtists
-          .where(
-            (a) =>
-                (a.coverArtId != null && a.coverArtId!.isNotEmpty) ||
-                (a.artistImageUrl != null && a.artistImageUrl!.isNotEmpty),
-          )
-          .toList();
-      state = state.copyWith(totalArtists: artistsWithImages.length);
-
-      var syncedArtists = 0;
-      for (final artist in artistsWithImages) {
-        if (_isCancelled) break;
-        _progress(
-          _latest.copyWith(
-            currentArtistName: artist.name,
-            statusMessage: 'Fetching portrait: ${artist.name}',
-          ),
-        );
-
-        final key = artistKey(artist.name);
-        final existing = await artistRepo.get(key);
-        if (!existing.isCustom &&
-            !existing.hidden &&
-            existing.remotePath == null) {
-          Uint8List? bytes;
-          if (artist.coverArtId != null && artist.coverArtId!.isNotEmpty) {
-            bytes = await client.getCoverArtBytes(artist.coverArtId!);
-          }
-          if (bytes == null &&
-              artist.artistImageUrl != null &&
-              artist.artistImageUrl!.isNotEmpty) {
-            bytes = await client.fetchImageUrl(artist.artistImageUrl!);
-          }
-          if (bytes != null && bytes.isNotEmpty) {
-            try {
-              await artistRepo.saveRemote(
-                artist.name,
-                bytes,
-                credit: const PictureCredit(
-                  author: 'Navidrome',
-                  license: 'Remote Library',
-                  pageUrl: '',
-                  licenseUrl: '',
-                  source: 'Navidrome',
-                ),
-              );
-            } catch (_) {
-              // Ignore invalid image bytes or save error and proceed
-            }
-          }
-        }
-        syncedArtists++;
-        _progress(_latest.copyWith(syncedArtists: syncedArtists));
-      }
+      await ref
+          .read(subsonicArtistPictureSyncProvider)
+          ?.sync(
+            remoteArtists,
+            isCancelled: () => _isCancelled,
+            onProgress: (done, total) => _progress(
+              _latest.copyWith(
+                totalArtists: total,
+                syncedArtists: done,
+                statusMessage: 'Fetching portraits: $done of $total',
+              ),
+            ),
+          );
 
       if (!_isCancelled) {
         _pending = null;

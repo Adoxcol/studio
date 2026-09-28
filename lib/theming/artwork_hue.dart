@@ -4,16 +4,26 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
+import 'package:studio/core/network_artwork.dart';
 import 'package:studio/theming/oklch.dart';
 
 /// Hue of the most chromatic color in [path], or null if none is usable.
-Future<double?> hueFromArtwork(String path) async {
+/// [path] is a local file or remote (Navidrome) artwork, which is read
+/// through [NetworkArtworkCache] like the cover shown on screen.
+Future<double?> hueFromArtwork(
+  String path, {
+  NetworkArtworkCache? network,
+}) async {
   ui.ImmutableBuffer? buffer;
   ui.ImageDescriptor? descriptor;
   ui.Codec? codec;
   ui.Image? image;
   try {
-    buffer = await ui.ImmutableBuffer.fromFilePath(path);
+    buffer = _isRemote(path)
+        ? await ui.ImmutableBuffer.fromUint8List(
+            await (network ?? NetworkArtworkCache.instance).bytes(path),
+          )
+        : await ui.ImmutableBuffer.fromFilePath(path);
     descriptor = await ui.ImageDescriptor.encoded(buffer);
     final longest = descriptor.width > descriptor.height
         ? descriptor.width
@@ -36,6 +46,9 @@ Future<double?> hueFromArtwork(String path) async {
     buffer?.dispose();
   }
 }
+
+bool _isRemote(String path) =>
+    path.startsWith('http://') || path.startsWith('https://');
 
 /// Hue of the most chromatic cluster in raw RGBA [pixels], or null when every
 /// cluster is near-grey. Quantizes to a handful of clusters first so a few
@@ -72,14 +85,17 @@ class ArtworkHueCache {
 
   Future<double?> read(String path) {
     if (_disposed) return Future.value(null);
-    final cached = _values.remove(path);
+    // Remote covers are signed per request; key them by the image instead so
+    // every track of an album shares one result.
+    final key = _isRemote(path) ? stableArtworkKey(path) : path;
+    final cached = _values.remove(key);
     if (cached != null) {
-      _values[path] = cached;
+      _values[key] = cached;
       return Future.value(cached);
     }
-    if (_active?.path == path) return _active!.done.future;
-    if (_pending?.path == path) return _pending!.done.future;
-    final request = _HueRequest(path);
+    if (_active?.key == key) return _active!.done.future;
+    if (_pending?.key == key) return _pending!.done.future;
+    final request = _HueRequest(key, path);
     if (_active != null) {
       _pending?.done.complete(null);
       _pending = request;
@@ -98,7 +114,7 @@ class ArtworkHueCache {
       // A missing/unreadable image must remain retryable.
     }
     if (!_disposed && hue != null) {
-      _values[request.path] = hue;
+      _values[request.key] = hue;
       while (_values.length > capacity) {
         _values.remove(_values.keys.first);
       }
@@ -122,7 +138,8 @@ class ArtworkHueCache {
 }
 
 class _HueRequest {
-  _HueRequest(this.path);
+  _HueRequest(this.key, this.path);
+  final String key;
   final String path;
   final done = Completer<double?>();
 }
