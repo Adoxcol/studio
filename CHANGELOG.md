@@ -7,6 +7,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- "Date added" sort in the Library (click Sort until it shows Date added),
+  newest first. Navidrome / Subsonic tracks use the date they were added to
+  the server, so it matches Navidrome's Recently Added; tracks scanned by
+  earlier versions get their server date on the next scan.
+
 ### Fixed
 
 - Choosing Navidrome in the Library now sticks: a "This computer /
