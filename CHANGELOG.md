@@ -9,6 +9,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Genres have their own colours. The Genres tab shows each genre as a
+  coloured card with a bar for how much of your library it makes up, and
+  track and artist details show genres as coloured chips. Familiar genres
+  get fitting colours (jazz amber, electronic cyan, metal red); every other
+  genre keeps a stable colour of its own.
 - "Date added" sort in the Library (click Sort until it shows Date added),
   newest first. Navidrome / Subsonic tracks use the date they were added to
   the server, so it matches Navidrome's Recently Added; tracks scanned by
