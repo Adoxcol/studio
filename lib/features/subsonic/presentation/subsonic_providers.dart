@@ -7,6 +7,7 @@ import 'package:studio/features/artist_artwork/presentation/artist_picture_provi
 import 'package:studio/features/subsonic/data/subsonic_artist_pictures.dart';
 import 'package:studio/features/subsonic/data/subsonic_client.dart';
 import 'package:studio/features/subsonic/data/subsonic_settings_store.dart';
+import 'package:studio/features/subsonic/data/subsonic_track_rows.dart';
 import 'package:studio/features/subsonic/domain/subsonic_models.dart';
 import 'package:studio/library/database.dart';
 import 'package:studio/providers/playable_resolver.dart';
@@ -362,7 +363,7 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
         final batch = List.of(buffer);
         buffer.clear();
         lastFlush = _clock.elapsed;
-        await db.insertTracksIfNotExists(batch);
+        await db.syncRemoteTracks(batch);
       }
 
       // 2. Fetch tracks for each album, a few at a time; write in batches
@@ -387,23 +388,7 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
 
         for (final songs in results) {
           for (final song in songs) {
-            buffer.add(
-              TracksCompanion.insert(
-                source: const Value(TrackLocator.subsonic),
-                locator: song.id,
-                title: song.title,
-                artist: Value(song.artist),
-                album: Value(song.album),
-                durationMs: Value(song.durationSeconds * 1000),
-                fileSizeBytes: Value(song.sizeBytes),
-                year: Value(song.year),
-                trackNumber: Value(song.trackNumber),
-                genre: Value(song.genre),
-                artworkPath: Value(
-                  client.buildCoverArtUri(song.coverArtId)?.toString(),
-                ),
-              ),
-            );
+            buffer.add(subsonicTrackRow(song, client));
           }
           scannedTracks += songs.length;
         }
@@ -450,22 +435,7 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
         if (_isCancelled) break;
 
         final playlistTracks = await db.getOrInsertTracks([
-          for (final song in playlistSongs)
-            TracksCompanion.insert(
-              source: const Value(TrackLocator.subsonic),
-              locator: song.id,
-              title: song.title,
-              artist: Value(song.artist),
-              album: Value(song.album),
-              durationMs: Value(song.durationSeconds * 1000),
-              fileSizeBytes: Value(song.sizeBytes),
-              year: Value(song.year),
-              trackNumber: Value(song.trackNumber),
-              genre: Value(song.genre),
-              artworkPath: Value(
-                client.buildCoverArtUri(song.coverArtId)?.toString(),
-              ),
-            ),
+          for (final song in playlistSongs) subsonicTrackRow(song, client),
         ]);
         final trackIds = [for (final track in playlistTracks) track.id];
 

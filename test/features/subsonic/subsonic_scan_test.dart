@@ -63,6 +63,12 @@ MockClientHandler _handler({required int albums, int songsPerAlbum = 3}) {
                 'artist': 'Artist',
                 'track': s + 1,
                 'duration': 200,
+                // Album N was added to the server on day N+1 of 2026.
+                'created': DateTime.utc(
+                  2026,
+                  1,
+                  1 + int.parse(id.substring(3)),
+                ).toIso8601String(),
               },
           ],
         },
@@ -106,6 +112,31 @@ void main() {
     container?.dispose();
     container = null;
     await db.close();
+  });
+
+  test('tracks take their date added from the server', () async {
+    // An older scan stored this song with the time it ran.
+    await db.syncRemoteTracks([
+      TracksCompanion.insert(
+        locator: 'al-0-song-0',
+        title: 'Song 0',
+        source: const Value(TrackLocator.subsonic),
+        indexedAt: Value(DateTime.utc(2026, 9, 28)),
+      ),
+    ]);
+    container = containerFor(_server(albums: 3, songsPerAlbum: 1));
+
+    await container!.read(subsonicScanProvider.notifier).startScan();
+
+    final stored = await db.allTracks(source: TrackLocator.subsonic);
+    final added = {
+      for (final track in stored) track.locator: track.indexedAt.toUtc(),
+    };
+    expect(added, {
+      'al-0-song-0': DateTime.utc(2026, 1, 1),
+      'al-1-song-0': DateTime.utc(2026, 1, 2),
+      'al-2-song-0': DateTime.utc(2026, 1, 3),
+    });
   });
 
   test('scan stores every track and reports final counts', () async {

@@ -164,6 +164,7 @@ class SubsonicSong {
     this.suffix,
     this.durationSeconds = 0,
     this.bitRateKbps,
+    this.created,
   });
 
   final String id;
@@ -182,6 +183,9 @@ class SubsonicSong {
   final String? suffix;
   final int durationSeconds;
   final int? bitRateKbps;
+
+  /// When the song was added to the server.
+  final DateTime? created;
 
   Duration get duration => Duration(seconds: durationSeconds);
 
@@ -203,6 +207,9 @@ class SubsonicSong {
       suffix: json['suffix'] as String?,
       durationSeconds: (json['duration'] as num?)?.toInt() ?? 0,
       bitRateKbps: (json['bitRate'] as num?)?.toInt(),
+      created: json['created'] is String
+          ? DateTime.tryParse(json['created'] as String)
+          : null,
     );
   }
 }
