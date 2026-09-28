@@ -10,3 +10,6 @@
 ## 2024-05-18 - Batch inserting Subsonic tracks avoids N+1 queries
 **Learning:** Inserting tracks into the Drift database one by one inside a loop using `getOrInsertTrack` causes a massive N+1 query overhead. Processing 1,000 tracks dropped from ~319-893ms down to ~66-82ms by using Drift's `batch` insertion (`upsertTracks`) combined with an `isIn` query to fetch the generated IDs in chunks (to respect SQLite limits).
 **Action:** When inserting large lists of dynamic dependencies or remote data that must be mirrored to the database (like importing a remote playlist), always collect the companions and use `batch()` or a transaction, followed by chunked sequential selects, instead of looping single inserts.
+## 2024-05-18 - Replacing putIfAbsent with null-aware assignment ??= in loops
+**Learning:** In Dart, calling `putIfAbsent` requires passing a closure (e.g., `() => value`). When used inside a tight loop (such as iterating over tens of thousands of tracks during indexing), this allocates an anonymous closure function on the heap for every single iteration, even if the key already exists. This introduces unnecessary memory churn and Garbage Collection overhead.
+**Action:** Replace `map.putIfAbsent(key, () => value)` with the null-aware assignment operator `map[key] ??= value`. This short-circuits the evaluation and avoids the closure allocation entirely.
