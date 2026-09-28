@@ -469,38 +469,45 @@ class _SegmentedModePill<T> extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           for (final item in items) ...[
-            GestureDetector(
-              onTap: () => onSelected(item),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: item == selected ? palette.bg : Colors.transparent,
-                  borderRadius: BorderRadius.circular(4),
-                  border: item == selected
-                      ? Border.all(color: palette.accent.withValues(alpha: 0.5))
-                      : null,
-                  boxShadow: item == selected
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            blurRadius: 3,
-                            offset: const Offset(0, 1),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Text(
-                  labelOf(item),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: item == selected
-                        ? FontWeight.w600
-                        : FontWeight.w500,
-                    color: item == selected ? palette.ink : palette.inkMuted,
+            Semantics(
+              button: true,
+              selected: item == selected,
+              label: labelOf(item),
+              child: GestureDetector(
+                onTap: () => onSelected(item),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: item == selected ? palette.bg : Colors.transparent,
+                    borderRadius: BorderRadius.circular(4),
+                    border: item == selected
+                        ? Border.all(
+                            color: palette.accent.withValues(alpha: 0.5),
+                          )
+                        : null,
+                    boxShadow: item == selected
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.06),
+                              blurRadius: 3,
+                              offset: const Offset(0, 1),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Text(
+                    labelOf(item),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: item == selected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      color: item == selected ? palette.ink : palette.inkMuted,
+                    ),
                   ),
                 ),
               ),
