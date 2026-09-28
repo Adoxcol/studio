@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:studio/ui/genre/genre_chip.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/core/time_format.dart';
 import 'package:studio/features/artist_artwork/presentation/artist_portrait.dart';
@@ -52,7 +53,7 @@ class ArtistDetailPanel extends ConsumerWidget {
               label: 'Credited on this track',
               value: details.credits.join(' · '),
             ),
-            _Field(label: 'Genres', value: details.genres.join(' · ')),
+            _GenreField(genres: details.genres),
             const SizedBox(height: 20),
             const _SectionLabel('ALBUMS IN YOUR LIBRARY'),
           ],
@@ -180,7 +181,14 @@ class TrackDetailPanel extends StatelessWidget {
             value: _positive(details.track.trackNumber),
           ),
           _Field(label: 'Year', value: _positive(details.track.year)),
-          _Field(label: 'Genre', value: details.track.genre ?? ''),
+          _GenreField(
+            label: 'Genre',
+            genres: [
+              if (details.track.genre?.trim() case final genre?
+                  when genre.isNotEmpty)
+                genre,
+            ],
+          ),
           _Field(label: 'Source', value: details.track.source),
           _Field(label: 'File / location', value: details.track.locator),
         ],
@@ -365,6 +373,38 @@ class _Field extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           SelectableText(value.trim().isEmpty ? 'Not available' : value),
+        ],
+      ),
+    );
+  }
+}
+
+class _GenreField extends StatelessWidget {
+  const _GenreField({required this.genres, this.label = 'Genres'});
+
+  final List<String> genres;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    if (genres.isEmpty) return _Field(label: label, value: '');
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: StudioPalette.of(context).inkMuted,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [for (final genre in genres) GenreChip(genre)],
+          ),
         ],
       ),
     );
