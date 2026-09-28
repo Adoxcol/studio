@@ -59,7 +59,8 @@ chore: bootstrap CI and PR templates
 - Semantic Versioning (`MAJOR.MINOR.PATCH`) tracked in `pubspec.yaml`.
 - A release PR moves `CHANGELOG.md`'s `Unreleased` section into a new dated version heading.
 - After merging a release PR, tag `main` as `vX.Y.Z`. Pushing that tag triggers
-  `.github/workflows/release.yml`, which drafts a GitHub Release with auto-generated notes.
+  `.github/workflows/release.yml`, which publishes a GitHub Release whose notes are that
+  version's `CHANGELOG.md` section (the job fails if it is missing) plus the list of merged PRs.
 
 ## Code style
 

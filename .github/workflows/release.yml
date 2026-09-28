@@ -19,6 +19,13 @@ jobs:
           channel: stable
       - uses: dtolnay/rust-toolchain@stable
       - run: flutter pub get
+      # Fails the release up front when CHANGELOG.md has no section for it.
+      - name: Release notes from CHANGELOG.md
+        run: dart tool/release_notes.dart "${{ github.ref_name }}" release-notes.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: studio-release-notes
+          path: release-notes.md
       - run: dart format --output=none --set-exit-if-changed .
       - run: flutter analyze
       - run: flutter test
@@ -118,6 +125,8 @@ jobs:
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          # The CHANGELOG.md section, followed by GitHub's list of merged PRs.
+          body_path: release-assets/release-notes.md
           generate_release_notes: true
           files: |
             release-assets/**/RELEASES
