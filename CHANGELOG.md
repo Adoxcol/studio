@@ -7,6 +7,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Choosing Navidrome in the Library now sticks: a "This computer /
+  Navidrome" switch next to the search box picks the catalogue, and it
+  stays selected while you move between Songs, Artists, Albums, Genres and
+  Playlists, and after restarting. Navidrome is no longer listed as a folder,
+  and the Folders tab shows only this computer's folders.
+
 ### Changed
 
 - GitHub release pages now show that version's notes from this changelog,

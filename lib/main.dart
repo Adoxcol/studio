@@ -18,6 +18,8 @@ import 'package:studio/features/artist_artwork/presentation/artist_picture_provi
 import 'package:studio/core/desktop/close_preference_provider.dart';
 import 'package:studio/core/network_artwork.dart';
 import 'package:studio/core/desktop/close_preference_store.dart';
+import 'package:studio/features/library_source/data/library_source_store.dart';
+import 'package:studio/features/library_source/presentation/library_source_provider.dart';
 import 'package:studio/features/mini_player/data/mini_player_store.dart';
 import 'package:studio/features/mini_player/presentation/mini_player_providers.dart';
 import 'package:studio/features/scrobbling/data/scrobble_queue_store.dart';
@@ -181,6 +183,11 @@ Future<void> main(List<String> args) async {
         skinStoreProvider.overrideWithValue(skins),
         miniPlayerStoreProvider.overrideWithValue(
           FileMiniPlayerStore(File(p.join(support.path, 'mini_player.json'))),
+        ),
+        librarySourceStoreProvider.overrideWithValue(
+          FileLibrarySourceStore(
+            File(p.join(support.path, 'library_source.json')),
+          ),
         ),
         subsonicOfflineStoreProvider.overrideWithValue(
           SubsonicOfflineStore(Directory(p.join(support.path, 'offline'))),
