@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' show Color;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:studio/core/network_artwork.dart';
 import 'package:studio/theming/artwork_hue.dart';
 import 'package:studio/theming/oklch.dart';
 
@@ -86,5 +90,48 @@ void main() {
     );
     expect(await hueFromRgba(rgba([(500, 255, 0, 0, 0)])), isNull);
     expect(await hueFromRgba(Uint8List(0)), isNull);
+  });
+
+  test('signed copies of one remote cover share a result', () async {
+    final calls = <String>[];
+    final cache = ArtworkHueCache(
+      loader: (path) async {
+        calls.add(path);
+        return 50;
+      },
+    );
+    addTearDown(cache.dispose);
+    const a =
+        'https://music.example.com/rest/getCoverArt?id=al-1&u=me&t=x1&s=s1';
+    const b =
+        'https://music.example.com/rest/getCoverArt?id=al-1&u=me&t=x2&s=s2';
+
+    expect(await cache.read(a), 50);
+    expect(await cache.read(b), 50);
+    expect(calls, [a]);
+  });
+
+  test('reads the hue of remote artwork', () async {
+    // 4x4 solid blue PNG, served by the "Navidrome" server.
+    final png = base64Decode(
+      'iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAEklEQVR4nGPQiDrxHxkzkC4AAMQIJJFpMddyAAAAAElFTkSuQmCC',
+    );
+    final network = NetworkArtworkCache(
+      client: MockClient(
+        (_) async => http.Response.bytes(
+          png,
+          200,
+          headers: {'content-type': 'image/png'},
+        ),
+      ),
+    );
+
+    final hue = await hueFromArtwork(
+      'https://music.example.com/rest/getCoverArt?id=al-1&s=a&t=b',
+      network: network,
+    );
+
+    final blue = Oklch.fromColor(const Color(0xff285ac8)).h;
+    expect(hue, closeTo(blue, 10));
   });
 }
