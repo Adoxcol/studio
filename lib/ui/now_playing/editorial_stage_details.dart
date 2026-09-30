@@ -110,24 +110,34 @@ class _AudiophileSpecsRow extends StatelessWidget {
       runSpacing: 6,
       children: [
         for (final badge in badges)
-          InkWell(
-            onTap: () => showAudioEngineSheet(context),
-            borderRadius: BorderRadius.circular(4),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
-                color: palette.hairlineSoft,
+          Tooltip(
+            message: 'Audio Engine Settings',
+            child: Semantics(
+              button: true,
+              label: 'Audio Engine Settings',
+              child: InkWell(
+                onTap: () => showAudioEngineSheet(context),
                 borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: palette.hairline),
-              ),
-              child: Text(
-                badge,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.4,
-                  color: palette.inkMuted,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: palette.hairlineSoft,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: palette.hairline),
+                  ),
+                  child: Text(
+                    badge,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.4,
+                      color: palette.inkMuted,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
                 ),
               ),
             ),

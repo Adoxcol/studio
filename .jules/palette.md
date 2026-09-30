@@ -1,3 +1,7 @@
 ## 2026-09-24 - Explicit Semantics for Custom Interactive Widgets
 **Learning:** Custom interactive widgets built with `GestureDetector` or `InkWell` (icon rail buttons, color swatches, toggles, browse tiles) are not announced as buttons by screen readers, and a parent `Tooltip` does not convey the control's role or its selected state. This came up repeatedly across the icon rail, settings accent swatches, and library browse view (2024-05-17 through 2026-09-24).
 **Action:** Wrap every custom interactive widget in `Semantics(button: true, label: ...)`. When the control has a selection state (navigation rails, swatches, toggles), also set `selected: true/false` so assistive technologies announce both role and state.
+
+## 2026-10-27 - Accessible Audio Engine Badges
+**Learning:** Found custom badges in `editorial_player_bar` and `editorial_stage_details` that triggered the audio engine sheet using `InkWell`. However, these icon/text buttons lacked tooltips and semantic labels, making them inaccessible to screen readers and unclear to mouse users relying on hover states.
+**Action:** When implementing custom interactive badges or icons that act as buttons (especially those indicating system status or opening sheets), always wrap the `InkWell` or `GestureDetector` with a `Tooltip` (for visual hover) and `Semantics(button: true, label: ...)` (for screen readers) to ensure they are fully accessible and discoverable.
