@@ -13,6 +13,3 @@
 ## 2024-05-18 - Replacing putIfAbsent with null-aware assignment ??= in loops
 **Learning:** In Dart, calling `putIfAbsent` requires passing a closure (e.g., `() => value`). When used inside a tight loop (such as iterating over tens of thousands of tracks during indexing), this allocates an anonymous closure function on the heap for every single iteration, even if the key already exists. This introduces unnecessary memory churn and Garbage Collection overhead.
 **Action:** Replace `map.putIfAbsent(key, () => value)` with the null-aware assignment operator `map[key] ??= value`. This short-circuits the evaluation and avoids the closure allocation entirely.
-## 2026-09-30 - Replacing O(N) list indexOf with O(1) state field
-**Learning:** During UI rebuilds, `QueuePage` and `UpNextPanel` were calling `queueIds.indexOf(trackId)` to find the active track. With tens of thousands of tracks in a queue, this O(N) lookup occurs multiple times per frame during scrolling or state updates. Even worse, if the same track ID exists multiple times in the queue, `indexOf` incorrectly returns the first occurrence.
-**Action:** Add the actual authoritative `queueIndex` from the underlying queue model directly to the published `PlaybackUiState`. Using this pre-computed O(1) integer field completely eliminates the O(N) rebuild overhead and natively fixes duplicates.
