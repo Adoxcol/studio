@@ -32,6 +32,7 @@ class PlaybackUiState {
     this.volume = 0.8,
     this.repeat = QueueRepeatMode.off,
     this.shuffle = false,
+    this.queueIndex = 0,
     this.queueIds = const [],
     this.historyIds = const [],
   });
@@ -52,15 +53,14 @@ class PlaybackUiState {
   final double volume;
   final QueueRepeatMode repeat;
   final bool shuffle;
+  final int queueIndex;
   final List<int> queueIds;
   final List<int> historyIds;
 
   List<int> get upcomingIds {
-    final id = trackId;
-    if (id == null || queueIds.isEmpty) return const [];
-    final index = queueIds.indexOf(id);
-    if (index < 0 || index >= queueIds.length - 1) return const [];
-    return queueIds.sublist(index + 1);
+    if (trackId == null || queueIds.isEmpty) return const [];
+    if (queueIndex < 0 || queueIndex >= queueIds.length - 1) return const [];
+    return queueIds.sublist(queueIndex + 1);
   }
 
   double get progress {
@@ -86,6 +86,7 @@ class PlaybackUiState {
     double? volume,
     QueueRepeatMode? repeat,
     bool? shuffle,
+    int? queueIndex,
     List<int>? queueIds,
     List<int>? historyIds,
     bool clearArtist = false,
@@ -113,6 +114,7 @@ class PlaybackUiState {
       volume: volume ?? this.volume,
       repeat: repeat ?? this.repeat,
       shuffle: shuffle ?? this.shuffle,
+      queueIndex: queueIndex ?? this.queueIndex,
       queueIds: queueIds ?? this.queueIds,
       historyIds: historyIds ?? this.historyIds,
     );
@@ -388,6 +390,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
 
   void _publishQueue() {
     state = state.copyWith(
+      queueIndex: queue.index,
       queueIds: List<int>.of(queue.ids),
       historyIds: List<int>.of(queue.historyIds),
     );
@@ -513,6 +516,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
     queue.setShuffle(!queue.shuffle);
     state = state.copyWith(
       shuffle: queue.shuffle,
+      queueIndex: queue.index,
       queueIds: List<int>.of(queue.ids),
       historyIds: List<int>.of(queue.historyIds),
     );
@@ -566,6 +570,7 @@ class PlaybackController extends Notifier<PlaybackUiState> {
             clearFileSize: track.fileSizeBytes == null,
             clearSampleRate: track.sampleRateHz == null,
             clearArtwork: track.artworkPath == null,
+            queueIndex: queue.index,
             queueIds: List<int>.of(queue.ids),
             historyIds: List<int>.of(queue.historyIds),
             repeat: queue.repeat,
@@ -744,6 +749,7 @@ Object _everythingButPosition(PlaybackUiState s) => (
   s.volume,
   s.repeat,
   s.shuffle,
+  s.queueIndex,
   s.queueIds,
   s.historyIds,
 );
