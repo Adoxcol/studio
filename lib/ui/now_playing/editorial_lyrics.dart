@@ -201,22 +201,29 @@ class EditorialLyricsPanel extends ConsumerWidget {
                   const SizedBox(width: 4),
                   // Font toggle
                   if (!isNarrow) ...[
-                    InkWell(
-                      onTap: () => ref
-                          .read(editorialLyricsSerifProvider.notifier)
-                          .toggle(),
-                      borderRadius: BorderRadius.circular(4),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        child: Text(
-                          isSerif ? 'Serif' : 'Sans',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: palette.inkMuted,
-                            fontFamilyFallback: const ['Georgia', 'serif'],
+                    Tooltip(
+                      message: 'Toggle font style',
+                      child: Semantics(
+                        button: true,
+                        label: 'Toggle font style',
+                        child: InkWell(
+                          onTap: () => ref
+                              .read(editorialLyricsSerifProvider.notifier)
+                              .toggle(),
+                          borderRadius: BorderRadius.circular(4),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            child: Text(
+                              isSerif ? 'Serif' : 'Sans',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: palette.inkMuted,
+                                fontFamilyFallback: const ['Georgia', 'serif'],
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -226,44 +233,58 @@ class EditorialLyricsPanel extends ConsumerWidget {
                     const SizedBox(width: 6),
                   ],
                   // Font scale decrease
-                  InkWell(
-                    onTap: () => ref
-                        .read(editorialLyricsScaleProvider.notifier)
-                        .decrease(),
-                    borderRadius: BorderRadius.circular(4),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 2,
-                      ),
-                      child: Text(
-                        'A-',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: palette.inkMuted,
+                  Tooltip(
+                    message: 'Decrease font size',
+                    child: Semantics(
+                      button: true,
+                      label: 'Decrease font size',
+                      child: InkWell(
+                        onTap: () => ref
+                            .read(editorialLyricsScaleProvider.notifier)
+                            .decrease(),
+                        borderRadius: BorderRadius.circular(4),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 2,
+                          ),
+                          child: Text(
+                            'A-',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: palette.inkMuted,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 4),
                   // Font scale increase
-                  InkWell(
-                    onTap: () => ref
-                        .read(editorialLyricsScaleProvider.notifier)
-                        .increase(),
-                    borderRadius: BorderRadius.circular(4),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 2,
-                      ),
-                      child: Text(
-                        'A+',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: palette.inkMuted,
+                  Tooltip(
+                    message: 'Increase font size',
+                    child: Semantics(
+                      button: true,
+                      label: 'Increase font size',
+                      child: InkWell(
+                        onTap: () => ref
+                            .read(editorialLyricsScaleProvider.notifier)
+                            .increase(),
+                        borderRadius: BorderRadius.circular(4),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 2,
+                          ),
+                          child: Text(
+                            'A+',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: palette.inkMuted,
+                            ),
+                          ),
                         ),
                       ),
                     ),
