@@ -38,7 +38,10 @@ void main() {
     File(p.join(dir.path, 's.json')).writeAsStringSync('{not json');
     final store2 = FileScrobbleSettingsStore(File(p.join(dir.path, 's.json')));
     await store2.init();
-    expect(store2.load().listenBrainzConnected, isTrue); // because it's stored in mock secure storage
+    expect(
+      store2.load().listenBrainzConnected,
+      isTrue,
+    ); // because it's stored in mock secure storage
   });
 
   test('queue round-trips and skips malformed entries', () {

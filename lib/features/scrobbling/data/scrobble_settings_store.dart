@@ -47,16 +47,28 @@ class FileScrobbleSettingsStore implements ScrobbleSettingsStore {
 
       // Migration: if secrets were stored in the plaintext file, move them to secure storage.
       bool needsMigration = false;
-      if (json['lastFmSecret'] is String && (json['lastFmSecret'] as String).isNotEmpty) {
-        await _secureStorage.write(key: 'scrobbling_lastFmSecret', value: json['lastFmSecret'] as String);
+      if (json['lastFmSecret'] is String &&
+          (json['lastFmSecret'] as String).isNotEmpty) {
+        await _secureStorage.write(
+          key: 'scrobbling_lastFmSecret',
+          value: json['lastFmSecret'] as String,
+        );
         needsMigration = true;
       }
-      if (json['lastFmSessionKey'] is String && (json['lastFmSessionKey'] as String).isNotEmpty) {
-        await _secureStorage.write(key: 'scrobbling_lastFmSessionKey', value: json['lastFmSessionKey'] as String);
+      if (json['lastFmSessionKey'] is String &&
+          (json['lastFmSessionKey'] as String).isNotEmpty) {
+        await _secureStorage.write(
+          key: 'scrobbling_lastFmSessionKey',
+          value: json['lastFmSessionKey'] as String,
+        );
         needsMigration = true;
       }
-      if (json['listenBrainzToken'] is String && (json['listenBrainzToken'] as String).isNotEmpty) {
-        await _secureStorage.write(key: 'scrobbling_listenBrainzToken', value: json['listenBrainzToken'] as String);
+      if (json['listenBrainzToken'] is String &&
+          (json['listenBrainzToken'] as String).isNotEmpty) {
+        await _secureStorage.write(
+          key: 'scrobbling_listenBrainzToken',
+          value: json['listenBrainzToken'] as String,
+        );
         needsMigration = true;
       }
 
@@ -67,15 +79,24 @@ class FileScrobbleSettingsStore implements ScrobbleSettingsStore {
     }
 
     // Now overlay any values from secure storage over the loaded settings
-    final lastFmSecret = await _secureStorage.read(key: 'scrobbling_lastFmSecret');
-    final lastFmSessionKey = await _secureStorage.read(key: 'scrobbling_lastFmSessionKey');
-    final listenBrainzToken = await _secureStorage.read(key: 'scrobbling_listenBrainzToken');
+    final lastFmSecret = await _secureStorage.read(
+      key: 'scrobbling_lastFmSecret',
+    );
+    final lastFmSessionKey = await _secureStorage.read(
+      key: 'scrobbling_lastFmSessionKey',
+    );
+    final listenBrainzToken = await _secureStorage.read(
+      key: 'scrobbling_listenBrainzToken',
+    );
 
-    if (lastFmSecret != null || lastFmSessionKey != null || listenBrainzToken != null) {
+    if (lastFmSecret != null ||
+        lastFmSessionKey != null ||
+        listenBrainzToken != null) {
       _cachedSettings = _cachedSettings.copyWith(
         lastFmSecret: lastFmSecret ?? _cachedSettings.lastFmSecret,
         lastFmSessionKey: lastFmSessionKey ?? _cachedSettings.lastFmSessionKey,
-        listenBrainzToken: listenBrainzToken ?? _cachedSettings.listenBrainzToken,
+        listenBrainzToken:
+            listenBrainzToken ?? _cachedSettings.listenBrainzToken,
       );
     }
   }
@@ -88,9 +109,18 @@ class FileScrobbleSettingsStore implements ScrobbleSettingsStore {
     _cachedSettings = settings;
 
     // Save secrets to secure storage asynchronously
-    _secureStorage.write(key: 'scrobbling_lastFmSecret', value: settings.lastFmSecret);
-    _secureStorage.write(key: 'scrobbling_lastFmSessionKey', value: settings.lastFmSessionKey);
-    _secureStorage.write(key: 'scrobbling_listenBrainzToken', value: settings.listenBrainzToken);
+    _secureStorage.write(
+      key: 'scrobbling_lastFmSecret',
+      value: settings.lastFmSecret,
+    );
+    _secureStorage.write(
+      key: 'scrobbling_lastFmSessionKey',
+      value: settings.lastFmSessionKey,
+    );
+    _secureStorage.write(
+      key: 'scrobbling_listenBrainzToken',
+      value: settings.listenBrainzToken,
+    );
 
     _writeSync(settings);
   }
