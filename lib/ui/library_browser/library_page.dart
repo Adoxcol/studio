@@ -56,14 +56,20 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     ref.read(libraryBrowserProvider.notifier).setSearchQuery(_search.text);
   }
 
-  List<String> _selectedRemoteLocators(List<Track> visibleTracks, Set<int> selectedTrackIds) => [
+  List<String> _selectedRemoteLocators(
+    List<Track> visibleTracks,
+    Set<int> selectedTrackIds,
+  ) => [
     for (final track in visibleTracks)
       if (selectedTrackIds.contains(track.id) &&
           track.source == TrackLocator.subsonic)
         track.locator,
   ];
 
-  Future<void> _editSelected(List<Track> visibleTracks, Set<int> selectedTrackIds) async {
+  Future<void> _editSelected(
+    List<Track> visibleTracks,
+    Set<int> selectedTrackIds,
+  ) async {
     final selected = visibleTracks
         .where((track) => selectedTrackIds.contains(track.id))
         .toList();
@@ -85,7 +91,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   }
 
   void _open(VoidCallback updateState) {
-    _syncSearch(); // force immediate sync before capturing
+    _syncSearch();
     updateState();
     _search.clear();
     ref.read(libraryBrowserProvider.notifier).setSearchQuery('');
@@ -114,10 +120,13 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   void _selectSource(LibrarySource source, LibraryTab currentTab) {
     ref.read(librarySourceProvider.notifier).select(source);
     _search.clear();
-    final newTabIfFolders = (source == LibrarySource.navidrome && currentTab == LibraryTab.folders)
-      ? LibraryTab.all
-      : currentTab;
-    ref.read(libraryBrowserProvider.notifier).selectSourceSwitch(newTabIfFolders);
+    final newTabIfFolders =
+        (source == LibrarySource.navidrome && currentTab == LibraryTab.folders)
+        ? LibraryTab.all
+        : currentTab;
+    ref
+        .read(libraryBrowserProvider.notifier)
+        .selectSourceSwitch(newTabIfFolders);
   }
 
   Future<void> _playlistAction(Future<void> Function() action) async {
@@ -128,10 +137,10 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     notifier.setPlaylistBusy(true);
     try {
       await action();
-    } on Object catch (error) {
+    } on Object catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not update the playlist. $error')),
+          SnackBar(content: const Text('Could not update the playlist.')),
         );
       }
     } finally {
@@ -176,11 +185,13 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         .duplicatePlaylist(playlist.id, name);
     if (mounted) {
       _open(() {
-        ref.read(libraryBrowserProvider.notifier).open(
-          tab: LibraryTab.playlists,
-          playlistId: id,
-          filters: const LibraryTrackFilters(),
-        );
+        ref
+            .read(libraryBrowserProvider.notifier)
+            .open(
+              tab: LibraryTab.playlists,
+              playlistId: id,
+              filters: const LibraryTrackFilters(),
+            );
       });
     }
   });
@@ -196,7 +207,8 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     notifier.removePlaylistHistory(playlist.id);
 
     final browserState = ref.read(libraryBrowserProvider);
-    if (browserState.playlistId == playlist.id && browserState.tab == LibraryTab.playlists) {
+    if (browserState.playlistId == playlist.id &&
+        browserState.tab == LibraryTab.playlists) {
       _selectTab(LibraryTab.playlists);
     }
   });
@@ -214,11 +226,13 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     if (id == null || !mounted || id == browserState.playlistId) return;
 
     _open(() {
-      ref.read(libraryBrowserProvider.notifier).open(
-        tab: LibraryTab.playlists,
-        playlistId: id,
-        filters: const LibraryTrackFilters(),
-      );
+      ref
+          .read(libraryBrowserProvider.notifier)
+          .open(
+            tab: LibraryTab.playlists,
+            playlistId: id,
+            filters: const LibraryTrackFilters(),
+          );
     });
   }
 
@@ -347,7 +361,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     final notifier = ref.read(libraryBrowserProvider.notifier);
     final index = LibraryIndex(allTracks);
     final remote = source == LibrarySource.navidrome;
-    final tab = remote && browserState.tab == LibraryTab.folders ? LibraryTab.all : browserState.tab;
+    final tab = remote && browserState.tab == LibraryTab.folders
+        ? LibraryTab.all
+        : browserState.tab;
     final folder = tab == LibraryTab.folders
         ? folders.where((f) => f.id == browserState.folderId).firstOrNull
         : null;
@@ -385,14 +401,16 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     }
     final view = _view!;
     final playlists = ref.watch(playlistsProvider).value ?? const [];
-    final viewingPlaylist = tab == LibraryTab.playlists && browserState.playlistId != null;
+    final viewingPlaylist =
+        tab == LibraryTab.playlists && browserState.playlistId != null;
     final selectedPlaylist = viewingPlaylist
         ? ref.watch(playlistsByIdProvider)[browserState.playlistId]
         : null;
     final smartPlaylist =
         viewingPlaylist && selectedPlaylist?.smartRules != null;
     final playlistTracks = viewingPlaylist
-        ? (ref.watch(playlistTracksProvider(browserState.playlistId!)).value ?? const [])
+        ? (ref.watch(playlistTracksProvider(browserState.playlistId!)).value ??
+              const [])
         : const <Track>[];
     final filteredPlaylistTracks = viewingPlaylist
         ? playlistTracks.where(browserState.filters.matches).toList()
@@ -434,7 +452,8 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                           trailing: hasNavidrome
                               ? _SourceSwitch(
                                   selected: source,
-                                  onSelect: (s) => _selectSource(s, browserState.tab),
+                                  onSelect: (s) =>
+                                      _selectSource(s, browserState.tab),
                                 )
                               : null,
                         ),
@@ -508,7 +527,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                   );
                             },
                             onCycleSort: () {
-                              final next = LibraryQuery.nextSort(browserState.sort);
+                              final next = LibraryQuery.nextSort(
+                                browserState.sort,
+                              );
                               // Date added starts newest first; leaving it
                               // returns to A-Z.
                               if (next == LibrarySort.added ||
@@ -518,7 +539,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                               notifier.setSort(next);
                             },
                             onToggleOrder: () {
-                              notifier.setOrder(LibraryQuery.toggleOrder(browserState.order));
+                              notifier.setOrder(
+                                LibraryQuery.toggleOrder(browserState.order),
+                              );
                             },
                             onCycleLayout: () {
                               final next =
@@ -531,8 +554,11 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                   .setTrackLayout(next);
                             },
                             filterCount: browserState.filters.activeCount,
-                            onFilters: () =>
-                                _showFilters(browserState.filters, allTracks, localFolders),
+                            onFilters: () => _showFilters(
+                              browserState.filters,
+                              allTracks,
+                              localFolders,
+                            ),
                             extras: [
                               if (showTable && !viewingPlaylist)
                                 LibraryTextAction(
@@ -572,7 +598,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                 LibraryTextAction(
                                   label: 'Select all',
                                   onTap: () {
-                                    notifier.selectAll(tableTracks.map((track) => track.id));
+                                    notifier.selectAll(
+                                      tableTracks.map((track) => track.id),
+                                    );
                                   },
                                 ),
                               ],
@@ -580,11 +608,15 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                   browserState.selectedTrackIds.isNotEmpty)
                                 LibraryTextAction(
                                   label: 'Edit metadata',
-                                  onTap: () => _editSelected(tableTracks, browserState.selectedTrackIds),
+                                  onTap: () => _editSelected(
+                                    tableTracks,
+                                    browserState.selectedTrackIds,
+                                  ),
                                 ),
                               if (browserState.selectionMode &&
                                   _selectedRemoteLocators(
-                                    tableTracks, browserState.selectedTrackIds
+                                    tableTracks,
+                                    browserState.selectedTrackIds,
                                   ).isNotEmpty &&
                                   ref.watch(
                                     offlineDownloadsProvider.select(
@@ -596,7 +628,10 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                   onTap: () => ref
                                       .read(offlineDownloadsProvider.notifier)
                                       .download(
-                                        _selectedRemoteLocators(tableTracks, browserState.selectedTrackIds),
+                                        _selectedRemoteLocators(
+                                          tableTracks,
+                                          browserState.selectedTrackIds,
+                                        ),
                                       ),
                                 ),
                               if (showTable)
@@ -694,11 +729,22 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                       albums: const [],
                                       genres: const [],
                                       playlists: playlists,
-                                      onSelectArtist: (name) => _open(() => notifier.selectArtist(name)),
-                                      onSelectAlbum: (artist, album) => _open(() => notifier.selectAlbum(artist, album)),
-                                      onSelectGenre: (genre) => _open(() => notifier.selectGenre(genre)),
+                                      onSelectArtist: (name) => _open(
+                                        () => notifier.selectArtist(name),
+                                      ),
+                                      onSelectAlbum: (artist, album) => _open(
+                                        () =>
+                                            notifier.selectAlbum(artist, album),
+                                      ),
+                                      onSelectGenre: (genre) => _open(
+                                        () => notifier.selectGenre(genre),
+                                      ),
                                       onSelectPlaylist: (playlist) {
-                                        _open(() => notifier.open(playlistId: playlist.id));
+                                        _open(
+                                          () => notifier.open(
+                                            playlistId: playlist.id,
+                                          ),
+                                        );
                                       },
                                     )
                                   : allTracks.isEmpty &&
@@ -722,10 +768,16 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                           )
                                         : LibraryTrackTable(
                                             tracks: tableTracks,
-                                            selectionMode: browserState.selectionMode,
-                                            selectedIds: browserState.selectedTrackIds,
-                                            onToggleSelection: (track) => notifier.toggleSelection(track.id),
-                                            bottomInset: browserState.history.isEmpty
+                                            selectionMode:
+                                                browserState.selectionMode,
+                                            selectedIds:
+                                                browserState.selectedTrackIds,
+                                            onToggleSelection: (track) =>
+                                                notifier.toggleSelection(
+                                                  track.id,
+                                                ),
+                                            bottomInset:
+                                                browserState.history.isEmpty
                                                 ? 0
                                                 : 64,
                                             onPlay: (index) {
@@ -755,11 +807,22 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                           ? view.genres
                                           : const [],
                                       playlists: playlists,
-                                      onSelectArtist: (name) => _open(() => notifier.selectArtist(name)),
-                                      onSelectAlbum: (artist, album) => _open(() => notifier.selectAlbum(artist, album)),
-                                      onSelectGenre: (genre) => _open(() => notifier.selectGenre(genre)),
+                                      onSelectArtist: (name) => _open(
+                                        () => notifier.selectArtist(name),
+                                      ),
+                                      onSelectAlbum: (artist, album) => _open(
+                                        () =>
+                                            notifier.selectAlbum(artist, album),
+                                      ),
+                                      onSelectGenre: (genre) => _open(
+                                        () => notifier.selectGenre(genre),
+                                      ),
                                       onSelectPlaylist: (playlist) {
-                                        _open(() => notifier.open(playlistId: playlist.id));
+                                        _open(
+                                          () => notifier.open(
+                                            playlistId: playlist.id,
+                                          ),
+                                        );
                                       },
                                     ),
                             ),
