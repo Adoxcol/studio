@@ -132,7 +132,10 @@ class _RailButton extends StatelessWidget {
       iconSize: 22,
       hoverColor: Colors.transparent,
       highlightColor: Colors.transparent,
-      constraints: BoxConstraints(minWidth: StudioIconRail.width, minHeight: 48),
+      constraints: BoxConstraints(
+        minWidth: StudioIconRail.width,
+        minHeight: 48,
+      ),
     );
   }
 }
