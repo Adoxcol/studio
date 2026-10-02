@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/core/desktop/open_url.dart';
-import 'package:studio/features/scrobbling/domain/scrobbler.dart';
-import 'package:studio/features/scrobbling/domain/scrobble_tracker.dart';
 import 'package:studio/features/scrobbling/domain/scrobble_service.dart';
 import 'package:studio/features/scrobbling/presentation/scrobble_providers.dart';
 import 'package:studio/theming/studio_palette.dart';
