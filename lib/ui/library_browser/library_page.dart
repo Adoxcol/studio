@@ -8,6 +8,7 @@ import 'package:studio/library/library_query.dart';
 import 'package:studio/state/library_providers.dart';
 import 'package:studio/state/library_navigation_provider.dart';
 import 'package:studio/state/playback_provider.dart';
+import 'package:studio/state/library_browser_provider.dart';
 import 'package:studio/theming/accent_seed.dart';
 import 'package:studio/theming/appearance_provider.dart';
 import 'package:studio/theming/studio_palette.dart';
@@ -35,24 +36,9 @@ class LibraryPage extends ConsumerStatefulWidget {
   ConsumerState<LibraryPage> createState() => _LibraryPageState();
 }
 
-typedef _LibraryLocation = ({
-  LibraryTab tab,
-  LibrarySort sort,
-  LibraryOrder order,
-  TextEditingValue search,
-  String? artist,
-  String? album,
-  String? genre,
-  int? playlistId,
-  int? folderId,
-  PageStorageBucket scrollStorage,
-  LibraryTrackFilters filters,
-});
-
 class _LibraryPageState extends ConsumerState<LibraryPage> {
   final _search = TextEditingController();
   Timer? _searchTimer;
-  String _query = '';
   LibraryView? _view;
   Object? _viewKey;
 
@@ -60,64 +46,35 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     _searchTimer?.cancel();
     _searchTimer = Timer(const Duration(milliseconds: 150), () {
       if (mounted) {
-        setState(() {
-          _query = _search.text;
-          _clearSelection();
-        });
+        ref.read(libraryBrowserProvider.notifier).setSearchQuery(_search.text);
       }
     });
   }
 
   void _syncSearch() {
     _searchTimer?.cancel();
-    _query = _search.text;
+    ref.read(libraryBrowserProvider.notifier).setSearchQuery(_search.text);
   }
 
-  final _history = <_LibraryLocation>[];
-  var _scrollStorage = PageStorageBucket();
-  var _tab = LibraryTab.all;
-  var _sort = LibrarySort.title;
-  var _order = LibraryOrder.ascending;
-  String? _artistFilter;
-  String? _albumFilter;
-  String? _genreFilter;
-  int? _playlistId;
-  int? _folderId;
-  LibraryTrackFilters _trackFilters = const LibraryTrackFilters();
-  bool _selectionMode = false;
-  bool _playlistBusy = false;
-  final Set<int> _selectedTrackIds = {};
-
-  void _clearSelection() {
-    _selectionMode = false;
-    _selectedTrackIds.clear();
-  }
-
-  void _toggleSelection(Track track) {
-    setState(() {
-      if (!_selectedTrackIds.add(track.id)) {
-        _selectedTrackIds.remove(track.id);
-      }
-    });
-  }
-
-  List<String> _selectedRemoteLocators(List<Track> visibleTracks) => [
+  List<String> _selectedRemoteLocators(List<Track> visibleTracks, Set<int> selectedTrackIds) => [
     for (final track in visibleTracks)
-      if (_selectedTrackIds.contains(track.id) &&
+      if (selectedTrackIds.contains(track.id) &&
           track.source == TrackLocator.subsonic)
         track.locator,
   ];
 
-  Future<void> _editSelected(List<Track> visibleTracks) async {
+  Future<void> _editSelected(List<Track> visibleTracks, Set<int> selectedTrackIds) async {
     final selected = visibleTracks
-        .where((track) => _selectedTrackIds.contains(track.id))
+        .where((track) => selectedTrackIds.contains(track.id))
         .toList();
     if (selected.isEmpty) return;
     final changed = await showBatchMetadataEditor(
       context: context,
       tracks: selected,
     );
-    if (changed && mounted) setState(_clearSelection);
+    if (changed && mounted) {
+      ref.read(libraryBrowserProvider.notifier).clearSelection();
+    }
   }
 
   @override
@@ -127,126 +84,48 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     super.dispose();
   }
 
-  void _open(VoidCallback select) {
-    setState(() {
-      _history.add((
-        tab: _tab,
-        sort: _sort,
-        order: _order,
-        search: _search.value,
-        artist: _artistFilter,
-        album: _albumFilter,
-        genre: _genreFilter,
-        playlistId: _playlistId,
-        folderId: _folderId,
-        scrollStorage: _scrollStorage,
-        filters: _trackFilters,
-      ));
-      _scrollStorage = PageStorageBucket();
-      // A catalogue search selects a group, not a subset of its tracks.
-      // Keep the original query in history and open the complete group.
-      _search.clear();
-      _syncSearch();
-      _clearSelection();
-      select();
-    });
+  void _open(VoidCallback updateState) {
+    _syncSearch(); // force immediate sync before capturing
+    updateState();
+    _search.clear();
+    ref.read(libraryBrowserProvider.notifier).setSearchQuery('');
   }
 
   void _goBack() {
-    if (_history.isEmpty) return;
-    setState(() {
-      final previous = _history.removeLast();
-      _tab = previous.tab;
-      _sort = previous.sort;
-      _order = previous.order;
-      _search.value = previous.search;
+    ref.read(libraryBrowserProvider.notifier).goBack((searchVal) {
+      _search.value = TextEditingValue(
+        text: searchVal,
+        selection: TextSelection.collapsed(offset: searchVal.length),
+      );
       _syncSearch();
-      _artistFilter = previous.artist;
-      _albumFilter = previous.album;
-      _genreFilter = previous.genre;
-      _playlistId = previous.playlistId;
-      _folderId = previous.folderId;
-      _scrollStorage = previous.scrollStorage;
-      _trackFilters = previous.filters;
-      _clearSelection();
     });
   }
 
   void _selectTab(LibraryTab tab) {
-    if (_history.isNotEmpty && _history.last.tab == tab) {
-      _goBack();
-      return;
-    }
-    setState(() {
-      if (_tab != tab || _history.isNotEmpty) {
-        _scrollStorage = PageStorageBucket();
-      }
+    ref.read(libraryBrowserProvider.notifier).selectTab(tab, (searchVal) {
+      _search.value = TextEditingValue(
+        text: searchVal,
+        selection: TextSelection.collapsed(offset: searchVal.length),
+      );
       _syncSearch();
-      _history.clear();
-      _tab = tab;
-      _folderId = null;
-      _playlistId = null;
-      _artistFilter = null;
-      _albumFilter = null;
-      _genreFilter = null;
-      _clearSelection();
     });
   }
 
-  /// The source stays picked across tabs and launches; switching it starts
-  /// that catalogue fresh, since artists and folders differ between them.
-  void _selectSource(LibrarySource source) {
+  void _selectSource(LibrarySource source, LibraryTab currentTab) {
     ref.read(librarySourceProvider.notifier).select(source);
-    setState(() {
-      _scrollStorage = PageStorageBucket();
-      _search.clear();
-      _syncSearch();
-      _history.clear();
-      if (source == LibrarySource.navidrome && _tab == LibraryTab.folders) {
-        _tab = LibraryTab.all;
-      }
-      _folderId = null;
-      _playlistId = null;
-      _artistFilter = null;
-      _albumFilter = null;
-      _genreFilter = null;
-      _trackFilters = const LibraryTrackFilters();
-      _clearSelection();
-    });
-  }
-
-  void _selectArtist(String name) {
-    _open(() {
-      _artistFilter = name;
-      _albumFilter = null;
-      _genreFilter = null;
-      _tab = LibraryTab.all;
-    });
-  }
-
-  void _selectAlbum(String artist, String album) {
-    _open(() {
-      _artistFilter = artist;
-      _albumFilter = album;
-      _genreFilter = null;
-      _tab = LibraryTab.all;
-      _sort = LibrarySort.track;
-      _order = LibraryOrder.ascending;
-    });
-  }
-
-  void _selectGenre(String genre) {
-    _open(() {
-      _genreFilter = genre;
-      _artistFilter = null;
-      _albumFilter = null;
-      _tab = LibraryTab.all;
-    });
+    _search.clear();
+    final newTabIfFolders = (source == LibrarySource.navidrome && currentTab == LibraryTab.folders)
+      ? LibraryTab.all
+      : currentTab;
+    ref.read(libraryBrowserProvider.notifier).selectSourceSwitch(newTabIfFolders);
   }
 
   Future<void> _playlistAction(Future<void> Function() action) async {
-    if (_playlistBusy) return;
-    setState(() => _playlistBusy = true);
+    final notifier = ref.read(libraryBrowserProvider.notifier);
+    final browserState = ref.read(libraryBrowserProvider);
+    if (browserState.playlistBusy) return;
+
+    notifier.setPlaylistBusy(true);
     try {
       await action();
     } on Object catch (error) {
@@ -256,7 +135,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         );
       }
     } finally {
-      if (mounted) setState(() => _playlistBusy = false);
+      if (mounted) {
+        notifier.setPlaylistBusy(false);
+      }
     }
   }
 
@@ -295,20 +176,27 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         .duplicatePlaylist(playlist.id, name);
     if (mounted) {
       _open(() {
-        _tab = LibraryTab.playlists;
-        _playlistId = id;
-        _trackFilters = const LibraryTrackFilters();
+        ref.read(libraryBrowserProvider.notifier).open(
+          tab: LibraryTab.playlists,
+          playlistId: id,
+          filters: const LibraryTrackFilters(),
+        );
       });
     }
   });
 
   Future<void> _deletePlaylist(Playlist playlist) => _playlistAction(() async {
-    if (!await confirmPlaylistDeletion(context, playlist) || !mounted) return;
+    if (!await confirmPlaylistDeletion(context, playlist) || !mounted) {
+      return;
+    }
     await ref.read(studioDatabaseProvider).deletePlaylist(playlist.id);
     if (!mounted) return;
-    // A duplicate can have its deleted source in Back history.
-    _history.removeWhere((location) => location.playlistId == playlist.id);
-    if (_playlistId == playlist.id && _tab == LibraryTab.playlists) {
+
+    final notifier = ref.read(libraryBrowserProvider.notifier);
+    notifier.removePlaylistHistory(playlist.id);
+
+    final browserState = ref.read(libraryBrowserProvider);
+    if (browserState.playlistId == playlist.id && browserState.tab == LibraryTab.playlists) {
       _selectTab(LibraryTab.playlists);
     }
   });
@@ -322,31 +210,33 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       playlist: playlist,
       initial: initial,
     );
-    if (id == null || !mounted || id == _playlistId) return;
+    final browserState = ref.read(libraryBrowserProvider);
+    if (id == null || !mounted || id == browserState.playlistId) return;
+
     _open(() {
-      _tab = LibraryTab.playlists;
-      _playlistId = id;
-      _trackFilters = const LibraryTrackFilters();
+      ref.read(libraryBrowserProvider.notifier).open(
+        tab: LibraryTab.playlists,
+        playlistId: id,
+        filters: const LibraryTrackFilters(),
+      );
     });
   }
 
   Future<void> _showFilters(
+    LibraryTrackFilters trackFilters,
     List<Track> tracks,
     List<LibraryFolder> folders,
   ) async {
     final selected = await showDialog<LibraryTrackFilters>(
       context: context,
       builder: (context) => _LibraryFilterDialog(
-        initial: _trackFilters,
+        initial: trackFilters,
         tracks: tracks,
         folders: folders,
       ),
     );
     if (selected != null && mounted) {
-      setState(() {
-        _trackFilters = selected;
-        _clearSelection();
-      });
+      ref.read(libraryBrowserProvider.notifier).setFilters(selected);
     }
   }
 
@@ -363,15 +253,18 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   Widget build(BuildContext context) {
     ref.listen(libraryNavigationProvider, (_, request) {
       final playlistId = request.playlistId;
+      final notifier = ref.read(libraryBrowserProvider.notifier);
       if (playlistId != null) {
         _open(() {
-          _tab = LibraryTab.playlists;
-          _playlistId = playlistId;
-          _artistFilter = null;
-          _albumFilter = null;
-          _genreFilter = null;
-          _folderId = null;
-          _trackFilters = const LibraryTrackFilters();
+          notifier.open(
+            tab: LibraryTab.playlists,
+            playlistId: playlistId,
+            artistFilter: null,
+            albumFilter: null,
+            genreFilter: null,
+            folderId: null,
+            filters: const LibraryTrackFilters(),
+          );
         });
         return;
       }
@@ -379,11 +272,16 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       if (artist == null) return;
       final album = request.album;
       if (album == null) {
-        _selectArtist(artist);
+        _open(() {
+          notifier.selectArtist(artist);
+        });
       } else {
-        _selectAlbum(artist, album);
+        _open(() {
+          notifier.selectAlbum(artist, album);
+        });
       }
     });
+
     final palette = StudioPalette.of(context);
     final scanActive = ref.watch(libraryScanProvider.select((s) => s.active));
     final localFolders = ref.watch(libraryFoldersProvider).value ?? const [];
@@ -398,6 +296,12 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     // Folders belong to this computer; a Navidrome library has none here.
     final folders = isRemoteSource ? const <LibraryFolder>[] : localFolders;
     final tracks = ref.watch(libraryTracksProvider);
+    final browserState = ref.watch(libraryBrowserProvider);
+
+    // Initial search sync in case it differs (rare, but good for safety)
+    if (_search.text != browserState.searchQuery && _searchTimer == null) {
+      _search.text = browserState.searchQuery;
+    }
 
     return tracks.when(
       data: (rows) => _body(
@@ -409,6 +313,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         scanActive,
         source,
         hasNavidrome,
+        browserState,
       ),
       loading: () => _body(
         context,
@@ -419,6 +324,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         scanActive,
         source,
         hasNavidrome,
+        browserState,
       ),
       error: (error, _) => Padding(
         padding: const EdgeInsets.all(32),
@@ -436,58 +342,60 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     bool scanning,
     LibrarySource source,
     bool hasNavidrome,
+    LibraryBrowserState browserState,
   ) {
+    final notifier = ref.read(libraryBrowserProvider.notifier);
     final index = LibraryIndex(allTracks);
     final remote = source == LibrarySource.navidrome;
-    final tab = remote && _tab == LibraryTab.folders ? LibraryTab.all : _tab;
+    final tab = remote && browserState.tab == LibraryTab.folders ? LibraryTab.all : browserState.tab;
     final folder = tab == LibraryTab.folders
-        ? folders.where((f) => f.id == _folderId).firstOrNull
+        ? folders.where((f) => f.id == browserState.folderId).firstOrNull
         : null;
     final viewingFolder = folder != null;
     final folderFilterId = folder?.id;
     final key = (
       index,
-      _query,
-      _artistFilter,
-      _albumFilter,
-      _genreFilter,
+      browserState.searchQuery,
+      browserState.artistFilter,
+      browserState.albumFilter,
+      browserState.genreFilter,
       folder?.id,
-      _trackFilters.losslessOnly,
-      _trackFilters.minimumSampleRateHz,
-      _trackFilters.minimumBitrateKbps,
-      _trackFilters.genre,
-      _trackFilters.year,
-      _trackFilters.folderId,
-      _sort,
-      _order,
+      browserState.filters.losslessOnly,
+      browserState.filters.minimumSampleRateHz,
+      browserState.filters.minimumBitrateKbps,
+      browserState.filters.genre,
+      browserState.filters.year,
+      browserState.filters.folderId,
+      browserState.sort,
+      browserState.order,
     );
     if (_viewKey != key) {
       _viewKey = key;
       _view = LibraryView(
         index: index,
-        query: _query,
-        artist: _artistFilter,
-        album: _albumFilter,
-        genre: _genreFilter,
+        query: browserState.searchQuery,
+        artist: browserState.artistFilter,
+        album: browserState.albumFilter,
+        genre: browserState.genreFilter,
         folderId: folderFilterId,
-        filters: _trackFilters,
-        sort: _sort,
-        order: _order,
+        filters: browserState.filters,
+        sort: browserState.sort,
+        order: browserState.order,
       );
     }
     final view = _view!;
     final playlists = ref.watch(playlistsProvider).value ?? const [];
-    final viewingPlaylist = tab == LibraryTab.playlists && _playlistId != null;
+    final viewingPlaylist = tab == LibraryTab.playlists && browserState.playlistId != null;
     final selectedPlaylist = viewingPlaylist
-        ? ref.watch(playlistsByIdProvider)[_playlistId]
+        ? ref.watch(playlistsByIdProvider)[browserState.playlistId]
         : null;
     final smartPlaylist =
         viewingPlaylist && selectedPlaylist?.smartRules != null;
     final playlistTracks = viewingPlaylist
-        ? (ref.watch(playlistTracksProvider(_playlistId!)).value ?? const [])
+        ? (ref.watch(playlistTracksProvider(browserState.playlistId!)).value ?? const [])
         : const <Track>[];
     final filteredPlaylistTracks = viewingPlaylist
-        ? playlistTracks.where(_trackFilters.matches).toList()
+        ? playlistTracks.where(browserState.filters.matches).toList()
         : const <Track>[];
     final showTable = tab == LibraryTab.all || viewingFolder || viewingPlaylist;
     // Catalogue Play All resolves sorting only when clicked.
@@ -526,7 +434,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                           trailing: hasNavidrome
                               ? _SourceSwitch(
                                   selected: source,
-                                  onSelect: _selectSource,
+                                  onSelect: (s) => _selectSource(s, browserState.tab),
                                 )
                               : null,
                         ),
@@ -575,8 +483,8 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                         ],
                         if (tab != LibraryTab.folders || viewingFolder)
                           _Actions(
-                            sort: _sort,
-                            order: _order,
+                            sort: browserState.sort,
+                            order: browserState.order,
                             canPlay: canPlay,
                             showSort: tab != LibraryTab.playlists,
                             showView: showTable,
@@ -599,19 +507,19 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                     shuffle: true,
                                   );
                             },
-                            onCycleSort: () => setState(() {
-                              final next = LibraryQuery.nextSort(_sort);
+                            onCycleSort: () {
+                              final next = LibraryQuery.nextSort(browserState.sort);
                               // Date added starts newest first; leaving it
-                              // returns to A–Z.
+                              // returns to A-Z.
                               if (next == LibrarySort.added ||
-                                  _sort == LibrarySort.added) {
-                                _order = next.defaultOrder;
+                                  browserState.sort == LibrarySort.added) {
+                                notifier.setOrder(next.defaultOrder);
                               }
-                              _sort = next;
-                            }),
-                            onToggleOrder: () => setState(
-                              () => _order = LibraryQuery.toggleOrder(_order),
-                            ),
+                              notifier.setSort(next);
+                            },
+                            onToggleOrder: () {
+                              notifier.setOrder(LibraryQuery.toggleOrder(browserState.order));
+                            },
                             onCycleLayout: () {
                               final next =
                                   ref.read(appearanceProvider).trackLayout ==
@@ -622,9 +530,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                   .read(appearanceProvider.notifier)
                                   .setTrackLayout(next);
                             },
-                            filterCount: _trackFilters.activeCount,
+                            filterCount: browserState.filters.activeCount,
                             onFilters: () =>
-                                _showFilters(allTracks, localFolders),
+                                _showFilters(browserState.filters, allTracks, localFolders),
                             extras: [
                               if (showTable && !viewingPlaylist)
                                 LibraryTextAction(
@@ -632,14 +540,14 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                   onTap: () => _editSmartPlaylist(
                                     initial:
                                         SmartPlaylistDefinition.fromFilters(
-                                          filters: _trackFilters,
-                                          query: _query,
-                                          artist: _artistFilter,
-                                          album: _albumFilter,
-                                          genre: _genreFilter,
+                                          filters: browserState.filters,
+                                          query: browserState.searchQuery,
+                                          artist: browserState.artistFilter,
+                                          album: browserState.albumFilter,
+                                          genre: browserState.genreFilter,
                                           folderId: folder?.id,
-                                          sort: _sort,
-                                          order: _order,
+                                          sort: browserState.sort,
+                                          order: browserState.order,
                                         ),
                                   ),
                                 ),
@@ -656,31 +564,27 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                     playlist: selectedPlaylist,
                                   ),
                                 ),
-                              if (_selectionMode) ...[
+                              if (browserState.selectionMode) ...[
                                 Text(
-                                  '${tableTracks.where((track) => _selectedTrackIds.contains(track.id)).length} selected',
+                                  '${tableTracks.where((track) => browserState.selectedTrackIds.contains(track.id)).length} selected',
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                                 LibraryTextAction(
                                   label: 'Select all',
-                                  onTap: () => setState(() {
-                                    _selectedTrackIds
-                                      ..clear()
-                                      ..addAll(
-                                        tableTracks.map((track) => track.id),
-                                      );
-                                  }),
+                                  onTap: () {
+                                    notifier.selectAll(tableTracks.map((track) => track.id));
+                                  },
                                 ),
                               ],
-                              if (_selectionMode &&
-                                  _selectedTrackIds.isNotEmpty)
+                              if (browserState.selectionMode &&
+                                  browserState.selectedTrackIds.isNotEmpty)
                                 LibraryTextAction(
                                   label: 'Edit metadata',
-                                  onTap: () => _editSelected(tableTracks),
+                                  onTap: () => _editSelected(tableTracks, browserState.selectedTrackIds),
                                 ),
-                              if (_selectionMode &&
+                              if (browserState.selectionMode &&
                                   _selectedRemoteLocators(
-                                    tableTracks,
+                                    tableTracks, browserState.selectedTrackIds
                                   ).isNotEmpty &&
                                   ref.watch(
                                     offlineDownloadsProvider.select(
@@ -692,27 +596,27 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                   onTap: () => ref
                                       .read(offlineDownloadsProvider.notifier)
                                       .download(
-                                        _selectedRemoteLocators(tableTracks),
+                                        _selectedRemoteLocators(tableTracks, browserState.selectedTrackIds),
                                       ),
                                 ),
                               if (showTable)
                                 LibraryTextAction(
-                                  label: _selectionMode
+                                  label: browserState.selectionMode
                                       ? 'Done selecting'
                                       : 'Select',
-                                  onTap: () => setState(() {
-                                    if (_selectionMode) {
-                                      _clearSelection();
+                                  onTap: () {
+                                    if (browserState.selectionMode) {
+                                      notifier.clearSelection();
                                     } else {
-                                      _selectionMode = true;
+                                      notifier.setSelectionMode(true);
                                     }
-                                  }),
-                                  muted: _selectionMode,
+                                  },
+                                  muted: browserState.selectionMode,
                                 ),
                               if (tab == LibraryTab.all &&
-                                  (_artistFilter != null ||
-                                      _albumFilter != null ||
-                                      _genreFilter != null))
+                                  (browserState.artistFilter != null ||
+                                      browserState.albumFilter != null ||
+                                      browserState.genreFilter != null))
                                 LibraryTextAction(
                                   label: 'All tracks',
                                   onTap: () => _selectTab(LibraryTab.all),
@@ -721,19 +625,19 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                 LibraryTextAction(
                                   label: 'New playlist',
                                   onTap: _createPlaylist,
-                                  enabled: !_playlistBusy,
+                                  enabled: !browserState.playlistBusy,
                                 ),
                               if (viewingPlaylist &&
                                   selectedPlaylist != null) ...[
                                 LibraryTextAction(
                                   label: 'Rename playlist',
-                                  enabled: !_playlistBusy,
+                                  enabled: !browserState.playlistBusy,
                                   onTap: () =>
                                       _renamePlaylist(selectedPlaylist),
                                 ),
                                 LibraryTextAction(
                                   label: 'Duplicate playlist',
-                                  enabled: !_playlistBusy,
+                                  enabled: !browserState.playlistBusy,
                                   onTap: () =>
                                       _duplicatePlaylist(selectedPlaylist),
                                 ),
@@ -741,7 +645,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                   LibraryTextAction(
                                     label: 'Reorder tracks',
                                     enabled:
-                                        !_playlistBusy &&
+                                        !browserState.playlistBusy &&
                                         playlistTracks.length > 1,
                                     onTap: () => _playlistAction(
                                       () => showPlaylistOrderEditor(
@@ -755,7 +659,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                   ),
                                 LibraryTextAction(
                                   label: 'Delete playlist',
-                                  enabled: !_playlistBusy,
+                                  enabled: !browserState.playlistBusy,
                                   onTap: () =>
                                       _deletePlaylist(selectedPlaylist),
                                   muted: true,
@@ -769,16 +673,16 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                           // identity key recreates the scrollable on navigation,
                           // restoring its offset during layout, before painting.
                           child: PageStorage(
-                            key: ObjectKey(_scrollStorage),
-                            bucket: _scrollStorage,
+                            key: ObjectKey(browserState.scrollStorage),
+                            bucket: browserState.scrollStorage,
                             child: KeyedSubtree(
                               key: const PageStorageKey('library-content'),
                               child: tab == LibraryTab.folders && !viewingFolder
                                   ? LibraryFoldersPanel(
-                                      query: _query,
+                                      query: browserState.searchQuery,
                                       onOpen: (selected) {
                                         _open(() {
-                                          _folderId = selected.id;
+                                          notifier.open(folderId: selected.id);
                                         });
                                       },
                                     )
@@ -790,11 +694,11 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                       albums: const [],
                                       genres: const [],
                                       playlists: playlists,
-                                      onSelectArtist: _selectArtist,
-                                      onSelectAlbum: _selectAlbum,
-                                      onSelectGenre: _selectGenre,
+                                      onSelectArtist: (name) => _open(() => notifier.selectArtist(name)),
+                                      onSelectAlbum: (artist, album) => _open(() => notifier.selectAlbum(artist, album)),
+                                      onSelectGenre: (genre) => _open(() => notifier.selectGenre(genre)),
                                       onSelectPlaylist: (playlist) {
-                                        _open(() => _playlistId = playlist.id);
+                                        _open(() => notifier.open(playlistId: playlist.id));
                                       },
                                     )
                                   : allTracks.isEmpty &&
@@ -818,10 +722,10 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                           )
                                         : LibraryTrackTable(
                                             tracks: tableTracks,
-                                            selectionMode: _selectionMode,
-                                            selectedIds: _selectedTrackIds,
-                                            onToggleSelection: _toggleSelection,
-                                            bottomInset: _history.isEmpty
+                                            selectionMode: browserState.selectionMode,
+                                            selectedIds: browserState.selectedTrackIds,
+                                            onToggleSelection: (track) => notifier.toggleSelection(track.id),
+                                            bottomInset: browserState.history.isEmpty
                                                 ? 0
                                                 : 64,
                                             onPlay: (index) {
@@ -851,11 +755,11 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                           ? view.genres
                                           : const [],
                                       playlists: playlists,
-                                      onSelectArtist: _selectArtist,
-                                      onSelectAlbum: _selectAlbum,
-                                      onSelectGenre: _selectGenre,
+                                      onSelectArtist: (name) => _open(() => notifier.selectArtist(name)),
+                                      onSelectAlbum: (artist, album) => _open(() => notifier.selectAlbum(artist, album)),
+                                      onSelectGenre: (genre) => _open(() => notifier.selectGenre(genre)),
                                       onSelectPlaylist: (playlist) {
-                                        _open(() => _playlistId = playlist.id);
+                                        _open(() => notifier.open(playlistId: playlist.id));
                                       },
                                     ),
                             ),
@@ -864,12 +768,12 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                       ],
                     ),
                   ),
-                  if (_history.isNotEmpty)
+                  if (browserState.history.isNotEmpty)
                     Positioned(
                       left: 20,
                       bottom: 20,
                       child: _LibraryBackButton(
-                        label: 'Back to ${_history.last.tab.label}',
+                        label: 'Back to ${browserState.history.last.tab.label}',
                         onPressed: _goBack,
                       ),
                     ),

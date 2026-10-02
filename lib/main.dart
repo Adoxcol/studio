@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
@@ -108,9 +109,11 @@ Future<void> main(List<String> args) async {
   final scrobbleQueue = FileScrobbleQueueStore(
     File(p.join(support.path, 'scrobble-queue.json')),
   );
-  final subsonicSettings = FileSubsonicSettingsStore(
+  final subsonicSettings = SecureSubsonicSettingsStore(
     File(p.join(support.path, 'subsonic.json')),
+    const FlutterSecureStorage(),
   );
+  await subsonicSettings.init();
   runApp(
     ProviderScope(
       overrides: [
