@@ -57,7 +57,10 @@ void main() {
         password: 'secure_password',
       );
 
-      await secureStorage.write(key: 'subsonic_config', value: jsonEncode(config.toJson()));
+      await secureStorage.write(
+        key: 'subsonic_config',
+        value: jsonEncode(config.toJson()),
+      );
 
       final store = SecureSubsonicSettingsStore(legacyFile, secureStorage);
       await store.init();
