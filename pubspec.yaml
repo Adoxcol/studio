@@ -59,6 +59,7 @@ dependencies:
   http_parser: ^4.1.2
   crypto: ^3.0.7
   velopack_flutter: ^0.3.2
+  flutter_secure_storage: ^11.2.0
 
 # discord_rich_presence 1.1.1's WindowsTransport.close() throws before it
 # reaches `_file?.close()` whenever the pipe is already dead, leaking the

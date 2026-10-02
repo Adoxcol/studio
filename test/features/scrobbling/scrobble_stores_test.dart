@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:studio/features/scrobbling/data/scrobble_queue_store.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:studio/features/scrobbling/data/scrobble_settings_store.dart';
 import 'package:studio/features/scrobbling/domain/scrobble_settings.dart';
 import 'package:studio/features/scrobbling/domain/scrobble_track.dart';
@@ -10,11 +11,15 @@ import 'package:studio/features/scrobbling/domain/scrobble_track.dart';
 void main() {
   late Directory dir;
 
-  setUp(() => dir = Directory.systemTemp.createTempSync('studio-scrobble'));
+  setUp(() {
+    dir = Directory.systemTemp.createTempSync('studio-scrobble');
+    FlutterSecureStorage.setMockInitialValues({});
+  });
   tearDown(() => dir.deleteSync(recursive: true));
 
-  test('settings round-trip and tolerate a corrupt file', () {
+  test('settings round-trip and tolerate a corrupt file', () async {
     final store = FileScrobbleSettingsStore(File(p.join(dir.path, 's.json')));
+    await store.init();
     expect(store.load().lastFmConnected, isFalse);
     store.save(
       const ScrobbleSettings(
@@ -31,7 +36,9 @@ void main() {
     expect(loaded.lastFmUser, 'rj');
     expect(loaded.listenBrainzConnected, isTrue);
     File(p.join(dir.path, 's.json')).writeAsStringSync('{not json');
-    expect(store.load().listenBrainzConnected, isFalse);
+    final store2 = FileScrobbleSettingsStore(File(p.join(dir.path, 's.json')));
+    await store2.init();
+    expect(store2.load().listenBrainzConnected, isTrue); // because it's stored in mock secure storage
   });
 
   test('queue round-trips and skips malformed entries', () {

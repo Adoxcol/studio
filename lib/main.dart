@@ -105,6 +105,7 @@ Future<void> main(List<String> args) async {
   final scrobbleSettings = FileScrobbleSettingsStore(
     File(p.join(support.path, 'scrobbling.json')),
   );
+  await scrobbleSettings.init();
   final scrobbleQueue = FileScrobbleQueueStore(
     File(p.join(support.path, 'scrobble-queue.json')),
   );
