@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:studio/features/subsonic/domain/subsonic_models.dart';
 
 abstract class SubsonicSettingsStore {
@@ -22,33 +23,59 @@ class MemorySubsonicSettingsStore implements SubsonicSettingsStore {
   }
 }
 
-class FileSubsonicSettingsStore implements SubsonicSettingsStore {
-  FileSubsonicSettingsStore(this.file);
+class SecureSubsonicSettingsStore implements SubsonicSettingsStore {
+  SecureSubsonicSettingsStore(this.legacyFile, this.secureStorage);
 
-  final File file;
+  final File legacyFile;
+  final FlutterSecureStorage secureStorage;
 
-  @override
-  SubsonicServerConfig? load() {
-    if (!file.existsSync()) return null;
-    try {
-      final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
-      return SubsonicServerConfig.fromJson(json);
-    } on Object {
-      return null;
+  SubsonicServerConfig? _cachedConfig;
+  static const _secureKey = 'subsonic_config';
+
+  Future<void> init() async {
+    final secureData = await secureStorage.read(key: _secureKey);
+    if (secureData != null) {
+      try {
+        final json = jsonDecode(secureData) as Map<String, dynamic>;
+        _cachedConfig = SubsonicServerConfig.fromJson(json);
+        return;
+      } on Object {
+        // Fall back if decoding fails
+      }
+    }
+
+    // Migration from plaintext to secure storage
+    if (legacyFile.existsSync()) {
+      try {
+        final json =
+            jsonDecode(legacyFile.readAsStringSync()) as Map<String, dynamic>;
+        _cachedConfig = SubsonicServerConfig.fromJson(json);
+
+        // Save to secure storage and delete legacy file
+        await secureStorage.write(
+          key: _secureKey,
+          value: jsonEncode(_cachedConfig!.toJson()),
+        );
+        legacyFile.deleteSync();
+      } on Object {
+        // Do nothing if migration fails
+      }
     }
   }
 
   @override
+  SubsonicServerConfig? load() => _cachedConfig;
+
+  @override
   void save(SubsonicServerConfig? config) {
+    _cachedConfig = config;
     if (config == null) {
-      if (file.existsSync()) {
-        file.deleteSync();
+      secureStorage.delete(key: _secureKey);
+      if (legacyFile.existsSync()) {
+        legacyFile.deleteSync();
       }
       return;
     }
-    file.parent.createSync(recursive: true);
-    final part = File('${file.path}.part');
-    part.writeAsStringSync(jsonEncode(config.toJson()), flush: true);
-    part.renameSync(file.path);
+    secureStorage.write(key: _secureKey, value: jsonEncode(config.toJson()));
   }
 }

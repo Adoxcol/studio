@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 0.8.0+1
 
 environment:
-  sdk: ^3.11.4
+  sdk: ">=3.11.0 <4.0.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -59,6 +59,7 @@ dependencies:
   http_parser: ^4.1.2
   crypto: ^3.0.7
   velopack_flutter: ^0.3.2
+  flutter_secure_storage: ^11.2.0
 
 # discord_rich_presence 1.1.1's WindowsTransport.close() throws before it
 # reaches `_file?.close()` whenever the pipe is already dead, leaking the
