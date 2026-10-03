@@ -103,8 +103,8 @@ Future<void> main(List<String> args) async {
   final discordArtwork = FreeImageArtworkUploader(
     cacheFile: File(p.join(support.path, 'discord-art.json')),
   );
-  final scrobbleSettings = FileScrobbleSettingsStore(
-    File(p.join(support.path, 'scrobbling.json')),
+  final scrobbleSettings = SecureScrobbleSettingsStore(
+    legacyFile: File(p.join(support.path, 'scrobbling.json')),
   );
   final scrobbleQueue = FileScrobbleQueueStore(
     File(p.join(support.path, 'scrobble-queue.json')),

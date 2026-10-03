@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:studio/features/scrobbling/domain/scrobble_settings.dart';
 
 abstract class ScrobbleSettingsStore {
-  ScrobbleSettings load();
-  void save(ScrobbleSettings settings);
+  Future<ScrobbleSettings> load();
+  Future<void> save(ScrobbleSettings settings);
 }
 
 class MemoryScrobbleSettingsStore implements ScrobbleSettingsStore {
@@ -14,35 +15,55 @@ class MemoryScrobbleSettingsStore implements ScrobbleSettingsStore {
   ScrobbleSettings value;
 
   @override
-  ScrobbleSettings load() => value;
+  Future<ScrobbleSettings> load() async => value;
 
   @override
-  void save(ScrobbleSettings settings) => value = settings;
+  Future<void> save(ScrobbleSettings settings) async => value = settings;
 }
 
-class FileScrobbleSettingsStore implements ScrobbleSettingsStore {
-  FileScrobbleSettingsStore(this.file);
+class SecureScrobbleSettingsStore implements ScrobbleSettingsStore {
+  SecureScrobbleSettingsStore({
+    required this.legacyFile,
+    this.storage = const FlutterSecureStorage(),
+  });
 
-  final File file;
+  final File legacyFile;
+  final FlutterSecureStorage storage;
+  static const _key = 'scrobble_settings';
 
   @override
-  ScrobbleSettings load() {
-    if (!file.existsSync()) return ScrobbleSettings.defaults;
+  Future<ScrobbleSettings> load() async {
     try {
-      final json = jsonDecode(file.readAsStringSync());
-      return json is Map<String, dynamic>
+      final value = await storage.read(key: _key);
+      if (value != null) {
+        final json = jsonDecode(value);
+        return json is Map<String, dynamic>
+            ? ScrobbleSettings.fromJson(json)
+            : ScrobbleSettings.defaults;
+      }
+    } on Object {
+      // Ignore secure storage errors, fallback to defaults or legacy
+    }
+
+    if (!legacyFile.existsSync()) return ScrobbleSettings.defaults;
+
+    try {
+      final json = jsonDecode(legacyFile.readAsStringSync());
+      final settings = json is Map<String, dynamic>
           ? ScrobbleSettings.fromJson(json)
           : ScrobbleSettings.defaults;
+
+      // Migrate to secure storage and delete legacy file
+      await save(settings);
+      legacyFile.deleteSync();
+      return settings;
     } on Object {
       return ScrobbleSettings.defaults;
     }
   }
 
   @override
-  void save(ScrobbleSettings settings) {
-    file.parent.createSync(recursive: true);
-    final part = File('${file.path}.part');
-    part.writeAsStringSync(jsonEncode(settings.toJson()), flush: true);
-    part.renameSync(file.path);
+  Future<void> save(ScrobbleSettings settings) async {
+    await storage.write(key: _key, value: jsonEncode(settings.toJson()));
   }
 }

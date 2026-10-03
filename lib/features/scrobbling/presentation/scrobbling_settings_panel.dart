@@ -6,7 +6,8 @@ import 'package:studio/features/scrobbling/domain/scrobble_service.dart';
 import 'package:studio/features/scrobbling/presentation/scrobble_providers.dart';
 import 'package:studio/theming/studio_palette.dart';
 
-/// Connect and disconnect Last.fm and ListenBrainz.
+/// Appears in the Settings > Connections tab to manage API keys, log in,
+/// and disconnect Last.fm and ListenBrainz.
 class ScrobblingSettingsPanel extends StatelessWidget {
   const ScrobblingSettingsPanel({super.key});
 
@@ -51,9 +52,9 @@ class _LastFmPanelState extends ConsumerState<_LastFmPanel> {
   @override
   void initState() {
     super.initState();
-    final settings = ref.read(scrobbleSettingsProvider);
-    _key = TextEditingController(text: settings.lastFmApiKey);
-    _secret = TextEditingController(text: settings.lastFmSecret);
+    final settings = ref.read(scrobbleSettingsProvider).asData?.value;
+    _key = TextEditingController(text: settings?.lastFmApiKey ?? '');
+    _secret = TextEditingController(text: settings?.lastFmSecret ?? '');
   }
 
   @override
@@ -117,7 +118,9 @@ class _LastFmPanelState extends ConsumerState<_LastFmPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = ref.watch(scrobbleSettingsProvider);
+    final asyncSettings = ref.watch(scrobbleSettingsProvider);
+    if (!asyncSettings.hasValue) return const SizedBox.shrink();
+    final settings = asyncSettings.requireValue;
     final muted = _muted(context);
     final showKeys = _editingKeys || !settings.hasLastFmKeys;
     return Column(
@@ -146,7 +149,7 @@ class _LastFmPanelState extends ConsumerState<_LastFmPanel> {
             ),
           if (showKeys) ...[
             Text(
-              'Enter an API key and shared secret from last.fm/api/account/create. They are stored unencrypted in this device’s app settings.',
+              'Enter an API key and shared secret from last.fm/api/account/create. They are securely stored in this device’s keychain/credential vault.',
               style: muted,
             ),
             const SizedBox(height: 12),
@@ -263,7 +266,9 @@ class _ListenBrainzPanelState extends ConsumerState<_ListenBrainzPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = ref.watch(scrobbleSettingsProvider);
+    final asyncSettings = ref.watch(scrobbleSettingsProvider);
+    if (!asyncSettings.hasValue) return const SizedBox.shrink();
+    final settings = asyncSettings.requireValue;
     final muted = _muted(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,7 +296,7 @@ class _ListenBrainzPanelState extends ConsumerState<_ListenBrainzPanel> {
               style: muted,
             ),
           Text(
-            'Paste the user token from listenbrainz.org/settings. It is stored unencrypted in this device’s app settings.',
+            'Paste the user token from listenbrainz.org/settings. It is securely stored in this device’s keychain/credential vault.',
             style: muted,
           ),
           const SizedBox(height: 12),
