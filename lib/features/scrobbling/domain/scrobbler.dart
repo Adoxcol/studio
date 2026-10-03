@@ -59,10 +59,7 @@ class Scrobbler {
         ]);
       case ScrobbleReadyEvent(:final track):
         for (final id in _services.keys) {
-          // Replaced `_queues.putIfAbsent(id, () => [])` with the `??=` operator.
-          // Using `putIfAbsent` inside a loop forces an anonymous closure `() => []` allocation on every
-          // iteration even if the key exists, causing unnecessary memory overhead.
-          final queue = _queues[id] ??= [];
+          final queue = _queues.putIfAbsent(id, () => []);
           queue.add(track);
           if (queue.length > maxQueued) {
             queue.removeRange(0, queue.length - maxQueued);
