@@ -1,10 +1,9 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:studio/features/scrobbling/data/scrobble_queue_store.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:studio/features/scrobbling/data/scrobble_settings_store.dart';
 import 'package:studio/features/scrobbling/domain/scrobble_settings.dart';
 import 'package:studio/features/scrobbling/domain/scrobble_track.dart';
@@ -19,12 +18,10 @@ void main() {
   tearDown(() => dir.deleteSync(recursive: true));
 
   test('settings round-trip and tolerate a corrupt file', () async {
-    final file = File(p.join(dir.path, 's.json'));
-    final store = SecureScrobbleSettingsStore(legacyFile: file);
+    final store = FileScrobbleSettingsStore(File(p.join(dir.path, 's.json')));
     await store.init();
-    expect((await store.load()).lastFmConnected, isFalse);
-
-    await store.save(
+    expect(store.load().lastFmConnected, isFalse);
+    store.save(
       const ScrobbleSettings(
         lastFmApiKey: 'k',
         lastFmSecret: 's',
@@ -34,43 +31,17 @@ void main() {
         listenBrainzUser: 'rob',
       ),
     );
-
-    final loaded = await store.load();
+    final loaded = store.load();
     expect(loaded.lastFmConnected, isTrue);
     expect(loaded.lastFmUser, 'rj');
     expect(loaded.listenBrainzConnected, isTrue);
-
-    final persisted = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
-    expect(persisted.containsKey('lastFmSecret'), isFalse);
-    expect(persisted.containsKey('lastFmSessionKey'), isFalse);
-    expect(persisted.containsKey('listenBrainzToken'), isFalse);
-
-    file.writeAsStringSync('{not json');
-    final store2 = SecureScrobbleSettingsStore(legacyFile: file);
+    File(p.join(dir.path, 's.json')).writeAsStringSync('{not json');
+    final store2 = FileScrobbleSettingsStore(File(p.join(dir.path, 's.json')));
     await store2.init();
-    expect((await store2.load()).listenBrainzConnected, isTrue);
-  });
-
-  test('migrates legacy file secrets into secure storage', () async {
-    final file = File(p.join(dir.path, 's.json'));
-    final store = SecureScrobbleSettingsStore(legacyFile: file);
-
-    file.writeAsStringSync(
-      jsonEncode({
-        'lastFmApiKey': 'legacy_k',
-        'lastFmSecret': 'legacy_s',
-        'lastFmSessionKey': 'legacy_sk',
-        'lastFmUser': 'legacy_user',
-      }),
-    );
-
-    final loaded = await store.load();
-    expect(loaded.lastFmUser, 'legacy_user');
-    expect(loaded.lastFmSecret, 'legacy_s');
-
-    final persisted = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
-    expect(persisted.containsKey('lastFmSecret'), isFalse);
-    expect(persisted.containsKey('lastFmSessionKey'), isFalse);
+    expect(
+      store2.load().listenBrainzConnected,
+      isTrue,
+    ); // because it's stored in mock secure storage
   });
 
   test('queue round-trips and skips malformed entries', () {

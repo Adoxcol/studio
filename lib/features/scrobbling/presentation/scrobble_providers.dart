@@ -26,30 +26,29 @@ final scrobbleHttpClientProvider = Provider<http.Client>((ref) {
   return client;
 });
 
-class ScrobbleSettingsNotifier extends AsyncNotifier<ScrobbleSettings> {
+class ScrobbleSettingsNotifier extends Notifier<ScrobbleSettings> {
   String? _pendingLastFmToken;
 
   @override
-  Future<ScrobbleSettings> build() =>
-      ref.watch(scrobbleSettingsStoreProvider).load();
+  ScrobbleSettings build() => ref.watch(scrobbleSettingsStoreProvider).load();
 
   bool get awaitingLastFmApproval => _pendingLastFmToken != null;
 
   LastFmClient _lastFm() => LastFmClient(
-    apiKey: state.requireValue.effectiveLastFmApiKey,
-    secret: state.requireValue.effectiveLastFmSecret,
+    apiKey: state.effectiveLastFmApiKey,
+    secret: state.effectiveLastFmSecret,
     httpClient: ref.read(scrobbleHttpClientProvider),
   );
 
   void _save(ScrobbleSettings next) {
-    state = AsyncData(next);
+    state = next;
     ref.read(scrobbleSettingsStoreProvider).save(next);
   }
 
   void setLastFmKeys(String apiKey, String secret) {
     _pendingLastFmToken = null;
     _save(
-      state.requireValue.copyWith(
+      state.copyWith(
         lastFmApiKey: apiKey.trim(),
         lastFmSecret: secret.trim(),
         lastFmSessionKey: '',
@@ -60,7 +59,7 @@ class ScrobbleSettingsNotifier extends AsyncNotifier<ScrobbleSettings> {
 
   /// Step one of Last.fm desktop auth: returns the approval page to open.
   Future<Uri> startLastFmAuth() async {
-    if (!state.requireValue.hasLastFmKeys) {
+    if (!state.hasLastFmKeys) {
       throw StateError('Add a Last.fm API key and secret first.');
     }
     final client = _lastFm();
@@ -76,7 +75,7 @@ class ScrobbleSettingsNotifier extends AsyncNotifier<ScrobbleSettings> {
     final session = await _lastFm().getSession(token);
     _pendingLastFmToken = null;
     _save(
-      state.requireValue.copyWith(
+      state.copyWith(
         lastFmSessionKey: session.key,
         lastFmUser: session.user,
         lastFmExpired: false,
@@ -89,7 +88,7 @@ class ScrobbleSettingsNotifier extends AsyncNotifier<ScrobbleSettings> {
   void disconnectLastFm() {
     _pendingLastFmToken = null;
     _save(
-      state.requireValue.copyWith(
+      state.copyWith(
         lastFmSessionKey: '',
         lastFmUser: '',
         lastFmExpired: false,
@@ -105,7 +104,7 @@ class ScrobbleSettingsNotifier extends AsyncNotifier<ScrobbleSettings> {
       httpClient: ref.read(scrobbleHttpClientProvider),
     ).validateToken();
     _save(
-      state.requireValue.copyWith(
+      state.copyWith(
         listenBrainzToken: token,
         listenBrainzUser: user,
         listenBrainzExpired: false,
@@ -115,7 +114,7 @@ class ScrobbleSettingsNotifier extends AsyncNotifier<ScrobbleSettings> {
 
   void disconnectListenBrainz() {
     _save(
-      state.requireValue.copyWith(
+      state.copyWith(
         listenBrainzToken: '',
         listenBrainzUser: '',
         listenBrainzExpired: false,
@@ -128,7 +127,7 @@ class ScrobbleSettingsNotifier extends AsyncNotifier<ScrobbleSettings> {
     switch (serviceId) {
       case 'lastfm':
         _save(
-          state.requireValue.copyWith(
+          state.copyWith(
             lastFmSessionKey: '',
             lastFmUser: '',
             lastFmExpired: true,
@@ -136,7 +135,7 @@ class ScrobbleSettingsNotifier extends AsyncNotifier<ScrobbleSettings> {
         );
       case 'listenbrainz':
         _save(
-          state.requireValue.copyWith(
+          state.copyWith(
             listenBrainzToken: '',
             listenBrainzUser: '',
             listenBrainzExpired: true,
@@ -147,7 +146,7 @@ class ScrobbleSettingsNotifier extends AsyncNotifier<ScrobbleSettings> {
 }
 
 final scrobbleSettingsProvider =
-    AsyncNotifierProvider<ScrobbleSettingsNotifier, ScrobbleSettings>(
+    NotifierProvider<ScrobbleSettingsNotifier, ScrobbleSettings>(
       ScrobbleSettingsNotifier.new,
     );
 
@@ -182,15 +181,10 @@ final scrobblerProvider = Provider<Scrobbler>((ref) {
       () => ref.read(scrobbleSettingsProvider.notifier).markExpired(id),
     ),
   );
-  ref.listen(scrobbleSettingsProvider, (_, asyncSettings) {
-    if (asyncSettings.hasValue) {
-      scrobbler.configure(
-        scrobbleServicesFor(
-          asyncSettings.requireValue,
-          ref.read(scrobbleHttpClientProvider),
-        ),
-      );
-    }
+  ref.listen(scrobbleSettingsProvider, (_, settings) {
+    scrobbler.configure(
+      scrobbleServicesFor(settings, ref.read(scrobbleHttpClientProvider)),
+    );
   }, fireImmediately: true);
   ref.onDispose(scrobbler.dispose);
   return scrobbler;
