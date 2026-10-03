@@ -9,10 +9,10 @@ import 'package:path/path.dart' as p;
 const mediaKitReferenceHolderFileName =
     'com.alexmercerind.media_kit.NativeReferenceHolder';
 
-File mediaKitReferenceHolderFile({int? processId}) {
+File mediaKitReferenceHolderFile({int? processId, String? tempDir}) {
   return File(
     p.join(
-      Directory.systemTemp.path,
+      tempDir ?? Directory.systemTemp.path,
       '$mediaKitReferenceHolderFileName.${processId ?? pid}',
     ),
   );
@@ -20,9 +20,9 @@ File mediaKitReferenceHolderFile({int? processId}) {
 
 /// Drop the leftover handle file before [MediaKit.ensureInitialized].
 /// Safe if the file is missing.
-void discardStaleMediaKitReferenceHolder() {
+void discardStaleMediaKitReferenceHolder({String? tempDir}) {
   try {
-    final file = mediaKitReferenceHolderFile();
+    final file = mediaKitReferenceHolderFile(tempDir: tempDir);
     if (file.existsSync()) file.deleteSync();
   } on Object {
     // Best-effort: media_kit will allocate a fresh buffer.
