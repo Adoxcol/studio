@@ -510,7 +510,20 @@ class _VolumeCluster extends ConsumerWidget {
 
     return Row(
       children: [
-        Icon(Icons.volume_up, size: 16, color: palette.inkMuted),
+        IconButton(
+          tooltip: volume > 0 ? 'Mute' : 'Unmute',
+          visualDensity: VisualDensity.compact,
+          icon: Icon(
+            volume <= 0
+                ? Icons.volume_off
+                : volume < 0.5
+                ? Icons.volume_down
+                : Icons.volume_up,
+            size: 16,
+          ),
+          color: palette.inkMuted,
+          onPressed: () => onChanged(volume > 0 ? 0.0 : 1.0),
+        ),
         const SizedBox(width: 8),
         Expanded(
           child: LayoutBuilder(
