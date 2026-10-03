@@ -435,26 +435,13 @@ class _Transport extends ConsumerWidget {
       required VoidCallback onTap,
       Color? color,
     }) {
-      return Tooltip(
-        message: tooltip,
-        child: Semantics(
-          button: true,
-          label: tooltip,
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: onTap,
-              child: SizedBox(
-                height: PlayerBar.contentHeight,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Icon(icon, size: 20, color: color ?? palette.ink),
-                ),
-              ),
-            ),
-          ),
-        ),
+      return IconButton(
+        tooltip: tooltip,
+        onPressed: onTap,
+        icon: Icon(icon, size: 20),
+        color: color ?? palette.ink,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        constraints: BoxConstraints(minHeight: PlayerBar.contentHeight),
       );
     }
 

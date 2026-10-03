@@ -5,8 +5,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:studio/features/scrobbling/domain/scrobble_settings.dart';
 
 abstract class ScrobbleSettingsStore {
-  ScrobbleSettings load();
-  void save(ScrobbleSettings settings);
+  Future<ScrobbleSettings> load();
+  Future<void> save(ScrobbleSettings settings);
 }
 
 class MemoryScrobbleSettingsStore implements ScrobbleSettingsStore {
@@ -15,25 +15,35 @@ class MemoryScrobbleSettingsStore implements ScrobbleSettingsStore {
   ScrobbleSettings value;
 
   @override
-  ScrobbleSettings load() => value;
+  Future<ScrobbleSettings> load() async => value;
 
   @override
-  void save(ScrobbleSettings settings) => value = settings;
+  Future<void> save(ScrobbleSettings settings) async => value = settings;
 }
 
-class FileScrobbleSettingsStore implements ScrobbleSettingsStore {
-  FileScrobbleSettingsStore(this.file);
+class SecureScrobbleSettingsStore implements ScrobbleSettingsStore {
+  SecureScrobbleSettingsStore({
+    required this.legacyFile,
+    this.storage = const FlutterSecureStorage(),
+  });
 
-  final File file;
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final File legacyFile;
+  final FlutterSecureStorage storage;
   late ScrobbleSettings _cachedSettings;
+  bool _initialized = false;
+
+  static const _lastFmSecretKey = 'scrobbling_lastFmSecret';
+  static const _lastFmSessionKeyKey = 'scrobbling_lastFmSessionKey';
+  static const _listenBrainzTokenKey = 'scrobbling_listenBrainzToken';
 
   Future<void> init() async {
+    if (_initialized) return;
+
     _cachedSettings = ScrobbleSettings.defaults;
     Map<String, dynamic>? json;
-    if (file.existsSync()) {
+    if (legacyFile.existsSync()) {
       try {
-        final decoded = jsonDecode(file.readAsStringSync());
+        final decoded = jsonDecode(legacyFile.readAsStringSync());
         if (decoded is Map<String, dynamic>) {
           json = decoded;
         }
@@ -49,24 +59,24 @@ class FileScrobbleSettingsStore implements ScrobbleSettingsStore {
       bool needsMigration = false;
       if (json['lastFmSecret'] is String &&
           (json['lastFmSecret'] as String).isNotEmpty) {
-        await _secureStorage.write(
-          key: 'scrobbling_lastFmSecret',
+        await storage.write(
+          key: _lastFmSecretKey,
           value: json['lastFmSecret'] as String,
         );
         needsMigration = true;
       }
       if (json['lastFmSessionKey'] is String &&
           (json['lastFmSessionKey'] as String).isNotEmpty) {
-        await _secureStorage.write(
-          key: 'scrobbling_lastFmSessionKey',
+        await storage.write(
+          key: _lastFmSessionKeyKey,
           value: json['lastFmSessionKey'] as String,
         );
         needsMigration = true;
       }
       if (json['listenBrainzToken'] is String &&
           (json['listenBrainzToken'] as String).isNotEmpty) {
-        await _secureStorage.write(
-          key: 'scrobbling_listenBrainzToken',
+        await storage.write(
+          key: _listenBrainzTokenKey,
           value: json['listenBrainzToken'] as String,
         );
         needsMigration = true;
@@ -79,15 +89,9 @@ class FileScrobbleSettingsStore implements ScrobbleSettingsStore {
     }
 
     // Now overlay any values from secure storage over the loaded settings
-    final lastFmSecret = await _secureStorage.read(
-      key: 'scrobbling_lastFmSecret',
-    );
-    final lastFmSessionKey = await _secureStorage.read(
-      key: 'scrobbling_lastFmSessionKey',
-    );
-    final listenBrainzToken = await _secureStorage.read(
-      key: 'scrobbling_listenBrainzToken',
-    );
+    final lastFmSecret = await storage.read(key: _lastFmSecretKey);
+    final lastFmSessionKey = await storage.read(key: _lastFmSessionKeyKey);
+    final listenBrainzToken = await storage.read(key: _listenBrainzTokenKey);
 
     if (lastFmSecret != null ||
         lastFmSessionKey != null ||
@@ -99,26 +103,28 @@ class FileScrobbleSettingsStore implements ScrobbleSettingsStore {
             listenBrainzToken ?? _cachedSettings.listenBrainzToken,
       );
     }
+
+    _initialized = true;
   }
 
   @override
-  ScrobbleSettings load() => _cachedSettings;
+  Future<ScrobbleSettings> load() async {
+    await init();
+    return _cachedSettings;
+  }
 
   @override
-  void save(ScrobbleSettings settings) {
+  Future<void> save(ScrobbleSettings settings) async {
+    await init();
     _cachedSettings = settings;
 
-    // Save secrets to secure storage asynchronously
-    _secureStorage.write(
-      key: 'scrobbling_lastFmSecret',
-      value: settings.lastFmSecret,
-    );
-    _secureStorage.write(
-      key: 'scrobbling_lastFmSessionKey',
+    await storage.write(key: _lastFmSecretKey, value: settings.lastFmSecret);
+    await storage.write(
+      key: _lastFmSessionKeyKey,
       value: settings.lastFmSessionKey,
     );
-    _secureStorage.write(
-      key: 'scrobbling_listenBrainzToken',
+    await storage.write(
+      key: _listenBrainzTokenKey,
       value: settings.listenBrainzToken,
     );
 
@@ -132,9 +138,9 @@ class FileScrobbleSettingsStore implements ScrobbleSettingsStore {
     json.remove('lastFmSessionKey');
     json.remove('listenBrainzToken');
 
-    file.parent.createSync(recursive: true);
-    final part = File('${file.path}.part');
+    legacyFile.parent.createSync(recursive: true);
+    final part = File('${legacyFile.path}.part');
     part.writeAsStringSync(jsonEncode(json), flush: true);
-    part.renameSync(file.path);
+    part.renameSync(legacyFile.path);
   }
 }

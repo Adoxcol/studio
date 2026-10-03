@@ -30,6 +30,7 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle(); // Wait for AsyncNotifier to resolve
     return store;
   }
 
