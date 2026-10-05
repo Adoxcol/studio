@@ -160,7 +160,7 @@ class SubsonicArtistPictureSync {
           (source != null && source != navidromePictureCredit.source)) {
         continue;
       }
-      byPath.putIfAbsent(path, () => []).add(artist.name);
+      (byPath[path] ??= []).add(artist.name);
     }
     for (final names in byPath.values) {
       final keys = names.map(artistKey).toSet();

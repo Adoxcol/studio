@@ -59,7 +59,7 @@ class Scrobbler {
         ]);
       case ScrobbleReadyEvent(:final track):
         for (final id in _services.keys) {
-          final queue = _queues.putIfAbsent(id, () => []);
+          final queue = _queues[id] ??= [];
           queue.add(track);
           if (queue.length > maxQueued) {
             queue.removeRange(0, queue.length - maxQueued);
