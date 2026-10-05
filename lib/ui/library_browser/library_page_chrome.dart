@@ -321,31 +321,19 @@ class _RefreshButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
-    final color = enabled ? palette.ink : palette.inkMuted;
-    return Tooltip(
-      message: 'Rescan library',
-      child: Semantics(
-        button: true,
-        label: 'Rescan library',
-        child: GestureDetector(
-          onTap: enabled ? onTap : null,
-          child: MouseRegion(
-            cursor: enabled
-                ? SystemMouseCursors.click
-                : SystemMouseCursors.basic,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: palette.bg,
-                border: Border.all(color: palette.hairline),
-              ),
-              child: SizedBox(
-                width: 40,
-                height: 40,
-                child: Icon(Icons.refresh, size: 18, color: color),
-              ),
-            ),
-          ),
+    return IconButton(
+      tooltip: 'Rescan library',
+      onPressed: enabled ? onTap : null,
+      icon: const Icon(Icons.refresh, size: 18),
+      style: IconButton.styleFrom(
+        backgroundColor: palette.bg,
+        foregroundColor: palette.ink,
+        disabledForegroundColor: palette.inkMuted,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: palette.hairline),
         ),
+        fixedSize: const Size(40, 40),
+        padding: EdgeInsets.zero,
       ),
     );
   }
