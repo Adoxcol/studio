@@ -162,19 +162,21 @@ class _TrackCard extends StatelessWidget {
       button: true,
       selected: selected || playing,
       label: semanticLabel,
-      child: GestureDetector(
-        onTap: selectionMode ? onToggleSelection : onPlay,
-        onSecondaryTapUp: onMenu == null
-            ? null
-            : (details) => onMenu!(details.globalPosition),
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: selected ? palette.accent : palette.hairline,
-              ),
-            ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: selected ? palette.accent : palette.hairline,
+          ),
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: selectionMode ? onToggleSelection : onPlay,
+            onSecondaryTapUp: onMenu == null
+                ? null
+                : (details) => onMenu!(details.globalPosition),
+            hoverColor: palette.hairlineSoft,
+            mouseCursor: SystemMouseCursors.click,
             child: Padding(
               padding: const EdgeInsets.all(7),
               child: Row(
@@ -371,14 +373,15 @@ class _TrackRow extends StatelessWidget {
       button: true,
       selected: selected || playing,
       label: semanticLabel,
-      child: GestureDetector(
-        onTap: selectionMode ? onToggleSelection : onPlay,
-        onSecondaryTapUp: onMenu == null
-            ? null
-            : (details) => onMenu!(details.globalPosition),
-        behavior: HitTestBehavior.opaque,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: selectionMode ? onToggleSelection : onPlay,
+          onSecondaryTapUp: onMenu == null
+              ? null
+              : (details) => onMenu!(details.globalPosition),
+          hoverColor: palette.hairlineSoft,
+          mouseCursor: SystemMouseCursors.click,
           child: SizedBox(
             height: LibraryTrackTable.rowExtent - 1,
             child: Row(
