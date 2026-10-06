@@ -14,3 +14,7 @@
 **Vulnerability:** Direct file writing (`writeAsStringSync`) for critical configuration and state stores (like `playback.json`, `appearance.json`) leaves applications vulnerable to partial writes or data corruption if a crash, sudden exit, or power loss occurs mid-write, leading to unhandled Exceptions on load or application unavailability (DoS).
 **Learning:** Dart's synchronous and asynchronous file writers overwrite the destination directly, which is not an atomic file system operation.
 **Prevention:** To prevent partial writes and maintain integrity, always use the atomic write pattern for files like preferences and session cache: write to a temporary `.part` file with `flush: true`, then use `renameSync()` (or `rename()`) to atomically replace the target file.
+## 2024-05-24 - Handle exceptions on unawaited Futures in Flutter
+**Vulnerability:** Synchronous `try/catch` blocks around unawaited `Future`s (e.g. `_secureStorage.write()`) fail to catch exceptions.
+**Learning:** Dart's asynchronous exceptions bypass synchronous catch blocks if the Future is unawaited. This results in an unhandled PlatformException, crashing the app.
+**Prevention:** Always attach `.catchError((_) {})` to the returned Future when making unawaited async calls that can fail.
