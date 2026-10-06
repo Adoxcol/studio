@@ -65,7 +65,6 @@ class _NameDialogState extends State<_NameDialog> {
             key: const ValueKey('playlist-name-field'),
             controller: _name,
             autofocus: true,
-            onChanged: (_) => setState(() {}),
             onSubmitted: (_) => _submit(),
             decoration: InputDecoration(
               labelText: 'Name',
@@ -87,9 +86,14 @@ class _NameDialogState extends State<_NameDialog> {
         onPressed: () => Navigator.pop(context),
         child: const Text('Cancel'),
       ),
-      TextButton(
-        onPressed: _name.text.trim().isEmpty ? null : _submit,
-        child: Text(widget.action),
+      ValueListenableBuilder<TextEditingValue>(
+        valueListenable: _name,
+        builder: (context, value, child) {
+          return TextButton(
+            onPressed: value.text.trim().isEmpty ? null : _submit,
+            child: Text(widget.action),
+          );
+        },
       ),
     ],
   );
