@@ -112,6 +112,7 @@ Future<void> main(List<String> args) async {
   final subsonicSettings = FileSubsonicSettingsStore(
     File(p.join(support.path, 'subsonic.json')),
   );
+  await subsonicSettings.init();
   runApp(
     ProviderScope(
       overrides: [
