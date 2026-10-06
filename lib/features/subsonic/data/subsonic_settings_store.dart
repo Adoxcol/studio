@@ -54,7 +54,8 @@ class FileSubsonicSettingsStore implements SubsonicSettingsStore {
 
         // Migration: if password was stored in the plaintext file, move it to secure storage.
         bool needsMigration = false;
-        if (json['password'] is String && (json['password'] as String).isNotEmpty) {
+        if (json['password'] is String &&
+            (json['password'] as String).isNotEmpty) {
           try {
             await _secureStorage.write(
               key: 'subsonic_password',
