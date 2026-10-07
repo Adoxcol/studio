@@ -9,11 +9,8 @@ class DockingTheme extends StatelessWidget {
   /// Applies the given theme [data] to [child].
   ///
   /// The [data] and [child] arguments must not be null.
-  const DockingTheme({
-    Key? key,
-    required this.child,
-    required this.data,
-  }) : super(key: key);
+  const DockingTheme({Key? key, required this.child, required this.data})
+      : super(key: key);
 
   /// Specifies the theme for descendant widgets.
   final DockingThemeData data;
@@ -39,11 +36,8 @@ class DockingTheme extends StatelessWidget {
 }
 
 class _InheritedTheme extends InheritedWidget {
-  const _InheritedTheme({
-    Key? key,
-    required this.data,
-    required Widget child,
-  }) : super(key: key, child: child);
+  const _InheritedTheme({Key? key, required this.data, required Widget child})
+      : super(key: key, child: child);
 
   final DockingThemeData data;
 

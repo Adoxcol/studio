@@ -14,7 +14,8 @@ class RemoveItem extends LayoutModifier {
     super.validate(layout, area);
     if (area.layoutId != layout.id) {
       throw ArgumentError(
-          'DockingArea belongs to another layout. Keep the layout in the state of your StatefulWidget.');
+        'DockingArea belongs to another layout. Keep the layout in the state of your StatefulWidget.',
+      );
     }
   }
 
@@ -49,10 +50,12 @@ class RemoveItem extends LayoutModifier {
       if (children.isEmpty) {
         return null;
       }
-      DockingTabs newDockingTabs = DockingTabs(children,
-          id: dockingTabs.id,
-          maximized: dockingTabs.maximized,
-          maximizable: dockingTabs.maximizable);
+      DockingTabs newDockingTabs = DockingTabs(
+        children,
+        id: dockingTabs.id,
+        maximized: dockingTabs.maximized,
+        maximizable: dockingTabs.maximizable,
+      );
       newDockingTabs.selectedIndex = dockingTabs.selectedIndex;
       return newDockingTabs;
     } else if (area is DockingParentArea) {
@@ -74,9 +77,11 @@ class RemoveItem extends LayoutModifier {
         return DockingColumn(children, id: area.id);
       }
       throw ArgumentError(
-          'DockingArea class not recognized: ' + area.runtimeType.toString());
+        'DockingArea class not recognized: ' + area.runtimeType.toString(),
+      );
     }
     throw ArgumentError(
-        'DockingArea class not recognized: ' + area.runtimeType.toString());
+      'DockingArea class not recognized: ' + area.runtimeType.toString(),
+    );
   }
 }

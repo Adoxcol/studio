@@ -32,8 +32,9 @@ class TabDragFeedbackWidget extends StatelessWidget {
     }
 
     return Container(
-        child: Row(children: children, crossAxisAlignment: crossAxisAlignment),
-        padding: EdgeInsets.all(4),
-        decoration: tabTheme.draggingDecoration);
+      child: Row(children: children, crossAxisAlignment: crossAxisAlignment),
+      padding: EdgeInsets.all(4),
+      decoration: tabTheme.draggingDecoration,
+    );
   }
 }

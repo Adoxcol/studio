@@ -23,8 +23,10 @@ class Tokenizer {
   }
 
   List<int> removeChildrenIndexes() {
-    final String token =
-        removeFirstToken(stop: ')', errorMessage: 'Invalid children indexes.');
+    final String token = removeFirstToken(
+      stop: ')',
+      errorMessage: 'Invalid children indexes.',
+    );
     if (token.isEmpty) {
       throw StateError('Parent without child.');
     }
@@ -39,10 +41,14 @@ class Tokenizer {
     return indexes;
   }
 
-  bool removeFirstRequiredBool(
-      {required String stop, required String errorMessage}) {
-    final String token =
-        removeFirstToken(stop: stop, errorMessage: errorMessage);
+  bool removeFirstRequiredBool({
+    required String stop,
+    required String errorMessage,
+  }) {
+    final String token = removeFirstToken(
+      stop: stop,
+      errorMessage: errorMessage,
+    );
     if (token == 'T') {
       return true;
     }
@@ -52,10 +58,14 @@ class Tokenizer {
     throw StateError(errorMessage);
   }
 
-  double? removeFirstOptionalDouble(
-      {required String stop, required String errorMessage}) {
-    final String token =
-        removeFirstToken(stop: stop, errorMessage: errorMessage);
+  double? removeFirstOptionalDouble({
+    required String stop,
+    required String errorMessage,
+  }) {
+    final String token = removeFirstToken(
+      stop: stop,
+      errorMessage: errorMessage,
+    );
     if (token.isEmpty) {
       return null;
     }
@@ -66,10 +76,14 @@ class Tokenizer {
     return number;
   }
 
-  int removeFirstRequiredInt(
-      {required String stop, required String errorMessage}) {
-    final String token =
-        removeFirstToken(stop: stop, errorMessage: errorMessage);
+  int removeFirstRequiredInt({
+    required String stop,
+    required String errorMessage,
+  }) {
+    final String token = removeFirstToken(
+      stop: stop,
+      errorMessage: errorMessage,
+    );
     final int? number = int.tryParse(token);
     if (number == null) {
       throw StateError(errorMessage);
@@ -77,8 +91,10 @@ class Tokenizer {
     return number;
   }
 
-  String removeFirstToken(
-      {required String stop, required String errorMessage}) {
+  String removeFirstToken({
+    required String stop,
+    required String errorMessage,
+  }) {
     final int index = _layout.indexOf(stop);
     if (index == -1) {
       throw StateError(errorMessage);

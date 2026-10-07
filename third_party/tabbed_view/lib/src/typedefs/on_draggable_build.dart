@@ -4,4 +4,7 @@ import 'package:tabbed_view/src/tabbed_view_controller.dart';
 
 /// Defines the configuration of a [Draggable] in its construction.
 typedef OnDraggableBuild = DraggableConfig Function(
-    TabbedViewController controller, int tabIndex, TabData tab);
+  TabbedViewController controller,
+  int tabIndex,
+  TabData tab,
+);

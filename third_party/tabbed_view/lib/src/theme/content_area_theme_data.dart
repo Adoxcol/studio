@@ -2,8 +2,11 @@
 import 'package:flutter/widgets.dart';
 
 class ContentAreaThemeData {
-  ContentAreaThemeData(
-      {this.decoration, this.padding, this.decorationNoTabsArea});
+  ContentAreaThemeData({
+    this.decoration,
+    this.padding,
+    this.decorationNoTabsArea,
+  });
 
   /// The decoration to paint behind the content.
   BoxDecoration? decoration;

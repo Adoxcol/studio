@@ -27,44 +27,53 @@ class _TabbedViewMenuWidgetState extends State<TabbedViewMenuWidget> {
       itemCount += widget.provider.menuItems.length - 1;
     }
     ListView list = ListView.builder(
-        itemCount: itemCount,
-        itemBuilder: (BuildContext context, int index) {
-          int itemIndex = index;
-          if (hasDivider) {
-            itemIndex = index ~/ 2;
-            if (index.isOdd) {
-              return Divider(
-                  height: menuTheme.dividerThickness,
-                  color: menuTheme.dividerColor,
-                  thickness: menuTheme.dividerThickness);
-            }
+      itemCount: itemCount,
+      itemBuilder: (BuildContext context, int index) {
+        int itemIndex = index;
+        if (hasDivider) {
+          itemIndex = index ~/ 2;
+          if (index.isOdd) {
+            return Divider(
+              height: menuTheme.dividerThickness,
+              color: menuTheme.dividerColor,
+              thickness: menuTheme.dividerThickness,
+            );
           }
-          return InkWell(
-              child: Container(
-                  padding: menuTheme.menuItemPadding,
-                  child: Text(widget.provider.menuItems[itemIndex].text,
-                      overflow: menuTheme.ellipsisOverflowText
-                          ? TextOverflow.ellipsis
-                          : null)),
-              hoverColor: menuTheme.hoverColor,
-              onTap: () {
-                widget.provider.menuItemsUpdater([]);
-                Function? onSelection =
-                    widget.provider.menuItems[itemIndex].onSelection;
-                if (onSelection != null) {
-                  onSelection();
-                }
-              });
-        });
+        }
+        return InkWell(
+          child: Container(
+            padding: menuTheme.menuItemPadding,
+            child: Text(
+              widget.provider.menuItems[itemIndex].text,
+              overflow:
+                  menuTheme.ellipsisOverflowText ? TextOverflow.ellipsis : null,
+            ),
+          ),
+          hoverColor: menuTheme.hoverColor,
+          onTap: () {
+            widget.provider.menuItemsUpdater([]);
+            Function? onSelection =
+                widget.provider.menuItems[itemIndex].onSelection;
+            if (onSelection != null) {
+              onSelection();
+            }
+          },
+        );
+      },
+    );
 
     return Container(
-        margin: menuTheme.margin,
-        padding: menuTheme.padding,
-        child: Material(
-            child: list,
-            textStyle: menuTheme.textStyle,
-            color: Colors.transparent),
-        decoration:
-            BoxDecoration(color: menuTheme.color, border: menuTheme.border));
+      margin: menuTheme.margin,
+      padding: menuTheme.padding,
+      child: Material(
+        child: list,
+        textStyle: menuTheme.textStyle,
+        color: Colors.transparent,
+      ),
+      decoration: BoxDecoration(
+        color: menuTheme.color,
+        border: menuTheme.border,
+      ),
+    );
   }
 }

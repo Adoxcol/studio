@@ -153,11 +153,16 @@ class _ArtistGrid extends StatelessWidget {
                     Semantics(
                       button: true,
                       label: group.name,
-                      child: GestureDetector(
-                        onTap: () => onSelect(group.name),
-                        child: ArtistPortrait(
-                          artist: group.name,
-                          size: constraints.maxWidth.clamp(0.0, 136.0),
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: InkWell(
+                          onTap: () => onSelect(group.name),
+                          hoverColor: Theme.of(context).hoverColor,
+                          borderRadius: BorderRadius.circular(136.0 / 2),
+                          child: ArtistPortrait(
+                            artist: group.name,
+                            size: constraints.maxWidth.clamp(0.0, 136.0),
+                          ),
                         ),
                       ),
                     ),
@@ -385,10 +390,12 @@ class _AlbumSections extends StatelessWidget {
                 child: Semantics(
                   button: true,
                   label: section.artist,
-                  child: GestureDetector(
-                    onTap: () => onSelectArtist(section.artist),
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.click,
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: InkWell(
+                      onTap: () => onSelectArtist(section.artist),
+                      hoverColor: Theme.of(context).hoverColor,
+                      borderRadius: BorderRadius.circular(4),
                       child: Row(
                         children: [
                           Flexible(
@@ -461,10 +468,12 @@ class _AlbumCard extends StatelessWidget {
     return Semantics(
       button: true,
       label: '${album.name}, $detail',
-      child: GestureDetector(
-        onTap: onTap,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onTap,
+          hoverColor: Theme.of(context).hoverColor,
+          borderRadius: BorderRadius.circular(8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -515,10 +524,12 @@ class _NameTile extends StatelessWidget {
     return Semantics(
       button: true,
       label: '$name, $detail',
-      child: GestureDetector(
-        onTap: onTap,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onTap,
+          hoverColor: Theme.of(context).hoverColor,
+          borderRadius: BorderRadius.circular(4),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,

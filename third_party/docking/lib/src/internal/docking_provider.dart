@@ -4,16 +4,17 @@ import 'package:docking/src/on_item_close.dart';
 import 'package:docking/src/on_item_selection.dart';
 
 class DockingProvider {
-  const DockingProvider(
-      {required this.layout,
-      required this.onItemSelection,
-      required this.onItemClose,
-      required this.itemCloseInterceptor,
-      required this.dockingButtonsBuilder,
-      required this.maximizableItem,
-      required this.maximizableTab,
-      required this.maximizableTabsArea,
-      required this.antiAliasingWorkaround});
+  const DockingProvider({
+    required this.layout,
+    required this.onItemSelection,
+    required this.onItemClose,
+    required this.itemCloseInterceptor,
+    required this.dockingButtonsBuilder,
+    required this.maximizableItem,
+    required this.maximizableTab,
+    required this.maximizableTabsArea,
+    required this.antiAliasingWorkaround,
+  });
 
   final DockingLayout? layout;
   final OnItemSelection? onItemSelection;

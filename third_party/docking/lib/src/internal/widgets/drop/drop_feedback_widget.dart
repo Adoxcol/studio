@@ -24,37 +24,45 @@ class _DropFeedbackWidgetState extends State<DropFeedbackWidget> {
         ? Duration.zero
         : const Duration(milliseconds: 160);
     final accent = Theme.of(context).colorScheme.primary;
-    return LayoutBuilder(builder: (context, constraints) {
-      final horizontal = _lastPosition == DropPosition.left ||
-          _lastPosition == DropPosition.right;
-      return Stack(fit: StackFit.expand, children: [
-        widget.child,
-        AnimatedPositioned(
-          duration: duration,
-          curve: Curves.easeOutCubic,
-          left: _lastPosition == DropPosition.right
-              ? constraints.maxWidth / 2
-              : 0,
-          top: _lastPosition == DropPosition.bottom
-              ? constraints.maxHeight / 2
-              : 0,
-          width: horizontal ? constraints.maxWidth / 2 : constraints.maxWidth,
-          height:
-              horizontal ? constraints.maxHeight : constraints.maxHeight / 2,
-          child: IgnorePointer(
-            child: AnimatedOpacity(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final horizontal = _lastPosition == DropPosition.left ||
+            _lastPosition == DropPosition.right;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            widget.child,
+            AnimatedPositioned(
               duration: duration,
-              opacity: widget.dropPosition == null ? 0 : 1,
-              child: DecoratedBox(
-                  decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.14),
-                border: Border.all(color: accent.withValues(alpha: 0.65)),
-                borderRadius: BorderRadius.circular(4),
-              )),
+              curve: Curves.easeOutCubic,
+              left: _lastPosition == DropPosition.right
+                  ? constraints.maxWidth / 2
+                  : 0,
+              top: _lastPosition == DropPosition.bottom
+                  ? constraints.maxHeight / 2
+                  : 0,
+              width:
+                  horizontal ? constraints.maxWidth / 2 : constraints.maxWidth,
+              height: horizontal
+                  ? constraints.maxHeight
+                  : constraints.maxHeight / 2,
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  duration: duration,
+                  opacity: widget.dropPosition == null ? 0 : 1,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.14),
+                      border: Border.all(color: accent.withValues(alpha: 0.65)),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ]);
-    });
+          ],
+        );
+      },
+    );
   }
 }

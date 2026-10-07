@@ -10,8 +10,11 @@ class TabsAreaCorner extends StatelessWidget {
   final TabbedViewProvider provider;
   final HiddenTabs hiddenTabs;
 
-  const TabsAreaCorner(
-      {super.key, required this.provider, required this.hiddenTabs});
+  const TabsAreaCorner({
+    super.key,
+    required this.provider,
+    required this.hiddenTabs,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,18 +23,21 @@ class TabsAreaCorner extends StatelessWidget {
 
   Widget _builder(BuildContext context, Widget? child) {
     Widget corner = Container(
-        padding: EdgeInsets.only(left: DropTabWidget.dropWidth),
-        child: Row(
-            children: [
-              TabsAreaButtonsWidget(provider: provider, hiddenTabs: hiddenTabs)
-            ],
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.end));
+      padding: EdgeInsets.only(left: DropTabWidget.dropWidth),
+      child: Row(
+        children: [
+          TabsAreaButtonsWidget(provider: provider, hiddenTabs: hiddenTabs),
+        ],
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+      ),
+    );
     if (provider.controller.reorderEnable) {
       return DropTabWidget(
-          provider: provider,
-          newIndex: provider.controller.length,
-          child: corner);
+        provider: provider,
+        newIndex: provider.controller.length,
+        child: corner,
+      );
     }
     return corner;
   }

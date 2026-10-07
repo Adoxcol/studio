@@ -49,7 +49,8 @@ class _DockDragFeedback extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(4),
           side: BorderSide(
-              color: theme.colorScheme.primary.withValues(alpha: 0.5)),
+            color: theme.colorScheme.primary.withValues(alpha: 0.5),
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

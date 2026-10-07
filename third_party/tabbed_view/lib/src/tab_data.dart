@@ -29,16 +29,16 @@ import 'package:tabbed_view/src/tabbed_view_controller.dart';
 ///
 /// * [TabbedView.contentBuilder]
 class TabData extends ChangeNotifier with TabIndex {
-  TabData(
-      {dynamic value,
-      required String text,
-      List<TabButton>? buttons,
-      Widget? content,
-      TabLeadingBuilder? leading,
-      bool closable = true,
-      this.draggable = true,
-      this.keepAlive = false})
-      : _value = value,
+  TabData({
+    dynamic value,
+    required String text,
+    List<TabButton>? buttons,
+    Widget? content,
+    TabLeadingBuilder? leading,
+    bool closable = true,
+    this.draggable = true,
+    this.keepAlive = false,
+  })  : _value = value,
         _text = text,
         _leading = leading,
         _closable = closable,

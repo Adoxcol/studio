@@ -3,20 +3,21 @@ import 'package:flutter/widgets.dart';
 /// Theme for tab in a given status.
 /// Allows you to overwrite [TabThemeData] properties.
 class TabStatusThemeData {
-  TabStatusThemeData(
-      {this.decoration,
-      this.innerTopBorder,
-      this.innerBottomBorder,
-      this.fontColor,
-      this.padding,
-      this.paddingWithoutButton,
-      this.margin,
-      this.normalButtonColor,
-      this.hoverButtonColor,
-      this.disabledButtonColor,
-      this.normalButtonBackground,
-      this.hoverButtonBackground,
-      this.disabledButtonBackground});
+  TabStatusThemeData({
+    this.decoration,
+    this.innerTopBorder,
+    this.innerBottomBorder,
+    this.fontColor,
+    this.padding,
+    this.paddingWithoutButton,
+    this.margin,
+    this.normalButtonColor,
+    this.hoverButtonColor,
+    this.disabledButtonColor,
+    this.normalButtonBackground,
+    this.hoverButtonBackground,
+    this.disabledButtonBackground,
+  });
 
   static final TabStatusThemeData empty = TabStatusThemeData();
 

@@ -6,15 +6,17 @@ import 'package:meta/meta.dart';
 /// Drops a [DockingItem] in the layout.
 @internal
 class DropItem extends LayoutModifier {
-  DropItem(
-      {required this.dropItem,
-      required this.targetArea,
-      required this.dropPosition,
-      required this.dropIndex}) {
+  DropItem({
+    required this.dropItem,
+    required this.targetArea,
+    required this.dropPosition,
+    required this.dropIndex,
+  }) {
     if ((dropIndex == null && dropPosition == null) ||
         (dropIndex != null && dropPosition != null)) {
       throw ArgumentError(
-          'Only one of the dropIndex and dropPosition parameters can be set.');
+        'Only one of the dropIndex and dropPosition parameters can be set.',
+      );
     }
   }
 
@@ -27,7 +29,8 @@ class DropItem extends LayoutModifier {
   DockingArea? newLayout(DockingLayout layout) {
     if (dropItem == targetArea) {
       throw ArgumentError(
-          'Argument draggedItem cannot be the same as argument targetArea. A DockingItem cannot be rearranged on itself.');
+        'Argument draggedItem cannot be the same as argument targetArea. A DockingItem cannot be rearranged on itself.',
+      );
     }
     validateDropItem(layout, dropItem);
     if (!(targetArea is DockingArea)) {
@@ -62,38 +65,51 @@ class DropItem extends LayoutModifier {
       } else if (dockingItem == targetArea) {
         final DockingItem newDraggedItem = dropItem;
         if (dropIndex == 0) {
-          return DockingTabs([newDraggedItem, dockingItem],
-              weight: dockingItem.weight,
-              minimalSize: dockingItem.minimalSize,
-              minimalWeight: dockingItem.minimalWeight);
+          return DockingTabs(
+            [newDraggedItem, dockingItem],
+            weight: dockingItem.weight,
+            minimalSize: dockingItem.minimalSize,
+            minimalWeight: dockingItem.minimalWeight,
+          );
         } else if (dropIndex == 1) {
-          return DockingTabs([dockingItem, newDraggedItem],
-              weight: dockingItem.weight,
-              minimalSize: dockingItem.minimalSize,
-              minimalWeight: dockingItem.minimalWeight);
+          return DockingTabs(
+            [dockingItem, newDraggedItem],
+            weight: dockingItem.weight,
+            minimalSize: dockingItem.minimalSize,
+            minimalWeight: dockingItem.minimalWeight,
+          );
         } else if (dropPosition == DropPosition.top) {
-          return DockingColumn([newDraggedItem, dockingItem],
-              weight: dockingItem.weight,
-              minimalSize: dockingItem.minimalSize,
-              minimalWeight: dockingItem.minimalWeight);
+          return DockingColumn(
+            [newDraggedItem, dockingItem],
+            weight: dockingItem.weight,
+            minimalSize: dockingItem.minimalSize,
+            minimalWeight: dockingItem.minimalWeight,
+          );
         } else if (dropPosition == DropPosition.bottom) {
-          return DockingColumn([dockingItem, newDraggedItem],
-              weight: dockingItem.weight,
-              minimalSize: dockingItem.minimalSize,
-              minimalWeight: dockingItem.minimalWeight);
+          return DockingColumn(
+            [dockingItem, newDraggedItem],
+            weight: dockingItem.weight,
+            minimalSize: dockingItem.minimalSize,
+            minimalWeight: dockingItem.minimalWeight,
+          );
         } else if (dropPosition == DropPosition.left) {
-          return DockingRow([newDraggedItem, dockingItem],
-              weight: dockingItem.weight,
-              minimalSize: dockingItem.minimalSize,
-              minimalWeight: dockingItem.minimalWeight);
+          return DockingRow(
+            [newDraggedItem, dockingItem],
+            weight: dockingItem.weight,
+            minimalSize: dockingItem.minimalSize,
+            minimalWeight: dockingItem.minimalWeight,
+          );
         } else if (dropPosition == DropPosition.right) {
-          return DockingRow([dockingItem, newDraggedItem],
-              weight: dockingItem.weight,
-              minimalSize: dockingItem.minimalSize,
-              minimalWeight: dockingItem.minimalWeight);
+          return DockingRow(
+            [dockingItem, newDraggedItem],
+            weight: dockingItem.weight,
+            minimalSize: dockingItem.minimalSize,
+            minimalWeight: dockingItem.minimalWeight,
+          );
         } else {
           throw ArgumentError(
-              'DropPosition not recognized: ' + dropPosition.toString());
+            'DropPosition not recognized: ' + dropPosition.toString(),
+          );
         }
       }
       return area;
@@ -120,13 +136,15 @@ class DropItem extends LayoutModifier {
       if (children.length == 1) {
         newArea = children.first;
       } else {
-        newArea = DockingTabs(children,
-            id: dockingTabs.id,
-            maximized: dockingTabs.maximized,
-            maximizable: dockingTabs.maximizable,
-            weight: dockingTabs.weight,
-            minimalWeight: dockingTabs.minimalWeight,
-            minimalSize: dockingTabs.minimalSize);
+        newArea = DockingTabs(
+          children,
+          id: dockingTabs.id,
+          maximized: dockingTabs.maximized,
+          maximizable: dockingTabs.maximizable,
+          weight: dockingTabs.weight,
+          minimalWeight: dockingTabs.minimalWeight,
+          minimalSize: dockingTabs.minimalSize,
+        );
         if (oldSelection != null) {
           int newSelectedIndex = children.indexOf(oldSelection);
           (newArea as DockingTabs).selectedIndex =
@@ -145,13 +163,15 @@ class DropItem extends LayoutModifier {
           } else {
             children.insert(newIndex, newDraggedItem);
           }
-          DockingTabs newDockingTabs = DockingTabs(children,
-              id: dockingTabs.id,
-              maximized: dockingTabs.maximized,
-              maximizable: dockingTabs.maximizable,
-              weight: dockingTabs.weight,
-              minimalWeight: dockingTabs.minimalWeight,
-              minimalSize: dockingTabs.minimalSize);
+          DockingTabs newDockingTabs = DockingTabs(
+            children,
+            id: dockingTabs.id,
+            maximized: dockingTabs.maximized,
+            maximizable: dockingTabs.maximizable,
+            weight: dockingTabs.weight,
+            minimalWeight: dockingTabs.minimalWeight,
+            minimalSize: dockingTabs.minimalSize,
+          );
           if (oldSelection != null) {
             int newSelectedIndex = children.indexOf(oldSelection);
             newDockingTabs.selectedIndex =
@@ -168,7 +188,8 @@ class DropItem extends LayoutModifier {
           return DockingRow([newArea, newDraggedItem]);
         } else {
           throw ArgumentError(
-              'DropPosition not recognized: ' + dropPosition.toString());
+            'DropPosition not recognized: ' + dropPosition.toString(),
+          );
         }
       }
       return newArea;
@@ -186,20 +207,26 @@ class DropItem extends LayoutModifier {
         return children.first;
       }
       if (area is DockingRow) {
-        return DockingRow(children,
-            weight: area.weight,
-            minimalWeight: area.minimalWeight,
-            minimalSize: area.minimalSize);
+        return DockingRow(
+          children,
+          weight: area.weight,
+          minimalWeight: area.minimalWeight,
+          minimalSize: area.minimalSize,
+        );
       } else if (area is DockingColumn) {
-        return DockingColumn(children,
-            weight: area.weight,
-            minimalWeight: area.minimalWeight,
-            minimalSize: area.minimalSize);
+        return DockingColumn(
+          children,
+          weight: area.weight,
+          minimalWeight: area.minimalWeight,
+          minimalSize: area.minimalSize,
+        );
       }
       throw StateError(
-          'DockingArea class not recognized: ' + area.runtimeType.toString());
+        'DockingArea class not recognized: ' + area.runtimeType.toString(),
+      );
     }
     throw StateError(
-        'DockingArea class not recognized: ' + area.runtimeType.toString());
+      'DockingArea class not recognized: ' + area.runtimeType.toString(),
+    );
   }
 }

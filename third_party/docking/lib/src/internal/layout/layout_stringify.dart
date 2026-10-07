@@ -45,8 +45,10 @@ class LayoutStringify {
   ///
   /// Example:
   /// V1:3:1(R;0;;;2,3),2(I;6;my_id1;0.5;F),3(I;6;my_id2;0.5;F)
-  static String stringify(
-      {required LayoutParser parser, required List<DockingArea> areas}) {
+  static String stringify({
+    required LayoutParser parser,
+    required List<DockingArea> areas,
+  }) {
     String str = 'V1:${areas.length}:';
     for (int i = 0; i < areas.length; i++) {
       if (i > 0) {
@@ -82,8 +84,10 @@ class LayoutStringify {
   /// * WEIGHT
   ///
   /// Example: 3;id1;.2
-  static String stringifyArea(
-      {required LayoutParser parser, required DockingArea area}) {
+  static String stringifyArea({
+    required LayoutParser parser,
+    required DockingArea area,
+  }) {
     List<String> data = [];
     // ID_LENGTH and ID
     final String id = parser.idToString(area.id);

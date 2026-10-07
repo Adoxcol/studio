@@ -14,9 +14,12 @@ typedef OnReorder = void Function(int oldIndex, int newIndex);
 ///
 /// Remember to dispose of the [TabbedView] when it is no longer needed. This will ensure we discard any resources used by the object.
 class TabbedViewController extends ChangeNotifier {
-  TabbedViewController(this._tabs,
-      {this.onReorder, this.data, bool reorderEnable = true})
-      : this._reorderEnable = reorderEnable {
+  TabbedViewController(
+    this._tabs, {
+    this.onReorder,
+    this.data,
+    bool reorderEnable = true,
+  }) : this._reorderEnable = reorderEnable {
     if (_tabs.length > 0) {
       _selectedIndex = 0;
     }
@@ -187,8 +190,12 @@ class TabbedViewController extends ChangeNotifier {
 
   void _validateIndex(int tabIndex) {
     if (tabIndex < 0 || tabIndex >= _tabs.length) {
-      throw IndexError.withLength(tabIndex, _tabs.length,
-          indexable: _tabs, name: 'tabIndex');
+      throw IndexError.withLength(
+        tabIndex,
+        _tabs.length,
+        indexable: _tabs,
+        name: 'tabIndex',
+      );
     }
   }
 

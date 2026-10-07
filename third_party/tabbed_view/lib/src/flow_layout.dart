@@ -6,12 +6,12 @@ import 'package:tabbed_view/src/theme/vertical_alignment.dart';
 
 /// Flow layout.
 class FlowLayout extends MultiChildRenderObjectWidget {
-  FlowLayout(
-      {Key? key,
-      required List<Widget> children,
-      required this.firstChildFlex,
-      this.verticalAlignment = VerticalAlignment.center})
-      : super(key: key, children: children);
+  FlowLayout({
+    Key? key,
+    required List<Widget> children,
+    required this.firstChildFlex,
+    this.verticalAlignment = VerticalAlignment.center,
+  }) : super(key: key, children: children);
 
   final bool firstChildFlex;
   final VerticalAlignment verticalAlignment;
@@ -28,7 +28,9 @@ class FlowLayout extends MultiChildRenderObjectWidget {
 
   @override
   void updateRenderObject(
-      BuildContext context, _FlowLayoutRenderBox renderObject) {
+    BuildContext context,
+    _FlowLayoutRenderBox renderObject,
+  ) {
     renderObject..firstChildFlex = firstChildFlex;
     renderObject..verticalAlignment = verticalAlignment;
   }
@@ -89,8 +91,9 @@ class _FlowLayoutRenderBox extends RenderBox
       child.flowLayoutParentData().visible = true;
     });
 
-    final BoxConstraints childConstraints =
-        BoxConstraints.loose(Size(double.infinity, constraints.maxHeight));
+    final BoxConstraints childConstraints = BoxConstraints.loose(
+      Size(double.infinity, constraints.maxHeight),
+    );
 
     double firstWidth = 0;
     double otherWidths = 0;
@@ -102,8 +105,10 @@ class _FlowLayoutRenderBox extends RenderBox
       } else {
         otherWidths += children[i].size.width;
       }
-      biggestChildHeight =
-          math.max(biggestChildHeight, children[i].size.height);
+      biggestChildHeight = math.max(
+        biggestChildHeight,
+        children[i].size.height,
+      );
     }
 
     double width = 0;
@@ -119,8 +124,9 @@ class _FlowLayoutRenderBox extends RenderBox
             children[i].flowLayoutParentData().visible = false;
           } else {
             children[i].flowLayoutParentData().offset = Offset(
-                availableWidth - children[i].size.width,
-                _y(children[i].size.height));
+              availableWidth - children[i].size.width,
+              _y(children[i].size.height),
+            );
             availableWidth -= children[i].size.width;
           }
         }
@@ -128,12 +134,14 @@ class _FlowLayoutRenderBox extends RenderBox
     } else {
       if (firstChildFlex && firstWidth + otherWidths > constraints.maxWidth) {
         children[0].layout(
-            BoxConstraints(
-                minWidth: 0,
-                maxWidth: constraints.maxWidth - otherWidths,
-                minHeight: biggestChildHeight,
-                maxHeight: biggestChildHeight),
-            parentUsesSize: true);
+          BoxConstraints(
+            minWidth: 0,
+            maxWidth: constraints.maxWidth - otherWidths,
+            minHeight: biggestChildHeight,
+            maxHeight: biggestChildHeight,
+          ),
+          parentUsesSize: true,
+        );
       }
       double x = 0;
       children.forEach((child) {

@@ -19,17 +19,18 @@ mixin DropArea {}
 
 /// Represents any area of the layout.
 abstract class DockingArea extends Area {
-  DockingArea(
-      {this.id,
-      double? size,
-      double? weight,
-      double? minimalWeight,
-      double? minimalSize})
-      : super(
-            size: size,
-            weight: weight,
-            minimalWeight: minimalWeight,
-            minimalSize: minimalSize);
+  DockingArea({
+    this.id,
+    double? size,
+    double? weight,
+    double? minimalWeight,
+    double? minimalSize,
+  }) : super(
+          size: size,
+          weight: weight,
+          minimalWeight: minimalWeight,
+          minimalSize: minimalSize,
+        );
 
   final dynamic id;
 
@@ -111,14 +112,18 @@ abstract class DockingArea extends Area {
 
   /// Updates recursively the information of parent, index and layoutId.
   int _updateHierarchy(
-      DockingParentArea? parentArea, int nextIndex, int layoutId) {
+    DockingParentArea? parentArea,
+    int nextIndex,
+    int layoutId,
+  ) {
     if (this.disposed) {
       throw StateError('Disposed area');
     }
     _parent = parentArea;
     if (layoutId != -1 && layoutId != layoutId) {
       throw ArgumentError(
-          'DockingParentArea already belongs to another layout');
+        'DockingParentArea already belongs to another layout',
+      );
     }
     _layoutId = layoutId;
     _index = nextIndex++;
@@ -126,11 +131,12 @@ abstract class DockingArea extends Area {
   }
 
   /// Converts layout's hierarchical structure to a debug String.
-  String hierarchy(
-      {bool indexInfo = false,
-      bool levelInfo = false,
-      bool hasParentInfo = false,
-      bool nameInfo = false}) {
+  String hierarchy({
+    bool indexInfo = false,
+    bool levelInfo = false,
+    bool hasParentInfo = false,
+    bool nameInfo = false,
+  }) {
     String str = typeAcronym;
     if (indexInfo) {
       str += index.toString();
@@ -153,23 +159,26 @@ abstract class DockingArea extends Area {
 
 /// Represents an abstract area for a collection of widgets.
 abstract class DockingParentArea extends DockingArea {
-  DockingParentArea(List<DockingArea> children,
-      {dynamic id,
-      double? size,
-      double? weight,
-      double? minimalWeight,
-      double? minimalSize})
-      : this._children = children,
+  DockingParentArea(
+    List<DockingArea> children, {
+    dynamic id,
+    double? size,
+    double? weight,
+    double? minimalWeight,
+    double? minimalSize,
+  })  : this._children = children,
         super(
-            id: id,
-            size: size,
-            weight: weight,
-            minimalWeight: minimalWeight,
-            minimalSize: minimalSize) {
+          id: id,
+          size: size,
+          weight: weight,
+          minimalWeight: minimalWeight,
+          minimalSize: minimalSize,
+        ) {
     for (DockingArea child in this._children) {
       if (child.runtimeType == this.runtimeType) {
         throw ArgumentError(
-            'DockingParentArea cannot have children of the same type');
+          'DockingParentArea cannot have children of the same type',
+        );
       }
       if (child.disposed) {
         throw ArgumentError('DockingParentArea cannot have disposed child');
@@ -209,7 +218,10 @@ abstract class DockingParentArea extends DockingArea {
 
   @override
   int _updateHierarchy(
-      DockingParentArea? parentArea, int nextIndex, int layoutId) {
+    DockingParentArea? parentArea,
+    int nextIndex,
+    int layoutId,
+  ) {
     nextIndex = super._updateHierarchy(parentArea, nextIndex, layoutId);
     for (DockingArea area in _children) {
       nextIndex = area._updateHierarchy(this, nextIndex, layoutId);
@@ -218,25 +230,28 @@ abstract class DockingParentArea extends DockingArea {
   }
 
   @override
-  String hierarchy(
-      {bool indexInfo = false,
-      bool levelInfo = false,
-      bool hasParentInfo = false,
-      bool nameInfo = false}) {
+  String hierarchy({
+    bool indexInfo = false,
+    bool levelInfo = false,
+    bool hasParentInfo = false,
+    bool nameInfo = false,
+  }) {
     String str = super.hierarchy(
-            indexInfo: indexInfo,
-            levelInfo: levelInfo,
-            hasParentInfo: hasParentInfo) +
+          indexInfo: indexInfo,
+          levelInfo: levelInfo,
+          hasParentInfo: hasParentInfo,
+        ) +
         '(';
     for (int i = 0; i < _children.length; i++) {
       if (i > 0) {
         str += ',';
       }
       str += _children[i].hierarchy(
-          levelInfo: levelInfo,
-          hasParentInfo: hasParentInfo,
-          indexInfo: indexInfo,
-          nameInfo: nameInfo);
+        levelInfo: levelInfo,
+        hasParentInfo: hasParentInfo,
+        indexInfo: indexInfo,
+        nameInfo: nameInfo,
+      );
     }
     str += ')';
     return str;
@@ -249,30 +264,31 @@ abstract class DockingParentArea extends DockingArea {
 /// keeping the widget in memory even if its tab is not selected.
 class DockingItem extends DockingArea with DropArea {
   /// Builds a [DockingItem].
-  DockingItem(
-      {dynamic id,
-      this.name,
-      required this.widget,
-      this.value,
-      this.closable = true,
-      bool keepAlive = false,
-      List<TabButton>? buttons,
-      this.maximizable,
-      bool maximized = false,
-      this.leading,
-      double? size,
-      double? weight,
-      double? minimalWeight,
-      double? minimalSize})
-      : this.buttons = buttons != null ? List.unmodifiable(buttons) : [],
+  DockingItem({
+    dynamic id,
+    this.name,
+    required this.widget,
+    this.value,
+    this.closable = true,
+    bool keepAlive = false,
+    List<TabButton>? buttons,
+    this.maximizable,
+    bool maximized = false,
+    this.leading,
+    double? size,
+    double? weight,
+    double? minimalWeight,
+    double? minimalSize,
+  })  : this.buttons = buttons != null ? List.unmodifiable(buttons) : [],
         this.globalKey = keepAlive ? GlobalKey() : null,
         this._maximized = maximized,
         super(
-            id: id,
-            size: size,
-            weight: weight,
-            minimalWeight: minimalWeight,
-            minimalSize: minimalSize);
+          id: id,
+          size: size,
+          weight: weight,
+          minimalWeight: minimalWeight,
+          minimalSize: minimalSize,
+        );
 
   String? name;
   Widget widget;
@@ -297,16 +313,18 @@ class DockingItem extends DockingArea with DropArea {
   }
 
   @override
-  String hierarchy(
-      {bool indexInfo = false,
-      bool levelInfo = false,
-      bool hasParentInfo = false,
-      bool nameInfo = false}) {
+  String hierarchy({
+    bool indexInfo = false,
+    bool levelInfo = false,
+    bool hasParentInfo = false,
+    bool nameInfo = false,
+  }) {
     String str = super.hierarchy(
-        indexInfo: indexInfo,
-        levelInfo: levelInfo,
-        hasParentInfo: hasParentInfo,
-        nameInfo: nameInfo);
+      indexInfo: indexInfo,
+      levelInfo: levelInfo,
+      hasParentInfo: hasParentInfo,
+      nameInfo: nameInfo,
+    );
     if (nameInfo && name != null) {
       str += name!;
     }
@@ -321,17 +339,21 @@ class DockingItem extends DockingArea with DropArea {
 /// Children will be arranged horizontally.
 class DockingRow extends DockingParentArea {
   /// Builds a [DockingRow].
-  DockingRow._(List<DockingArea> children, dynamic id,
-      {double? size,
-      double? weight,
-      double? minimalWeight,
-      double? minimalSize})
-      : super(children,
-            id: id,
-            size: size,
-            weight: weight,
-            minimalWeight: minimalWeight,
-            minimalSize: minimalSize) {
+  DockingRow._(
+    List<DockingArea> children,
+    dynamic id, {
+    double? size,
+    double? weight,
+    double? minimalWeight,
+    double? minimalSize,
+  }) : super(
+          children,
+          id: id,
+          size: size,
+          weight: weight,
+          minimalWeight: minimalWeight,
+          minimalSize: minimalSize,
+        ) {
     controller = MultiSplitViewController(areas: children);
     if (this._children.length < 2) {
       throw ArgumentError('Insufficient number of children');
@@ -339,12 +361,14 @@ class DockingRow extends DockingParentArea {
   }
 
   /// Builds a [DockingRow].
-  factory DockingRow(List<DockingArea> children,
-      {dynamic id,
-      double? size,
-      double? weight,
-      double? minimalWeight,
-      double? minimalSize}) {
+  factory DockingRow(
+    List<DockingArea> children, {
+    dynamic id,
+    double? size,
+    double? weight,
+    double? minimalWeight,
+    double? minimalSize,
+  }) {
     List<DockingArea> newChildren = [];
     for (DockingArea child in children) {
       if (child is DockingRow) {
@@ -353,11 +377,14 @@ class DockingRow extends DockingParentArea {
         newChildren.add(child);
       }
     }
-    return DockingRow._(newChildren, id,
-        size: size,
-        weight: weight,
-        minimalWeight: minimalWeight,
-        minimalSize: minimalSize);
+    return DockingRow._(
+      newChildren,
+      id,
+      size: size,
+      weight: weight,
+      minimalWeight: minimalWeight,
+      minimalSize: minimalSize,
+    );
   }
 
   late MultiSplitViewController controller;
@@ -373,18 +400,21 @@ class DockingRow extends DockingParentArea {
 /// Children will be arranged vertically.
 class DockingColumn extends DockingParentArea {
   /// Builds a [DockingColumn].
-  DockingColumn._(List<DockingArea> children,
-      {dynamic id,
-      double? size,
-      double? weight,
-      double? minimalWeight,
-      double? minimalSize})
-      : super(children,
-            id: id,
-            size: size,
-            weight: weight,
-            minimalWeight: minimalWeight,
-            minimalSize: minimalSize) {
+  DockingColumn._(
+    List<DockingArea> children, {
+    dynamic id,
+    double? size,
+    double? weight,
+    double? minimalWeight,
+    double? minimalSize,
+  }) : super(
+          children,
+          id: id,
+          size: size,
+          weight: weight,
+          minimalWeight: minimalWeight,
+          minimalSize: minimalSize,
+        ) {
     controller = MultiSplitViewController(areas: children);
     if (this._children.length < 2) {
       throw ArgumentError('Insufficient number of children');
@@ -392,12 +422,14 @@ class DockingColumn extends DockingParentArea {
   }
 
   /// Builds a [DockingColumn].
-  factory DockingColumn(List<DockingArea> children,
-      {dynamic id,
-      double? size,
-      double? weight,
-      double? minimalWeight,
-      double? minimalSize}) {
+  factory DockingColumn(
+    List<DockingArea> children, {
+    dynamic id,
+    double? size,
+    double? weight,
+    double? minimalWeight,
+    double? minimalSize,
+  }) {
     List<DockingArea> newChildren = [];
     for (DockingArea child in children) {
       if (child is DockingColumn) {
@@ -406,12 +438,14 @@ class DockingColumn extends DockingParentArea {
         newChildren.add(child);
       }
     }
-    return DockingColumn._(newChildren,
-        id: id,
-        size: size,
-        weight: weight,
-        minimalWeight: minimalWeight,
-        minimalSize: minimalSize);
+    return DockingColumn._(
+      newChildren,
+      id: id,
+      size: size,
+      weight: weight,
+      minimalWeight: minimalWeight,
+      minimalSize: minimalSize,
+    );
   }
 
   late MultiSplitViewController controller;
@@ -427,21 +461,24 @@ class DockingColumn extends DockingParentArea {
 /// Children will be arranged in tabs.
 class DockingTabs extends DockingParentArea with DropArea {
   /// Builds a [DockingTabs].
-  DockingTabs(List<DockingItem> children,
-      {dynamic id,
-      bool maximized = false,
-      this.maximizable,
-      double? size,
-      double? weight,
-      double? minimalWeight,
-      double? minimalSize})
-      : this._maximized = maximized,
-        super(children,
-            id: id,
-            size: size,
-            weight: weight,
-            minimalWeight: minimalWeight,
-            minimalSize: minimalSize) {
+  DockingTabs(
+    List<DockingItem> children, {
+    dynamic id,
+    bool maximized = false,
+    this.maximizable,
+    double? size,
+    double? weight,
+    double? minimalWeight,
+    double? minimalSize,
+  })  : this._maximized = maximized,
+        super(
+          children,
+          id: id,
+          size: size,
+          weight: weight,
+          minimalWeight: minimalWeight,
+          minimalSize: minimalSize,
+        ) {
     if (this._children.length == 0) {
       throw ArgumentError('DockingTabs cannot be empty');
     }
@@ -492,12 +529,16 @@ class DockingLayout extends ChangeNotifier {
   DockingArea? get root => _root;
 
   /// Loads a layout from String.
-  void load(
-      {required String layout,
-      required LayoutParser parser,
-      required AreaBuilder builder}) {
+  void load({
+    required String layout,
+    required LayoutParser parser,
+    required AreaBuilder builder,
+  }) {
     root = LayoutFactory.buildRoot(
-        layout: layout, parser: parser, builder: builder);
+      layout: layout,
+      parser: parser,
+      builder: builder,
+    );
   }
 
   /// Set a new root.
@@ -537,19 +578,21 @@ class DockingLayout extends ChangeNotifier {
   DockingArea? get maximizedArea => _maximizedArea;
 
   /// Converts layout's hierarchical structure to a debug String.
-  String hierarchy(
-      {bool indexInfo = false,
-      bool levelInfo = false,
-      bool hasParentInfo = false,
-      bool nameInfo = false}) {
+  String hierarchy({
+    bool indexInfo = false,
+    bool levelInfo = false,
+    bool hasParentInfo = false,
+    bool nameInfo = false,
+  }) {
     if (_root == null) {
       return '';
     }
     return _root!.hierarchy(
-        indexInfo: indexInfo,
-        levelInfo: levelInfo,
-        hasParentInfo: hasParentInfo,
-        nameInfo: nameInfo);
+      indexInfo: indexInfo,
+      levelInfo: levelInfo,
+      hasParentInfo: hasParentInfo,
+      nameInfo: nameInfo,
+    );
   }
 
   /// Updates recursively the information of parent,
@@ -641,11 +684,12 @@ class DockingLayout extends ChangeNotifier {
   }
 
   /// Moves a DockingItem in this layout.
-  void moveItem(
-      {required DockingItem draggedItem,
-      required DropArea targetArea,
-      DropPosition? dropPosition,
-      int? dropIndex}) {
+  void moveItem({
+    required DockingItem draggedItem,
+    required DropArea targetArea,
+    DropPosition? dropPosition,
+    int? dropIndex,
+  }) {
     // Reordering within a strip must not replace every parent in the layout:
     // doing so destroys the strip's animation/drag state and rebuilds all panes.
     if (targetArea is DockingTabs &&
@@ -670,10 +714,11 @@ class DockingLayout extends ChangeNotifier {
     //TODO maximize test
     _rebuild([
       MoveItem(
-          draggedItem: draggedItem,
-          targetArea: targetArea,
-          dropPosition: dropPosition,
-          dropIndex: dropIndex)
+        draggedItem: draggedItem,
+        targetArea: targetArea,
+        dropPosition: dropPosition,
+        dropIndex: dropIndex,
+      ),
     ]);
   }
 
@@ -692,26 +737,29 @@ class DockingLayout extends ChangeNotifier {
   }
 
   /// Adds a DockingItem to this layout.
-  void addItemOn(
-      {required DockingItem newItem,
-      required DropArea targetArea,
-      DropPosition? dropPosition,
-      int? dropIndex}) {
+  void addItemOn({
+    required DockingItem newItem,
+    required DropArea targetArea,
+    DropPosition? dropPosition,
+    int? dropIndex,
+  }) {
     //TODO maximize test
     _rebuild([
       AddItem(
-          newItem: newItem,
-          targetArea: targetArea,
-          dropPosition: dropPosition,
-          dropIndex: dropIndex)
+        newItem: newItem,
+        targetArea: targetArea,
+        dropPosition: dropPosition,
+        dropIndex: dropIndex,
+      ),
     ]);
   }
 
   /// Adds a DockingItem to the root of this layout.
-  void addItemOnRoot(
-      {required DockingItem newItem,
-      DropPosition? dropPosition,
-      int? dropIndex}) {
+  void addItemOnRoot({
+    required DockingItem newItem,
+    DropPosition? dropPosition,
+    int? dropIndex,
+  }) {
     if (root == null) {
       throw StateError('Root is null');
     }
@@ -719,10 +767,11 @@ class DockingLayout extends ChangeNotifier {
       DropArea targetArea = root! as DropArea;
       _rebuild([
         AddItem(
-            newItem: newItem,
-            targetArea: targetArea,
-            dropPosition: dropPosition,
-            dropIndex: dropIndex)
+          newItem: newItem,
+          targetArea: targetArea,
+          dropPosition: dropPosition,
+          dropIndex: dropIndex,
+        ),
       ]);
     } else {
       throw StateError('Root is not a DropArea');

@@ -20,13 +20,10 @@ class WindowsTransport extends Transport {
     _file = file;
     events.add(Event('open'));
 
-    send(
-      <String, Object?>{
-        'v': 1,
-        'client_id': client?.clientId,
-      },
-      op: OPCodes.handshake,
-    );
+    send(<String, Object?>{
+      'v': 1,
+      'client_id': client?.clientId,
+    }, op: OPCodes.handshake);
 
     await read();
 
@@ -67,8 +64,9 @@ class WindowsTransport extends Transport {
 
   Future<RandomAccessFile?> _getIpc({int id = 0}) async {
     try {
-      final RandomAccessFile ipcFile =
-          await File(_getIpcPath(id)).open(mode: FileMode.write);
+      final RandomAccessFile ipcFile = await File(
+        _getIpcPath(id),
+      ).open(mode: FileMode.write);
       return ipcFile;
     } catch (err) {
       if (id >= 10) {
