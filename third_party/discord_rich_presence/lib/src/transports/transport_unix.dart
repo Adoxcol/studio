@@ -78,7 +78,7 @@ class UnixTransport extends Transport {
       {'TMPDIR': final String dir} => dir,
       {'TMP': final String dir} => dir,
       {'TEMP': final String dir} => dir,
-      _ => '/tmp'
+      _ => '/tmp',
     };
 
     return '$prefix/discord-ipc-$id';
@@ -91,11 +91,16 @@ class UnixTransport extends Transport {
 
     try {
       final String path = _getIpcPath(id);
-      final InternetAddress host =
-          InternetAddress(path, type: InternetAddressType.unix);
+      final InternetAddress host = InternetAddress(
+        path,
+        type: InternetAddressType.unix,
+      );
 
-      final Socket conn =
-          await Socket.connect(host, 0, timeout: Duration(seconds: 3));
+      final Socket conn = await Socket.connect(
+        host,
+        0,
+        timeout: Duration(seconds: 3),
+      );
       return conn;
     } catch (err) {
       return _getIpc(id: id + 1);

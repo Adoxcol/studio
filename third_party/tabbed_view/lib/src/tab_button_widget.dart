@@ -6,18 +6,19 @@ import 'package:tabbed_view/src/tabbed_view_menu_item.dart';
 
 /// Widget for tab buttons. Used for any tab button such as the close button.
 class TabButtonWidget extends StatefulWidget {
-  TabButtonWidget(
-      {required this.provider,
-      required this.button,
-      required this.enabled,
-      required this.iconSize,
-      required this.normalColor,
-      required this.hoverColor,
-      required this.disabledColor,
-      this.themePadding,
-      this.normalBackground,
-      this.hoverBackground,
-      this.disabledBackground});
+  TabButtonWidget({
+    required this.provider,
+    required this.button,
+    required this.enabled,
+    required this.iconSize,
+    required this.normalColor,
+    required this.hoverColor,
+    required this.disabledColor,
+    this.themePadding,
+    this.normalBackground,
+    this.hoverBackground,
+    this.disabledBackground,
+  });
 
   final TabbedViewProvider provider;
   final TabButton button;
@@ -87,8 +88,9 @@ class TabButtonWidgetState extends State<TabButtonWidget> {
     if (widget.button.menuBuilder != null) {
       onPressed = () {
         if (widget.provider.menuItems.isEmpty) {
-          List<TabbedViewMenuItem> menuItems =
-              widget.button.menuBuilder!(context);
+          List<TabbedViewMenuItem> menuItems = widget.button.menuBuilder!(
+            context,
+          );
           if (menuItems.isNotEmpty) {
             widget.provider.menuItemsUpdater(menuItems);
           }
@@ -100,16 +102,18 @@ class TabButtonWidgetState extends State<TabButtonWidget> {
 
     if (widget.button.toolTip != null) {
       icon = Tooltip(
-          message: widget.button.toolTip!,
-          child: icon,
-          waitDuration: Duration(milliseconds: 500));
+        message: widget.button.toolTip!,
+        child: icon,
+        waitDuration: Duration(milliseconds: 500),
+      );
     }
 
     return MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: _onEnter,
-        onExit: _onExit,
-        child: GestureDetector(child: icon, onTap: onPressed));
+      cursor: SystemMouseCursors.click,
+      onEnter: _onEnter,
+      onExit: _onExit,
+      child: GestureDetector(child: icon, onTap: onPressed),
+    );
   }
 
   void _onEnter(PointerEnterEvent event) {

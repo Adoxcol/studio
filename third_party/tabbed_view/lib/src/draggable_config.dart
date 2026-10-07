@@ -4,16 +4,17 @@ import 'package:flutter/widgets.dart';
 ///
 /// It's will be used to configure a [Draggable]
 class DraggableConfig {
-  const DraggableConfig(
-      {this.feedback,
-      this.feedbackOffset = Offset.zero,
-      this.dragAnchorStrategy = childDragAnchorStrategy,
-      this.onDragStarted,
-      this.onDragUpdate,
-      this.onDraggableCanceled,
-      this.onDragEnd,
-      this.onDragCompleted,
-      this.canDrag = true});
+  const DraggableConfig({
+    this.feedback,
+    this.feedbackOffset = Offset.zero,
+    this.dragAnchorStrategy = childDragAnchorStrategy,
+    this.onDragStarted,
+    this.onDragUpdate,
+    this.onDraggableCanceled,
+    this.onDragEnd,
+    this.onDragCompleted,
+    this.canDrag = true,
+  });
 
   static const DraggableConfig defaultConfig = DraggableConfig();
 

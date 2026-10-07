@@ -17,20 +17,20 @@ import 'package:tabbed_view/tabbed_view.dart';
 
 /// Represents a widget for [DockingTabs].
 class DockingTabsWidget extends StatefulWidget {
-  DockingTabsWidget(
-      {Key? key,
-      required this.layout,
-      required this.dragOverPosition,
-      required this.dockingTabs,
-      this.onItemSelection,
-      this.onItemClose,
-      this.itemCloseInterceptor,
-      this.dockingButtonsBuilder,
-      this.tabsAreaBuilder,
-      required this.maximizableTab,
-      required this.maximizableTabsArea,
-      required this.draggable})
-      : super(key: key);
+  DockingTabsWidget({
+    Key? key,
+    required this.layout,
+    required this.dragOverPosition,
+    required this.dockingTabs,
+    this.onItemSelection,
+    this.onItemClose,
+    this.itemCloseInterceptor,
+    this.dockingButtonsBuilder,
+    this.tabsAreaBuilder,
+    required this.maximizableTab,
+    required this.maximizableTabsArea,
+    required this.draggable,
+  }) : super(key: key);
 
   final DockingLayout layout;
   final DockingTabs dockingTabs;
@@ -75,16 +75,23 @@ class DockingTabsWidgetState extends State<DockingTabsWidget>
         DockingThemeData data = DockingTheme.of(context);
         if (widget.layout.maximizedArea != null &&
             widget.layout.maximizedArea == child) {
-          buttons.add(TabButton(
+          buttons.add(
+            TabButton(
               icon: data.restoreIcon,
-              onPressed: () => widget.layout.restore()));
+              onPressed: () => widget.layout.restore(),
+            ),
+          );
         } else {
-          buttons.add(TabButton(
+          buttons.add(
+            TabButton(
               icon: data.maximizeIcon,
-              onPressed: () => widget.layout.maximizeDockingItem(child)));
+              onPressed: () => widget.layout.maximizeDockingItem(child),
+            ),
+          );
         }
       }
-      tabs.add(TabData(
+      tabs.add(
+        TabData(
           value: child,
           text: child.name != null ? child.name! : '',
           content: content,
@@ -92,48 +99,57 @@ class DockingTabsWidgetState extends State<DockingTabsWidget>
           keepAlive: child.globalKey != null,
           leading: child.leading,
           buttons: buttons,
-          draggable: widget.draggable));
+          draggable: widget.draggable,
+        ),
+      );
     });
     TabbedViewController controller = TabbedViewController(tabs);
-    controller.selectedIndex =
-        math.min(widget.dockingTabs.selectedIndex, tabs.length - 1);
+    controller.selectedIndex = math.min(
+      widget.dockingTabs.selectedIndex,
+      tabs.length - 1,
+    );
 
     Widget tabbedView = TabbedView(
-        tabsAreaBuilder: widget.tabsAreaBuilder == null
-            ? null
-            : (context, child) =>
-                widget.tabsAreaBuilder!(context, widget.dockingTabs, child),
-        controller: controller,
-        tabsAreaButtonsBuilder: _tabsAreaButtonsBuilder,
-        onTabSelection: (int? index) {
-          if (index != null) {
-            widget.dockingTabs.selectedIndex = index;
-            if (widget.onItemSelection != null) {
-              widget.onItemSelection!(widget.dockingTabs.childAt(index));
-            }
+      tabsAreaBuilder: widget.tabsAreaBuilder == null
+          ? null
+          : (context, child) =>
+              widget.tabsAreaBuilder!(context, widget.dockingTabs, child),
+      controller: controller,
+      tabsAreaButtonsBuilder: _tabsAreaButtonsBuilder,
+      onTabSelection: (int? index) {
+        if (index != null) {
+          widget.dockingTabs.selectedIndex = index;
+          if (widget.onItemSelection != null) {
+            widget.onItemSelection!(widget.dockingTabs.childAt(index));
           }
-        },
-        tabCloseInterceptor: _tabCloseInterceptor,
-        onDraggableBuild: widget.draggable
-            ? (TabbedViewController controller, int tabIndex, TabData tabData) {
-                return buildDraggableConfig(
-                    dockingDrag: widget.dragOverPosition, tabData: tabData);
-              }
-            : null,
-        onTabClose: _onTabClose,
-        contentBuilder: (context, tabIndex) => TabsContentWrapper(
-            listener: _updateActiveDropPosition,
-            layout: widget.layout,
-            dockingTabs: widget.dockingTabs,
-            child: controller.tabs[tabIndex].content!),
-        onBeforeDropAccept: widget.draggable ? _onBeforeDropAccept : null);
+        }
+      },
+      tabCloseInterceptor: _tabCloseInterceptor,
+      onDraggableBuild: widget.draggable
+          ? (TabbedViewController controller, int tabIndex, TabData tabData) {
+              return buildDraggableConfig(
+                dockingDrag: widget.dragOverPosition,
+                tabData: tabData,
+              );
+            }
+          : null,
+      onTabClose: _onTabClose,
+      contentBuilder: (context, tabIndex) => TabsContentWrapper(
+        listener: _updateActiveDropPosition,
+        layout: widget.layout,
+        dockingTabs: widget.dockingTabs,
+        child: controller.tabs[tabIndex].content!,
+      ),
+      onBeforeDropAccept: widget.draggable ? _onBeforeDropAccept : null,
+    );
     // Keep the subtree stable when a drag starts/ends. Reparenting here destroys
     // the active draggable and resets the tab-strip animation.
     return DropFeedbackWidget(
-        dropPosition: widget.draggable && widget.dragOverPosition.enable
-            ? _activeDropPosition
-            : null,
-        child: tabbedView);
+      dropPosition: widget.draggable && widget.dragOverPosition.enable
+          ? _activeDropPosition
+          : null,
+      child: tabbedView,
+    );
   }
 
   void _updateActiveDropPosition(DropPosition? dropPosition) {
@@ -149,12 +165,16 @@ class DockingTabsWidgetState extends State<DockingTabsWidget>
   }
 
   bool _onBeforeDropAccept(
-      DraggableData source, TabbedViewController target, int newIndex) {
+    DraggableData source,
+    TabbedViewController target,
+    int newIndex,
+  ) {
     DockingItem dockingItem = source.tabData.value;
     widget.layout.moveItem(
-        draggedItem: dockingItem,
-        targetArea: widget.dockingTabs,
-        dropIndex: newIndex);
+      draggedItem: dockingItem,
+      targetArea: widget.dockingTabs,
+      dropIndex: newIndex,
+    );
     return true;
   }
 
@@ -162,7 +182,8 @@ class DockingTabsWidgetState extends State<DockingTabsWidget>
     List<TabButton> buttons = [];
     if (widget.dockingButtonsBuilder != null) {
       buttons.addAll(
-          widget.dockingButtonsBuilder!(context, widget.dockingTabs, null));
+        widget.dockingButtonsBuilder!(context, widget.dockingTabs, null),
+      );
     }
     final bool maximizable = widget.dockingTabs.maximizable != null
         ? widget.dockingTabs.maximizable!
@@ -171,13 +192,20 @@ class DockingTabsWidgetState extends State<DockingTabsWidget>
       DockingThemeData data = DockingTheme.of(context);
       if (widget.layout.maximizedArea != null &&
           widget.layout.maximizedArea == widget.dockingTabs) {
-        buttons.add(TabButton(
-            icon: data.restoreIcon, onPressed: () => widget.layout.restore()));
+        buttons.add(
+          TabButton(
+            icon: data.restoreIcon,
+            onPressed: () => widget.layout.restore(),
+          ),
+        );
       } else {
-        buttons.add(TabButton(
+        buttons.add(
+          TabButton(
             icon: data.maximizeIcon,
             onPressed: () =>
-                widget.layout.maximizeDockingTabs(widget.dockingTabs)));
+                widget.layout.maximizeDockingTabs(widget.dockingTabs),
+          ),
+        );
       }
     }
     return buttons;

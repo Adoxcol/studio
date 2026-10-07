@@ -39,22 +39,23 @@ typedef OnTabSelection = Function(int? newTabIndex);
 ///   selected. The default value is [TRUE].
 /// * [closeButtonTooltip]: optional tooltip for the close button.
 class TabbedView extends StatefulWidget {
-  TabbedView(
-      {required this.controller,
-      this.contentBuilder,
-      this.onTabClose,
-      this.tabCloseInterceptor,
-      this.onTabSelection,
-      this.tabSelectInterceptor,
-      this.selectToEnableButtons = true,
-      this.contentClip = true,
-      this.closeButtonTooltip,
-      this.tabsAreaButtonsBuilder,
-      this.tabsAreaBuilder,
-      this.tabsAreaVisible,
-      this.onDraggableBuild,
-      this.canDrop,
-      this.onBeforeDropAccept});
+  TabbedView({
+    required this.controller,
+    this.contentBuilder,
+    this.onTabClose,
+    this.tabCloseInterceptor,
+    this.onTabSelection,
+    this.tabSelectInterceptor,
+    this.selectToEnableButtons = true,
+    this.contentClip = true,
+    this.closeButtonTooltip,
+    this.tabsAreaButtonsBuilder,
+    this.tabsAreaBuilder,
+    this.tabsAreaVisible,
+    this.onDraggableBuild,
+    this.canDrop,
+    this.onBeforeDropAccept,
+  });
 
   final TabbedViewController controller;
   final bool contentClip;
@@ -106,23 +107,24 @@ class _TabbedViewState extends State<TabbedView> {
     TabbedViewThemeData theme = TabbedViewTheme.of(context);
 
     TabbedViewProvider provider = TabbedViewProvider(
-        controller: widget.controller,
-        contentBuilder: widget.contentBuilder,
-        onTabClose: widget.onTabClose,
-        tabCloseInterceptor: widget.tabCloseInterceptor,
-        onTabSelection: widget.onTabSelection,
-        contentClip: widget.contentClip,
-        tabSelectInterceptor: widget.tabSelectInterceptor,
-        selectToEnableButtons: widget.selectToEnableButtons,
-        closeButtonTooltip: widget.closeButtonTooltip,
-        tabsAreaButtonsBuilder: widget.tabsAreaButtonsBuilder,
-        onDraggableBuild: widget.onDraggableBuild,
-        menuItemsUpdater: _setMenuItems,
-        menuItems: _menuItems,
-        onTabDrag: _onTabDrag,
-        draggingTabIndex: _draggingTabIndex,
-        canDrop: widget.canDrop,
-        onBeforeDropAccept: widget.onBeforeDropAccept);
+      controller: widget.controller,
+      contentBuilder: widget.contentBuilder,
+      onTabClose: widget.onTabClose,
+      tabCloseInterceptor: widget.tabCloseInterceptor,
+      onTabSelection: widget.onTabSelection,
+      contentClip: widget.contentClip,
+      tabSelectInterceptor: widget.tabSelectInterceptor,
+      selectToEnableButtons: widget.selectToEnableButtons,
+      closeButtonTooltip: widget.closeButtonTooltip,
+      tabsAreaButtonsBuilder: widget.tabsAreaButtonsBuilder,
+      onDraggableBuild: widget.onDraggableBuild,
+      menuItemsUpdater: _setMenuItems,
+      menuItems: _menuItems,
+      onTabDrag: _onTabDrag,
+      draggingTabIndex: _draggingTabIndex,
+      canDrop: widget.canDrop,
+      onBeforeDropAccept: widget.onBeforeDropAccept,
+    );
 
     final bool tabsAreaVisible =
         widget.tabsAreaVisible ?? theme.tabsArea.visible;
@@ -134,11 +136,15 @@ class _TabbedViewState extends State<TabbedView> {
       }
       children.add(LayoutId(id: 1, child: tabArea));
     }
-    ContentArea contentArea =
-        ContentArea(provider: provider, tabsAreaVisible: tabsAreaVisible);
+    ContentArea contentArea = ContentArea(
+      provider: provider,
+      tabsAreaVisible: tabsAreaVisible,
+    );
     children.add(LayoutId(id: 2, child: contentArea));
     return CustomMultiChildLayout(
-        children: children, delegate: _TabbedViewLayout());
+      children: children,
+      delegate: _TabbedViewLayout(),
+    );
   }
 
   void _onTabDrag(int? tabIndex) {
@@ -187,12 +193,14 @@ class _TabbedViewLayout extends MultiChildLayoutDelegate {
     Size childSize = Size.zero;
     if (hasChild(1)) {
       childSize = layoutChild(
-          1,
-          BoxConstraints(
-              minWidth: size.width,
-              maxWidth: size.width,
-              minHeight: 0,
-              maxHeight: size.height));
+        1,
+        BoxConstraints(
+          minWidth: size.width,
+          maxWidth: size.width,
+          minHeight: 0,
+          maxHeight: size.height,
+        ),
+      );
       positionChild(1, Offset.zero);
     }
     double height = math.max(0, size.height - childSize.height);

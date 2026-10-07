@@ -43,8 +43,9 @@ class DropTabWidget extends StatelessWidget {
               ? Duration.zero
               : const Duration(milliseconds: 100),
           builder: (context, value, child) => CustomPaint(
-            foregroundPainter:
-                _InsertionPainter(color.withValues(alpha: value)),
+            foregroundPainter: _InsertionPainter(
+              color.withValues(alpha: value),
+            ),
             child: child,
           ),
           child: child,
@@ -52,8 +53,11 @@ class DropTabWidget extends StatelessWidget {
       },
       onAcceptWithDetails: (details) {
         final data = details.data;
-        if (provider.onBeforeDropAccept
-                ?.call(data, provider.controller, newIndex) ==
+        if (provider.onBeforeDropAccept?.call(
+              data,
+              provider.controller,
+              newIndex,
+            ) ==
             false) {
           return;
         }

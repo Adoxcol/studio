@@ -13,15 +13,15 @@ import 'package:tabbed_view/src/theme/tabs_area_theme_data.dart';
 /// Displays the popup menu button for tabs hidden due to lack of space.
 /// The selected [TabWidget] will always be visible.
 class TabsAreaLayout extends MultiChildRenderObjectWidget {
-  TabsAreaLayout(
-      {Key? key,
-      required List<Widget> children,
-      required this.theme,
-      required this.hiddenTabs,
-      required this.animation,
-      required this.animate,
-      required this.selectedTabIndex})
-      : super(key: key, children: children);
+  TabsAreaLayout({
+    Key? key,
+    required List<Widget> children,
+    required this.theme,
+    required this.hiddenTabs,
+    required this.animation,
+    required this.animate,
+    required this.selectedTabIndex,
+  }) : super(key: key, children: children);
 
   final TabbedViewThemeData theme;
   final HiddenTabs hiddenTabs;
@@ -37,12 +37,19 @@ class TabsAreaLayout extends MultiChildRenderObjectWidget {
   @override
   _TabsAreaLayoutRenderBox createRenderObject(BuildContext context) {
     return _TabsAreaLayoutRenderBox(
-        theme, hiddenTabs, selectedTabIndex, animation, animate);
+      theme,
+      hiddenTabs,
+      selectedTabIndex,
+      animation,
+      animate,
+    );
   }
 
   @override
   void updateRenderObject(
-      BuildContext context, _TabsAreaLayoutRenderBox renderObject) {
+    BuildContext context,
+    _TabsAreaLayoutRenderBox renderObject,
+  ) {
     renderObject..tabsAreaTheme = theme.tabsArea;
     renderObject..hiddenTabs = hiddenTabs;
     renderObject..selectedTabIndex = selectedTabIndex;
@@ -75,9 +82,13 @@ class _TabsAreaLayoutRenderBox extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, TabsAreaLayoutParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, TabsAreaLayoutParentData> {
-  _TabsAreaLayoutRenderBox(TabbedViewThemeData theme, HiddenTabs hiddenTabs,
-      int? selectedTabIndex, this._animation, this._animate)
-      : this._tabsAreaTheme = theme.tabsArea,
+  _TabsAreaLayoutRenderBox(
+    TabbedViewThemeData theme,
+    HiddenTabs hiddenTabs,
+    int? selectedTabIndex,
+    this._animation,
+    this._animate,
+  )   : this._tabsAreaTheme = theme.tabsArea,
         this._hiddenTabs = hiddenTabs,
         this._selectedTabIndex = selectedTabIndex;
 
@@ -110,8 +121,11 @@ class _TabsAreaLayoutRenderBox extends RenderBox
     final t = Curves.easeOutCubic.transform(_animation.value);
     for (final entry in _targets.entries) {
       if (entry.key.parent != this) continue;
-      entry.key.tabsAreaLayoutParentData().offset =
-          Offset.lerp(_starts[entry.key] ?? entry.value, entry.value, t)!;
+      entry.key.tabsAreaLayoutParentData().offset = Offset.lerp(
+        _starts[entry.key] ?? entry.value,
+        entry.value,
+        t,
+      )!;
     }
     markNeedsPaint();
     markNeedsSemanticsUpdate();
@@ -165,8 +179,9 @@ class _TabsAreaLayoutRenderBox extends RenderBox
       final data = child.tabsAreaLayoutParentData();
       if (data.visible) previousOffsets[child as RenderBox] = data.offset;
     });
-    final BoxConstraints childConstraints =
-        BoxConstraints.loose(Size(double.infinity, constraints.maxHeight));
+    final BoxConstraints childConstraints = BoxConstraints.loose(
+      Size(double.infinity, constraints.maxHeight),
+    );
 
     List<RenderBox> children = [];
     visitChildren((child) {
@@ -205,11 +220,15 @@ class _TabsAreaLayoutRenderBox extends RenderBox
     }
 
     double availableWidth = math.max(
-        constraints.maxWidth - tabsAreaTheme.initialGap - _corner.size.width,
-        0);
+      constraints.maxWidth - tabsAreaTheme.initialGap - _corner.size.width,
+      0,
+    );
 
     visibleTabs.layoutSingleTab(
-        constraints.maxWidth, height, _corner.size.width);
+      constraints.maxWidth,
+      height,
+      _corner.size.width,
+    );
 
     List<int> hiddenIndexes = [];
 
@@ -226,7 +245,10 @@ class _TabsAreaLayoutRenderBox extends RenderBox
         hiddenIndexes.add(removedIndex);
       }
       visibleTabs.layoutSingleTab(
-          constraints.maxWidth, height, _corner.size.width);
+        constraints.maxWidth,
+        height,
+        _corner.size.width,
+      );
     }
 
     hiddenTabs.update(hiddenIndexes);
@@ -234,11 +256,15 @@ class _TabsAreaLayoutRenderBox extends RenderBox
     visibleTabs.updateOffsets();
 
     _corner.layout(
-        BoxConstraints.tightFor(
-            width: math.max(
-                constraints.maxWidth - visibleTabs.maxX(), minCornerAreaWidth),
-            height: height),
-        parentUsesSize: true);
+      BoxConstraints.tightFor(
+        width: math.max(
+          constraints.maxWidth - visibleTabs.maxX(),
+          minCornerAreaWidth,
+        ),
+        height: height,
+      ),
+      parentUsesSize: true,
+    );
 
     List<RenderBox> visibleChildren = [];
     for (int i = 0; i < visibleTabs.length; i++) {
@@ -252,8 +278,10 @@ class _TabsAreaLayoutRenderBox extends RenderBox
     final TabsAreaLayoutParentData cornerParentData =
         _corner.tabsAreaLayoutParentData();
     // anchoring corner to the right
-    cornerParentData.offset = Offset(constraints.maxWidth - _corner.size.width,
-        constraints.maxHeight - _corner.size.height);
+    cornerParentData.offset = Offset(
+      constraints.maxWidth - _corner.size.width,
+      constraints.maxHeight - _corner.size.height,
+    );
 
     cornerParentData.visible = true;
     visibleChildren.add(_corner);
@@ -264,14 +292,18 @@ class _TabsAreaLayoutRenderBox extends RenderBox
         final TabsAreaLayoutParentData parentData =
             tab.tabsAreaLayoutParentData();
         tab.layout(
-            BoxConstraints(
-                minWidth: tab.size.width,
-                maxWidth: tab.size.width,
-                minHeight: tab.size.height,
-                maxHeight: height),
-            parentUsesSize: true);
-        parentData.offset =
-            Offset(parentData.offset.dx, height - tab.size.height);
+          BoxConstraints(
+            minWidth: tab.size.width,
+            maxWidth: tab.size.width,
+            minHeight: tab.size.height,
+            maxHeight: height,
+          ),
+          parentUsesSize: true,
+        );
+        parentData.offset = Offset(
+          parentData.offset.dx,
+          height - tab.size.height,
+        );
       }
     } else {
       if (tabsAreaTheme.equalHeights == EqualHeights.tabs) {
@@ -283,8 +315,9 @@ class _TabsAreaLayoutRenderBox extends RenderBox
         for (int i = 0; i < visibleCount; i++) {
           RenderBox tab = visibleChildren[i];
           tab.layout(
-              BoxConstraints.tightFor(width: tab.size.width, height: height),
-              parentUsesSize: true);
+            BoxConstraints.tightFor(width: tab.size.width, height: height),
+            parentUsesSize: true,
+          );
           final TabsAreaLayoutParentData parentData =
               tab.tabsAreaLayoutParentData();
           parentData.offset = Offset(parentData.offset.dx, 0);
@@ -293,14 +326,17 @@ class _TabsAreaLayoutRenderBox extends RenderBox
           RenderBox corner = visibleChildren.last;
           final TabsAreaLayoutParentData parentData =
               corner.tabsAreaLayoutParentData();
-          parentData.offset =
-              Offset(parentData.offset.dx, height - corner.size.height);
+          parentData.offset = Offset(
+            parentData.offset.dx,
+            height - corner.size.height,
+          );
         }
       } else if (tabsAreaTheme.equalHeights == EqualHeights.all) {
         for (RenderBox child in visibleChildren) {
           child.layout(
-              BoxConstraints.tightFor(width: child.size.width, height: height),
-              parentUsesSize: true);
+            BoxConstraints.tightFor(width: child.size.width, height: height),
+            parentUsesSize: true,
+          );
 
           final TabsAreaLayoutParentData parentData =
               child.tabsAreaLayoutParentData();
@@ -315,8 +351,10 @@ class _TabsAreaLayoutRenderBox extends RenderBox
       for (final child in visibleChildren)
         if (child != _corner) child: child.tabsAreaLayoutParentData().offset,
     };
-    final moved = targets.entries.any((entry) =>
-        _targets.containsKey(entry.key) && _targets[entry.key] != entry.value);
+    final moved = targets.entries.any(
+      (entry) =>
+          _targets.containsKey(entry.key) && _targets[entry.key] != entry.value,
+    );
     if (!_animate) {
       _animation.stop();
       _starts = targets;
@@ -389,9 +427,14 @@ class _TabsAreaLayoutRenderBox extends RenderBox
     // initial gap
     if (tabsAreaTheme.initialGap > 0 && gapBorderPaint != null) {
       canvas.drawRect(
-          Rect.fromLTWH(left, topGap, tabsAreaTheme.initialGap,
-              tabsAreaTheme.gapBottomBorder.width),
-          gapBorderPaint);
+        Rect.fromLTWH(
+          left,
+          topGap,
+          tabsAreaTheme.initialGap,
+          tabsAreaTheme.gapBottomBorder.width,
+        ),
+        gapBorderPaint,
+      );
     }
     left += tabsAreaTheme.initialGap;
 
@@ -404,9 +447,14 @@ class _TabsAreaLayoutRenderBox extends RenderBox
         // right gap
         if (tabsAreaTheme.middleGap > 0 && gapBorderPaint != null) {
           canvas.drawRect(
-              Rect.fromLTWH(left, topGap, tabsAreaTheme.middleGap,
-                  tabsAreaTheme.gapBottomBorder.width),
-              gapBorderPaint);
+            Rect.fromLTWH(
+              left,
+              topGap,
+              tabsAreaTheme.middleGap,
+              tabsAreaTheme.gapBottomBorder.width,
+            ),
+            gapBorderPaint,
+          );
         }
         left += tabsAreaTheme.middleGap;
       }
@@ -430,9 +478,14 @@ class _TabsAreaLayoutRenderBox extends RenderBox
       }
       if (lastGapWidth > 0) {
         canvas.drawRect(
-            Rect.fromLTWH(lastX, topGap, lastGapWidth,
-                tabsAreaTheme.gapBottomBorder.width),
-            gapBorderPaint);
+          Rect.fromLTWH(
+            lastX,
+            topGap,
+            lastGapWidth,
+            tabsAreaTheme.gapBottomBorder.width,
+          ),
+          gapBorderPaint,
+        );
       }
     }
   }

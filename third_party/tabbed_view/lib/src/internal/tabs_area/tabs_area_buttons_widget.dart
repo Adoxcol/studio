@@ -16,8 +16,11 @@ class TabsAreaButtonsWidget extends StatelessWidget {
   final TabbedViewProvider provider;
   final HiddenTabs hiddenTabs;
 
-  const TabsAreaButtonsWidget(
-      {super.key, required this.provider, required this.hiddenTabs});
+  const TabsAreaButtonsWidget({
+    super.key,
+    required this.provider,
+    required this.hiddenTabs,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +30,18 @@ class TabsAreaButtonsWidget extends StatelessWidget {
     List<TabButton> buttons = [];
     if (provider.tabsAreaButtonsBuilder != null) {
       buttons = provider.tabsAreaButtonsBuilder!(
-          context, provider.controller.tabs.length);
+        context,
+        provider.controller.tabs.length,
+      );
     }
     if (hiddenTabs.hasHiddenTabs) {
       buttons.insert(
-          0,
-          TabButton(
-              icon: tabsAreaTheme.menuIcon,
-              menuBuilder: _hiddenTabsMenuBuilder));
+        0,
+        TabButton(
+          icon: tabsAreaTheme.menuIcon,
+          menuBuilder: _hiddenTabsMenuBuilder,
+        ),
+      );
     }
 
     List<Widget> children = [];
@@ -45,22 +52,26 @@ class TabsAreaButtonsWidget extends StatelessWidget {
         padding = EdgeInsets.only(left: tabsAreaTheme.buttonsGap);
       }
       final TabButton tabButton = buttons[i];
-      children.add(Container(
+      children.add(
+        Container(
           child: TabButtonWidget(
-              provider: provider,
-              button: tabButton,
-              enabled: provider.draggingTabIndex == null,
-              normalColor: tabsAreaTheme.normalButtonColor,
-              hoverColor: tabsAreaTheme.hoverButtonColor,
-              disabledColor: tabsAreaTheme.disabledButtonColor,
-              normalBackground: tabsAreaTheme.normalButtonBackground,
-              hoverBackground: tabsAreaTheme.hoverButtonBackground,
-              disabledBackground: tabsAreaTheme.disabledButtonBackground,
-              iconSize: tabButton.iconSize != null
-                  ? tabButton.iconSize!
-                  : tabsAreaTheme.buttonIconSize,
-              themePadding: tabsAreaTheme.buttonPadding),
-          padding: padding));
+            provider: provider,
+            button: tabButton,
+            enabled: provider.draggingTabIndex == null,
+            normalColor: tabsAreaTheme.normalButtonColor,
+            hoverColor: tabsAreaTheme.hoverButtonColor,
+            disabledColor: tabsAreaTheme.disabledButtonColor,
+            normalBackground: tabsAreaTheme.normalButtonBackground,
+            hoverBackground: tabsAreaTheme.hoverButtonBackground,
+            disabledBackground: tabsAreaTheme.disabledButtonBackground,
+            iconSize: tabButton.iconSize != null
+                ? tabButton.iconSize!
+                : tabsAreaTheme.buttonIconSize,
+            themePadding: tabsAreaTheme.buttonPadding,
+          ),
+          padding: padding,
+        ),
+      );
     }
 
     Widget buttonsArea = Row(children: children);
@@ -75,10 +86,11 @@ class TabsAreaButtonsWidget extends StatelessWidget {
             tabsAreaTheme.buttonsAreaPadding != null ||
             margin != null)) {
       buttonsArea = Container(
-          child: buttonsArea,
-          decoration: tabsAreaTheme.buttonsAreaDecoration,
-          padding: tabsAreaTheme.buttonsAreaPadding,
-          margin: margin);
+        child: buttonsArea,
+        decoration: tabsAreaTheme.buttonsAreaDecoration,
+        padding: tabsAreaTheme.buttonsAreaPadding,
+        margin: margin,
+      );
     }
     return buttonsArea;
   }
@@ -88,9 +100,12 @@ class TabsAreaButtonsWidget extends StatelessWidget {
     List<TabbedViewMenuItem> list = [];
     for (int index in hiddenTabs.indexes) {
       TabData tab = provider.controller.tabs[index];
-      list.add(TabbedViewMenuItem(
+      list.add(
+        TabbedViewMenuItem(
           text: tab.text,
-          onSelection: () => provider.controller.selectedIndex = index));
+          onSelection: () => provider.controller.selectedIndex = index,
+        ),
+      );
     }
     return list;
   }

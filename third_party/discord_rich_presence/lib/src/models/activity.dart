@@ -11,14 +11,15 @@ enum ActivityType {
 }
 
 class Activity {
-  Activity(
-      {required this.name,
-      this.details,
-      this.state,
-      this.type = ActivityType.playing,
-      this.url,
-      this.timestamps,
-      this.assets});
+  Activity({
+    required this.name,
+    this.details,
+    this.state,
+    this.type = ActivityType.playing,
+    this.url,
+    this.timestamps,
+    this.assets,
+  });
 
   final String name;
   final String? details;
@@ -55,23 +56,23 @@ class Activity {
 enum ActivityAssetsImageSize { small, large }
 
 class ActivityAssets {
-  const ActivityAssets(
-      {this.largeImage, this.largeText, this.smallImage, this.smallText});
+  const ActivityAssets({
+    this.largeImage,
+    this.largeText,
+    this.smallImage,
+    this.smallText,
+  });
 
-  factory ActivityAssets.fromExternalLink(String url,
-      {String? text,
-      ActivityAssetsImageSize size = ActivityAssetsImageSize.large}) {
+  factory ActivityAssets.fromExternalLink(
+    String url, {
+    String? text,
+    ActivityAssetsImageSize size = ActivityAssetsImageSize.large,
+  }) {
     if (size == ActivityAssetsImageSize.large) {
-      return ActivityAssets(
-        largeImage: url,
-        largeText: text,
-      );
+      return ActivityAssets(largeImage: url, largeText: text);
     }
 
-    return ActivityAssets(
-      smallImage: url,
-      smallText: text,
-    );
+    return ActivityAssets(smallImage: url, smallText: text);
   }
 
   final String? largeImage;

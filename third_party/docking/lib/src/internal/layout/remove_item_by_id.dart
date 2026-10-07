@@ -36,10 +36,12 @@ class RemoveItemById extends LayoutModifier {
       if (children.length == 1) {
         return children.first;
       }
-      DockingTabs newDockingTabs = DockingTabs(children,
-          id: dockingTabs.id,
-          maximized: dockingTabs.maximized,
-          maximizable: dockingTabs.maximizable);
+      DockingTabs newDockingTabs = DockingTabs(
+        children,
+        id: dockingTabs.id,
+        maximized: dockingTabs.maximized,
+        maximizable: dockingTabs.maximizable,
+      );
       newDockingTabs.selectedIndex = dockingTabs.selectedIndex;
       return newDockingTabs;
     } else if (area is DockingParentArea) {
@@ -61,9 +63,11 @@ class RemoveItemById extends LayoutModifier {
         return DockingColumn(children, id: area.id);
       }
       throw ArgumentError(
-          'DockingArea class not recognized: ' + area.runtimeType.toString());
+        'DockingArea class not recognized: ' + area.runtimeType.toString(),
+      );
     }
     throw ArgumentError(
-        'DockingArea class not recognized: ' + area.runtimeType.toString());
+      'DockingArea class not recognized: ' + area.runtimeType.toString(),
+    );
   }
 }

@@ -23,17 +23,19 @@ class Client {
 
   Future<void> setActivity(Activity activity) async {
     await _request(
-      DiscordCommands.setActivity.name,
-      <String, dynamic>{
-        'pid': pid,
-        'activity': activity.toJson(),
-      },
-      '',
-    );
+        DiscordCommands.setActivity.name,
+        <String, dynamic>{
+          'pid': pid,
+          'activity': activity.toJson(),
+        },
+        '');
   }
 
   Future<void> _request(
-      String cmd, Map<String, dynamic> args, String event) async {
+    String cmd,
+    Map<String, dynamic> args,
+    String event,
+  ) async {
     final Uuid uuid = Uuid();
     final String nonce = uuid.v4();
 

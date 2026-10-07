@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 
 /// Theme for menu.
 class TabbedViewMenuThemeData {
-  TabbedViewMenuThemeData(
-      {this.padding,
-      this.margin,
-      this.menuItemPadding,
-      this.textStyle = const TextStyle(fontSize: 13),
-      this.border,
-      this.color,
-      this.blur = true,
-      this.ellipsisOverflowText = false,
-      double dividerThickness = 0,
-      double maxWidth = 200,
-      this.dividerColor,
-      this.hoverColor})
-      : this._dividerThickness = dividerThickness >= 0 ? dividerThickness : 0,
+  TabbedViewMenuThemeData({
+    this.padding,
+    this.margin,
+    this.menuItemPadding,
+    this.textStyle = const TextStyle(fontSize: 13),
+    this.border,
+    this.color,
+    this.blur = true,
+    this.ellipsisOverflowText = false,
+    double dividerThickness = 0,
+    double maxWidth = 200,
+    this.dividerColor,
+    this.hoverColor,
+  })  : this._dividerThickness = dividerThickness >= 0 ? dividerThickness : 0,
         this._maxWidth = maxWidth >= 0 ? maxWidth : 0;
 
   EdgeInsetsGeometry? margin;

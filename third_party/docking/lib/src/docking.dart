@@ -11,20 +11,20 @@ import 'package:multi_split_view/multi_split_view.dart';
 
 /// The docking widget.
 class Docking extends StatefulWidget {
-  const Docking(
-      {Key? key,
-      this.layout,
-      this.onItemSelection,
-      this.onItemClose,
-      this.itemCloseInterceptor,
-      this.dockingButtonsBuilder,
-      this.tabsAreaBuilder,
-      this.maximizableItem = true,
-      this.maximizableTab = true,
-      this.maximizableTabsArea = true,
-      this.antiAliasingWorkaround = true,
-      this.draggable = true})
-      : super(key: key);
+  const Docking({
+    Key? key,
+    this.layout,
+    this.onItemSelection,
+    this.onItemClose,
+    this.itemCloseInterceptor,
+    this.dockingButtonsBuilder,
+    this.tabsAreaBuilder,
+    this.maximizableItem = true,
+    this.maximizableTab = true,
+    this.maximizableTabsArea = true,
+    this.antiAliasingWorkaround = true,
+    this.draggable = true,
+  }) : super(key: key);
 
   final DockingLayout? layout;
   final OnItemSelection? onItemSelection;
@@ -83,10 +83,14 @@ class _DockingState extends State<Docking> {
                 area.globalKey != null &&
                 area.parent != widget.layout?.maximizedArea) {
               // keeping alive other areas
-              children.add(TickerMode(
+              children.add(
+                TickerMode(
                   enabled: false,
                   child: ExcludeFocus(
-                      child: Offstage(child: _buildArea(context, area)))));
+                    child: Offstage(child: _buildArea(context, area)),
+                  ),
+                ),
+              );
             }
           }
         }
@@ -103,17 +107,18 @@ class _DockingState extends State<Docking> {
   Widget _buildArea(BuildContext context, DockingArea area) {
     if (area is DockingItem) {
       return DockingItemWidget(
-          key: area.key,
-          layout: widget.layout!,
-          dragOverPosition: _dragOverPosition,
-          draggable: widget.draggable,
-          item: area,
-          onItemSelection: widget.onItemSelection,
-          itemCloseInterceptor: widget.itemCloseInterceptor,
-          onItemClose: widget.onItemClose,
-          dockingButtonsBuilder: widget.dockingButtonsBuilder,
-          tabsAreaBuilder: widget.tabsAreaBuilder,
-          maximizable: widget.maximizableItem);
+        key: area.key,
+        layout: widget.layout!,
+        dragOverPosition: _dragOverPosition,
+        draggable: widget.draggable,
+        item: area,
+        onItemSelection: widget.onItemSelection,
+        itemCloseInterceptor: widget.itemCloseInterceptor,
+        onItemClose: widget.onItemClose,
+        dockingButtonsBuilder: widget.dockingButtonsBuilder,
+        tabsAreaBuilder: widget.tabsAreaBuilder,
+        maximizable: widget.maximizableItem,
+      );
     } else if (area is DockingRow) {
       return _row(context, area);
     } else if (area is DockingColumn) {
@@ -121,34 +126,37 @@ class _DockingState extends State<Docking> {
     } else if (area is DockingTabs) {
       if (area.childrenCount == 1) {
         return DockingItemWidget(
-            key: area.key,
-            layout: widget.layout!,
-            dragOverPosition: _dragOverPosition,
-            draggable: widget.draggable,
-            item: area.childAt(0),
-            onItemSelection: widget.onItemSelection,
-            itemCloseInterceptor: widget.itemCloseInterceptor,
-            onItemClose: widget.onItemClose,
-            dockingButtonsBuilder: widget.dockingButtonsBuilder,
-            tabsAreaBuilder: widget.tabsAreaBuilder,
-            maximizable: widget.maximizableItem);
-      }
-      return DockingTabsWidget(
           key: area.key,
           layout: widget.layout!,
           dragOverPosition: _dragOverPosition,
           draggable: widget.draggable,
-          dockingTabs: area,
+          item: area.childAt(0),
           onItemSelection: widget.onItemSelection,
-          onItemClose: widget.onItemClose,
           itemCloseInterceptor: widget.itemCloseInterceptor,
+          onItemClose: widget.onItemClose,
           dockingButtonsBuilder: widget.dockingButtonsBuilder,
           tabsAreaBuilder: widget.tabsAreaBuilder,
-          maximizableTab: widget.maximizableTab,
-          maximizableTabsArea: widget.maximizableTabsArea);
+          maximizable: widget.maximizableItem,
+        );
+      }
+      return DockingTabsWidget(
+        key: area.key,
+        layout: widget.layout!,
+        dragOverPosition: _dragOverPosition,
+        draggable: widget.draggable,
+        dockingTabs: area,
+        onItemSelection: widget.onItemSelection,
+        onItemClose: widget.onItemClose,
+        itemCloseInterceptor: widget.itemCloseInterceptor,
+        dockingButtonsBuilder: widget.dockingButtonsBuilder,
+        tabsAreaBuilder: widget.tabsAreaBuilder,
+        maximizableTab: widget.maximizableTab,
+        maximizableTabsArea: widget.maximizableTabsArea,
+      );
     }
     throw UnimplementedError(
-        'Unrecognized runtimeType: ' + area.runtimeType.toString());
+      'Unrecognized runtimeType: ' + area.runtimeType.toString(),
+    );
   }
 
   Widget _row(BuildContext context, DockingRow row) {
@@ -158,11 +166,12 @@ class _DockingState extends State<Docking> {
     });
 
     return MultiSplitView(
-        key: row.key,
-        children: children,
-        axis: Axis.horizontal,
-        controller: row.controller,
-        antiAliasingWorkaround: widget.antiAliasingWorkaround);
+      key: row.key,
+      children: children,
+      axis: Axis.horizontal,
+      controller: row.controller,
+      antiAliasingWorkaround: widget.antiAliasingWorkaround,
+    );
   }
 
   Widget _column(BuildContext context, DockingColumn column) {
@@ -172,11 +181,12 @@ class _DockingState extends State<Docking> {
     });
 
     return MultiSplitView(
-        key: column.key,
-        children: children,
-        axis: Axis.vertical,
-        controller: column.controller,
-        antiAliasingWorkaround: widget.antiAliasingWorkaround);
+      key: column.key,
+      children: children,
+      axis: Axis.vertical,
+      controller: column.controller,
+      antiAliasingWorkaround: widget.antiAliasingWorkaround,
+    );
   }
 
   void _forceRebuild() {

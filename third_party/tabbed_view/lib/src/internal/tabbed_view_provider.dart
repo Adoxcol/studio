@@ -10,24 +10,25 @@ import 'package:tabbed_view/src/typedefs/can_drop.dart';
 /// Propagates parameters to internal widgets.
 @internal
 class TabbedViewProvider {
-  TabbedViewProvider(
-      {required this.controller,
-      this.contentBuilder,
-      this.onTabClose,
-      this.tabCloseInterceptor,
-      required this.contentClip,
-      this.onTabSelection,
-      this.tabSelectInterceptor,
-      required this.selectToEnableButtons,
-      this.closeButtonTooltip,
-      this.tabsAreaButtonsBuilder,
-      required this.menuItems,
-      required this.menuItemsUpdater,
-      required this.onTabDrag,
-      required this.draggingTabIndex,
-      required this.onDraggableBuild,
-      required this.canDrop,
-      required this.onBeforeDropAccept});
+  TabbedViewProvider({
+    required this.controller,
+    this.contentBuilder,
+    this.onTabClose,
+    this.tabCloseInterceptor,
+    required this.contentClip,
+    this.onTabSelection,
+    this.tabSelectInterceptor,
+    required this.selectToEnableButtons,
+    this.closeButtonTooltip,
+    this.tabsAreaButtonsBuilder,
+    required this.menuItems,
+    required this.menuItemsUpdater,
+    required this.onTabDrag,
+    required this.draggingTabIndex,
+    required this.onDraggableBuild,
+    required this.canDrop,
+    required this.onBeforeDropAccept,
+  });
 
   final TabbedViewController controller;
   final bool contentClip;

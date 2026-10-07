@@ -47,7 +47,8 @@ class _TabsAreaState extends State<TabsArea>
     List<Widget> children = [];
     for (int index = 0; index < controller.tabs.length; index++) {
       TabStatus status = _getStatusFor(index);
-      children.add(TabWidget(
+      children.add(
+        TabWidget(
           key: controller.tabs[index].value == null
               ? controller.tabs[index].uniqueKey
               : ValueKey(controller.tabs[index].value),
@@ -55,26 +56,32 @@ class _TabsAreaState extends State<TabsArea>
           status: status,
           provider: widget.provider,
           updateHighlightedIndex: _updateHighlightedIndex,
-          onClose: _onTabClose));
+          onClose: _onTabClose,
+        ),
+      );
     }
 
     children.add(
-        TabsAreaCorner(provider: widget.provider, hiddenTabs: _hiddenTabs));
+      TabsAreaCorner(provider: widget.provider, hiddenTabs: _hiddenTabs),
+    );
 
     Widget tabsAreaLayout = TabsAreaLayout(
-        animation: _reorderAnimation,
-        animate:
-            !MediaQuery.disableAnimationsOf(context) && TickerMode.of(context),
-        children: children,
-        theme: theme,
-        hiddenTabs: _hiddenTabs,
-        selectedTabIndex: controller.selectedIndex);
+      animation: _reorderAnimation,
+      animate:
+          !MediaQuery.disableAnimationsOf(context) && TickerMode.of(context),
+      children: children,
+      theme: theme,
+      hiddenTabs: _hiddenTabs,
+      selectedTabIndex: controller.selectedIndex,
+    );
     tabsAreaLayout = ClipRect(child: tabsAreaLayout);
 
     Decoration? decoration;
     if (tabsAreaTheme.color != null || tabsAreaTheme.border != null) {
       decoration = BoxDecoration(
-          color: tabsAreaTheme.color, border: tabsAreaTheme.border);
+        color: tabsAreaTheme.color,
+        border: tabsAreaTheme.border,
+      );
     }
     return Container(child: tabsAreaLayout, decoration: decoration);
   }

@@ -25,7 +25,10 @@ class VisibleTabs {
 
   /// Layouts the single selected tab.
   void layoutSingleTab(
-      double maxWidth, double maxHeight, double reservedWidth) {
+    double maxWidth,
+    double maxHeight,
+    double reservedWidth,
+  ) {
     if (_tabs.length == 1) {
       double availableWidth = maxWidth -
           reservedWidth -
@@ -35,8 +38,9 @@ class VisibleTabs {
       if (availableWidth > 0) {
         RenderBox tab = _tabs.first;
         if (tab.size.width > availableWidth) {
-          final BoxConstraints childConstraints =
-              BoxConstraints.loose(Size(availableWidth, maxHeight));
+          final BoxConstraints childConstraints = BoxConstraints.loose(
+            Size(availableWidth, maxHeight),
+          );
           tab.layout(childConstraints, parentUsesSize: true);
         }
       }

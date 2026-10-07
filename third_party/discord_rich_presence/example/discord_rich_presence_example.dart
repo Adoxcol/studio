@@ -14,9 +14,7 @@ void main() async {
     Activity(
       name: 'minecraft',
       type: ActivityType.playing,
-      timestamps: ActivityTimestamps(
-        start: DateTime.now(),
-      ),
+      timestamps: ActivityTimestamps(start: DateTime.now()),
     ),
   );
 

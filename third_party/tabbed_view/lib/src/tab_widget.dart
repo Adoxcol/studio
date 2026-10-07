@@ -20,14 +20,14 @@ typedef UpdateHighlightedIndex = void Function(int? tabIndex);
 
 /// The tab widget. Displays the tab text and its buttons.
 class TabWidget extends StatelessWidget {
-  const TabWidget(
-      {required Key key,
-      required this.index,
-      required this.status,
-      required this.provider,
-      required this.updateHighlightedIndex,
-      required this.onClose})
-      : super(key: key);
+  const TabWidget({
+    required Key key,
+    required this.index,
+    required this.status,
+    required this.provider,
+    required this.updateHighlightedIndex,
+    required this.onClose,
+  }) : super(key: key);
 
   final int index;
   final TabStatus status;
@@ -45,10 +45,12 @@ class TabWidget extends StatelessWidget {
     List<Widget> textAndButtons = _textAndButtons(context, tabTheme);
 
     Widget textAndButtonsContainer = ClipRect(
-        child: FlowLayout(
-            children: textAndButtons,
-            firstChildFlex: true,
-            verticalAlignment: tabTheme.verticalAlignment));
+      child: FlowLayout(
+        children: textAndButtons,
+        firstChildFlex: true,
+        verticalAlignment: tabTheme.verticalAlignment,
+      ),
+    );
 
     BorderSide innerBottomBorder = statusTheme.innerBottomBorder ??
         tabTheme.innerBottomBorder ??
@@ -73,14 +75,16 @@ class TabWidget extends StatelessWidget {
     }
 
     Widget tabWidget = Container(
-        child: Container(
-            child: textAndButtonsContainer,
-            padding: padding,
-            decoration: BoxDecoration(
-                border:
-                    Border(top: innerTopBorder, bottom: innerBottomBorder))),
-        decoration: decoration,
-        margin: margin);
+      child: Container(
+        child: textAndButtonsContainer,
+        padding: padding,
+        decoration: BoxDecoration(
+          border: Border(top: innerTopBorder, bottom: innerBottomBorder),
+        ),
+      ),
+      decoration: decoration,
+      margin: margin,
+    );
 
     MouseCursor cursor = MouseCursor.defer;
     if (provider.draggingTabIndex == null && status == TabStatus.selected) {
@@ -88,19 +92,25 @@ class TabWidget extends StatelessWidget {
     }
 
     tabWidget = MouseRegion(
-        cursor: cursor,
-        onEnter: (event) => updateHighlightedIndex(index),
-        onExit: (event) => updateHighlightedIndex(null),
-        child: provider.draggingTabIndex == null
-            ? GestureDetector(
-                onTap: () => _onSelect(context, index), child: tabWidget)
-            : tabWidget);
+      cursor: cursor,
+      onEnter: (event) => updateHighlightedIndex(index),
+      onExit: (event) => updateHighlightedIndex(null),
+      child: provider.draggingTabIndex == null
+          ? GestureDetector(
+              onTap: () => _onSelect(context, index),
+              child: tabWidget,
+            )
+          : tabWidget,
+    );
 
     if (tab.draggable) {
       DraggableConfig draggableConfig = DraggableConfig.defaultConfig;
       if (provider.onDraggableBuild != null) {
-        draggableConfig =
-            provider.onDraggableBuild!(provider.controller, index, tab);
+        draggableConfig = provider.onDraggableBuild!(
+          provider.controller,
+          index,
+          tab,
+        );
       }
 
       if (draggableConfig.canDrag) {
@@ -109,55 +119,59 @@ class TabWidget extends StatelessWidget {
             : TabDragFeedbackWidget(tab: tab, tabTheme: tabTheme);
 
         tabWidget = Draggable<DraggableData>(
-            allowedButtonsFilter: (buttons) => buttons == kPrimaryButton,
-            child: tabWidget,
-            feedback: Material(child: feedback),
-            data: DraggableData(provider.controller, tab),
-            feedbackOffset: draggableConfig.feedbackOffset,
-            dragAnchorStrategy: draggableConfig.dragAnchorStrategy,
-            onDragStarted: () {
-              provider.onTabDrag(index);
-              if (draggableConfig.onDragStarted != null) {
-                draggableConfig.onDragStarted!();
-              }
-            },
-            onDragUpdate: (details) {
-              if (draggableConfig.onDragUpdate != null) {
-                draggableConfig.onDragUpdate!(details);
-              }
-            },
-            onDraggableCanceled: (velocity, offset) {
-              provider.onTabDrag(null);
-              if (draggableConfig.onDraggableCanceled != null) {
-                draggableConfig.onDraggableCanceled!(velocity, offset);
-              }
-            },
-            onDragEnd: (details) {
-              if (draggableConfig.onDragEnd != null) {
-                draggableConfig.onDragEnd!(details);
-              }
-            },
-            onDragCompleted: () {
-              provider.onTabDrag(null);
-              if (draggableConfig.onDragCompleted != null) {
-                draggableConfig.onDragCompleted!();
-              }
-            });
+          allowedButtonsFilter: (buttons) => buttons == kPrimaryButton,
+          child: tabWidget,
+          feedback: Material(child: feedback),
+          data: DraggableData(provider.controller, tab),
+          feedbackOffset: draggableConfig.feedbackOffset,
+          dragAnchorStrategy: draggableConfig.dragAnchorStrategy,
+          onDragStarted: () {
+            provider.onTabDrag(index);
+            if (draggableConfig.onDragStarted != null) {
+              draggableConfig.onDragStarted!();
+            }
+          },
+          onDragUpdate: (details) {
+            if (draggableConfig.onDragUpdate != null) {
+              draggableConfig.onDragUpdate!(details);
+            }
+          },
+          onDraggableCanceled: (velocity, offset) {
+            provider.onTabDrag(null);
+            if (draggableConfig.onDraggableCanceled != null) {
+              draggableConfig.onDraggableCanceled!(velocity, offset);
+            }
+          },
+          onDragEnd: (details) {
+            if (draggableConfig.onDragEnd != null) {
+              draggableConfig.onDragEnd!(details);
+            }
+          },
+          onDragCompleted: () {
+            provider.onTabDrag(null);
+            if (draggableConfig.onDragCompleted != null) {
+              draggableConfig.onDragCompleted!();
+            }
+          },
+        );
 
         tabWidget = AnimatedOpacity(
-            duration: MediaQuery.disableAnimationsOf(context)
-                ? Duration.zero
-                : const Duration(milliseconds: 140),
-            child: tabWidget,
-            opacity: provider.draggingTabIndex != index
-                ? 1
-                : tabTheme.draggingOpacity);
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 140),
+          child: tabWidget,
+          opacity:
+              provider.draggingTabIndex != index ? 1 : tabTheme.draggingOpacity,
+        );
       }
     }
 
     if (provider.controller.reorderEnable) {
       return DropTabWidget(
-          provider: provider, newIndex: tab.index, child: tabWidget);
+        provider: provider,
+        newIndex: tab.index,
+        child: tabWidget,
+      );
     }
     return tabWidget;
   }
@@ -215,10 +229,16 @@ class TabWidget extends StatelessWidget {
       }
     }
 
-    textAndButtons.add(Container(
-        child:
-            Text(tab.text, style: textStyle, overflow: TextOverflow.ellipsis),
-        padding: padding));
+    textAndButtons.add(
+      Container(
+        child: Text(
+          tab.text,
+          style: textStyle,
+          overflow: TextOverflow.ellipsis,
+        ),
+        padding: padding,
+      ),
+    );
 
     if (hasButtons) {
       for (int i = 0; i < tab.buttons!.length; i++) {
@@ -227,22 +247,26 @@ class TabWidget extends StatelessWidget {
           padding = EdgeInsets.only(left: tabTheme.buttonsGap);
         }
         TabButton button = tab.buttons![i];
-        textAndButtons.add(Container(
+        textAndButtons.add(
+          Container(
             child: TabButtonWidget(
-                provider: provider,
-                button: button,
-                enabled: buttonsEnabled,
-                normalColor: normalColor,
-                hoverColor: hoverColor,
-                disabledColor: disabledColor,
-                normalBackground: normalBackground,
-                hoverBackground: hoverBackground,
-                disabledBackground: disabledBackground,
-                iconSize: button.iconSize != null
-                    ? button.iconSize!
-                    : tabTheme.buttonIconSize,
-                themePadding: tabTheme.buttonPadding),
-            padding: padding));
+              provider: provider,
+              button: button,
+              enabled: buttonsEnabled,
+              normalColor: normalColor,
+              hoverColor: hoverColor,
+              disabledColor: disabledColor,
+              normalBackground: normalBackground,
+              hoverBackground: hoverBackground,
+              disabledBackground: disabledBackground,
+              iconSize: button.iconSize != null
+                  ? button.iconSize!
+                  : tabTheme.buttonIconSize,
+              themePadding: tabTheme.buttonPadding,
+            ),
+            padding: padding,
+          ),
+        );
       }
     }
     if (tab.closable) {
@@ -251,24 +275,29 @@ class TabWidget extends StatelessWidget {
         padding = EdgeInsets.only(left: tabTheme.buttonsGap);
       }
       TabButton closeButton = TabButton(
-          icon: tabTheme.closeIcon,
-          onPressed: () => _onClose(context, index),
-          toolTip: provider.closeButtonTooltip);
+        icon: tabTheme.closeIcon,
+        onPressed: () => _onClose(context, index),
+        toolTip: provider.closeButtonTooltip,
+      );
 
-      textAndButtons.add(Container(
+      textAndButtons.add(
+        Container(
           child: TabButtonWidget(
-              provider: provider,
-              button: closeButton,
-              enabled: buttonsEnabled,
-              normalColor: normalColor,
-              hoverColor: hoverColor,
-              disabledColor: disabledColor,
-              normalBackground: normalBackground,
-              hoverBackground: hoverBackground,
-              disabledBackground: disabledBackground,
-              iconSize: tabTheme.buttonIconSize,
-              themePadding: tabTheme.buttonPadding),
-          padding: padding));
+            provider: provider,
+            button: closeButton,
+            enabled: buttonsEnabled,
+            normalColor: normalColor,
+            hoverColor: hoverColor,
+            disabledColor: disabledColor,
+            normalBackground: normalBackground,
+            hoverBackground: hoverBackground,
+            disabledBackground: disabledBackground,
+            iconSize: tabTheme.buttonIconSize,
+            themePadding: tabTheme.buttonPadding,
+          ),
+          padding: padding,
+        ),
+      );
     }
 
     return textAndButtons;
