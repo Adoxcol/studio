@@ -18,3 +18,7 @@
 **Vulnerability:** Synchronous `try/catch` blocks around unawaited `Future`s (e.g. `_secureStorage.write()`) fail to catch exceptions.
 **Learning:** Dart's asynchronous exceptions bypass synchronous catch blocks if the Future is unawaited. This results in an unhandled PlatformException, crashing the app.
 **Prevention:** Always attach `.catchError((_) {})` to the returned Future when making unawaited async calls that can fail.
+## YYYY-MM-DD - Weak random number generation for security purposes
+**Vulnerability:** `SubsonicClient.generateSalt` uses `Random()` (Math.random) instead of a cryptographically secure random number generator (`Random.secure()`) to generate the salt used for authentication token generation. This makes the salt predictable, which could theoretically weaken the MD5 hash protection of the password.
+**Learning:** `Random()` in Dart is an implementation of a pseudo-random number generator, which is not suitable for cryptographic or security-related purposes.
+**Prevention:** Always use `Random.secure()` when generating salts, tokens, passwords, or any other security-sensitive random values.

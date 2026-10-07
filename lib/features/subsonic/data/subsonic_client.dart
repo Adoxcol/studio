@@ -20,7 +20,7 @@ class SubsonicClient {
   static String generateSalt({int length = 10}) {
     const chars =
         'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final rand = Random();
+    final rand = Random.secure();
     return List.generate(
       length,
       (_) => chars[rand.nextInt(chars.length)],
