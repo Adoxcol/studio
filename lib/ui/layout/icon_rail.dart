@@ -124,23 +124,19 @@ class _RailButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
     final color = selected ? palette.accent : palette.inkMutedAlt;
-    return Tooltip(
-      message: tooltip,
-      child: Semantics(
-        button: true,
-        label: tooltip,
-        selected: selected,
-        child: InkWell(
-          onTap: onTap,
-          splashFactory: NoSplash.splashFactory,
-          hoverColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          child: SizedBox(
-            width: StudioIconRail.width,
-            height: 48,
-            child: Icon(selected ? selectedIcon : icon, color: color, size: 22),
-          ),
-        ),
+    return SizedBox(
+      width: StudioIconRail.width,
+      height: 48,
+      child: IconButton(
+        isSelected: selected,
+        tooltip: tooltip,
+        onPressed: onTap,
+        hoverColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        style: IconButton.styleFrom(splashFactory: NoSplash.splashFactory),
+        iconSize: 22,
+        icon: Icon(icon, color: color),
+        selectedIcon: Icon(selectedIcon, color: color),
       ),
     );
   }
