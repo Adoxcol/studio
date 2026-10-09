@@ -184,9 +184,8 @@ class TrackDetailPanel extends StatelessWidget {
           _GenreField(
             label: 'Genre',
             genres: [
-              if (details.track.genre?.trim() case final genre?
-                  when genre.isNotEmpty)
-                genre,
+              if (details.track.genre?.trim() case final genre?)
+                if (genre.isNotEmpty) genre,
             ],
           ),
           _Field(label: 'Source', value: details.track.source),
