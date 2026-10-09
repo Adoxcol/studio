@@ -109,18 +109,22 @@ class FileScrobbleSettingsStore implements ScrobbleSettingsStore {
     _cachedSettings = settings;
 
     // Save secrets to secure storage asynchronously
-    _secureStorage.write(
-      key: 'scrobbling_lastFmSecret',
-      value: settings.lastFmSecret,
-    );
-    _secureStorage.write(
-      key: 'scrobbling_lastFmSessionKey',
-      value: settings.lastFmSessionKey,
-    );
-    _secureStorage.write(
-      key: 'scrobbling_listenBrainzToken',
-      value: settings.listenBrainzToken,
-    );
+    // Catch errors on these unawaited Futures to prevent app crashes on failure
+    _secureStorage
+        .write(key: 'scrobbling_lastFmSecret', value: settings.lastFmSecret)
+        .catchError((_) {});
+    _secureStorage
+        .write(
+          key: 'scrobbling_lastFmSessionKey',
+          value: settings.lastFmSessionKey,
+        )
+        .catchError((_) {});
+    _secureStorage
+        .write(
+          key: 'scrobbling_listenBrainzToken',
+          value: settings.listenBrainzToken,
+        )
+        .catchError((_) {});
 
     _writeSync(settings);
   }
