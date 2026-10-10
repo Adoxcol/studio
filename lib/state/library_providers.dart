@@ -138,6 +138,15 @@ final libraryFoldersProvider = StreamProvider<List<LibraryFolder>>((ref) {
   return ref.watch(studioDatabaseProvider).watchFolders();
 });
 
+/// ⚡ Bolt Optimization:
+/// Previously, widgets were performing an O(N) linear scan over `libraryFoldersProvider`
+/// during rebuilds to find a selected folder. For libraries with numerous folders,
+/// this map caching turns it into an O(1) lookup map, only rebuilding when the folders change.
+final libraryFoldersByIdProvider = Provider<Map<int, LibraryFolder>>((ref) {
+  final folders = ref.watch(libraryFoldersProvider).value ?? const [];
+  return {for (final f in folders) f.id: f};
+});
+
 class LibraryScanNotifier extends Notifier<ScanProgress> {
   Future<void> _inflight = Future.value();
   var _cancelRequested = false;
