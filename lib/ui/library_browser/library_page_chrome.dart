@@ -119,10 +119,12 @@ class _Tabs extends StatelessWidget {
                   button: true,
                   label: tab.label,
                   selected: tab == selected,
-                  child: GestureDetector(
-                    onTap: () => onSelect(tab),
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.click,
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: InkWell(
+                      onTap: () => onSelect(tab),
+                      mouseCursor: SystemMouseCursors.click,
+                      hoverColor: palette.hairlineSoft,
                       child: Text(
                         tab.label,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -173,11 +175,13 @@ class _SourceSwitch extends StatelessWidget {
               selected: source == selected,
               label: 'Library source: ${source.label}',
               excludeSemantics: true,
-              child: GestureDetector(
-                key: ValueKey('library-source-${source.name}'),
-                onTap: () => onSelect(source),
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
+              child: Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  key: ValueKey('library-source-${source.name}'),
+                  onTap: () => onSelect(source),
+                  mouseCursor: SystemMouseCursors.click,
+                  hoverColor: palette.hairlineSoft,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 160),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
