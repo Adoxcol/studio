@@ -29,10 +29,14 @@ class LibraryTextAction extends StatelessWidget {
       button: true,
       label: label,
       enabled: enabled,
-      child: GestureDetector(
-        onTap: enabled ? onTap : null,
-        child: MouseRegion(
-          cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          mouseCursor: enabled
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.basic,
+          hoverColor: palette.hairlineSoft,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
