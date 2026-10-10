@@ -33,7 +33,9 @@ class LibraryTextAction extends StatelessWidget {
         type: MaterialType.transparency,
         child: InkWell(
           onTap: enabled ? onTap : null,
-          mouseCursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+          mouseCursor: enabled
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.basic,
           hoverColor: palette.hairlineSoft,
           child: Row(
             mainAxisSize: MainAxisSize.min,
