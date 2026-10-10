@@ -440,9 +440,8 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     final index = LibraryIndex(allTracks);
     final remote = source == LibrarySource.navidrome;
     final tab = remote && _tab == LibraryTab.folders ? LibraryTab.all : _tab;
-    final folder = tab == LibraryTab.folders
-        ? folders.where((f) => f.id == _folderId).firstOrNull
-        : null;
+    final foldersById = ref.watch(libraryFoldersByIdProvider);
+    final folder = tab == LibraryTab.folders ? foldersById[_folderId] : null;
     final viewingFolder = folder != null;
     final folderFilterId = folder?.id;
     final key = (
