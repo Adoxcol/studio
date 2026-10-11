@@ -272,26 +272,26 @@ class _GenreTileState extends State<_GenreTile> {
       button: true,
       label: '${widget.name}, ${widget.detail}',
       excludeSemantics: true,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => setState(() => _hovered = true),
-          onExit: (_) => setState(() => _hovered = false),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 140),
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: _hovered ? colors.accent : colors.border,
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [colors.surface, palette.bg],
-              ),
-            ),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: _hovered ? colors.accent : colors.border,
+          ),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [colors.surface, palette.bg],
+          ),
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: widget.onTap,
+            onHover: (hovered) => setState(() => _hovered = hovered),
+            hoverColor: colors.accent.withValues(alpha: 0.1),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
