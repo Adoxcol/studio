@@ -277,9 +277,7 @@ class _GenreTileState extends State<_GenreTile> {
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: _hovered ? colors.accent : colors.border,
-          ),
+          border: Border.all(color: _hovered ? colors.accent : colors.border),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
