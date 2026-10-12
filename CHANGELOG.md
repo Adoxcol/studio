@@ -7,6 +7,30 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-12
+
+### Fixed
+
+- Subsonic passwords and Last.fm / ListenBrainz authentication tokens are
+  now kept in the operating system's secure credential store instead of
+  plaintext files. Existing credentials are migrated automatically, and
+  Studio continues to start cleanly if secure storage is temporarily
+  unavailable.
+- Subsonic authentication salts now use the operating system's secure random
+  generator.
+- Library tabs, source controls, track rows, genre tiles, refresh actions,
+  playback controls and the volume button now give consistent native hover,
+  ripple and click feedback.
+- Audio-engine badges, lyrics typography controls and icon-only navigation and
+  playback actions now have clearer tooltips and screen-reader labels.
+
+### Performance
+
+- Large playback queues now use constant-time position lookups, including when
+  the same track appears more than once.
+- Library folder selection and scrobble-queue updates avoid repeated linear
+  scans, and the playlist-name dialog rebuilds less while typing.
+
 ## [0.8.0] - 2026-09-28
 
 ### Added
