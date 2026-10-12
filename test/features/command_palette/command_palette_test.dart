@@ -118,7 +118,7 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
     expect(
-      engine.lastUri?.toFilePath(),
+      engine.lastUri?.toFilePath(windows: false),
       anyOf('/music/Jóga.flac', '/music/Hunter.flac'),
     );
   });
