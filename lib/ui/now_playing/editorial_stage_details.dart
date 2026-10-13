@@ -56,26 +56,33 @@ class _EditorialArtistAlbumByline extends ConsumerWidget {
         ? ' (${playback.year})'
         : '';
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () {
-          ref.read(libraryNavigationProvider.notifier).openArtist(artist);
-          ref.read(playbackModeProvider.notifier).exit();
-          ref
-              .read(studioNavProvider.notifier)
-              .select(StudioDestination.library);
-        },
-        child: Text(
-          album.isNotEmpty ? '$artist • $album$year' : artist,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 14,
-            fontStyle: FontStyle.italic,
-            color: palette.inkMuted,
-            fontFamilyFallback: const ['Georgia', 'serif'],
+    return Tooltip(
+      message: 'View artist in Library',
+      child: Semantics(
+        button: true,
+        label: 'View artist in Library',
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () {
+              ref.read(libraryNavigationProvider.notifier).openArtist(artist);
+              ref.read(playbackModeProvider.notifier).exit();
+              ref
+                  .read(studioNavProvider.notifier)
+                  .select(StudioDestination.library);
+            },
+            child: Text(
+              album.isNotEmpty ? '$artist • $album$year' : artist,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14,
+                fontStyle: FontStyle.italic,
+                color: palette.inkMuted,
+                fontFamilyFallback: const ['Georgia', 'serif'],
+              ),
+            ),
           ),
         ),
       ),
