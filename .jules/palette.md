@@ -7,3 +7,6 @@
 ## 2026-10-06 - Interactive Grid Tile Items
 **Learning:** Similar to list items, custom grid tiles (`_GenreTile` in `LibraryBrowseView`) built with `GestureDetector`, `MouseRegion`, and custom `_hovered` state lack native Material visual feedback.
 **Action:** Replace `GestureDetector` + `MouseRegion` and custom `setState` hover logic with `InkWell` wrapped in `Material(type: MaterialType.transparency)`. Set `hoverColor` to provide a smooth, native Material ripple and hover effect, which is less verbose and visually superior.
+## 2026-10-16 - Interactive Custom Segmented Controls
+**Learning:** In Flutter applications, custom segmented control tabs (like the `_SegmentedModePill` in the Player Bar) built with `GestureDetector` lack the native Material visual feedback, such as pointer cursors on hover or ink ripples on click.
+**Action:** Replace `GestureDetector` with an `InkWell` wrapped in `Material(type: MaterialType.transparency)`. Ensure you provide `borderRadius` and a `hoverColor` matching the existing aesthetic. This gives custom controls native interactive feedback and eliminates the missing pointer cursor issue.
