@@ -83,6 +83,21 @@ class _MetadataEditorDialogState extends ConsumerState<_MetadataEditorDialog> {
       ),
   ];
 
+  void _clearErrorIfAny() {
+    if (_error != null) setState(() => _error = null);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _title.addListener(_clearErrorIfAny);
+    _artist.addListener(_clearErrorIfAny);
+    _album.addListener(_clearErrorIfAny);
+    _genre.addListener(_clearErrorIfAny);
+    _year.addListener(_clearErrorIfAny);
+    _trackNumber.addListener(_clearErrorIfAny);
+  }
+
   @override
   void dispose() {
     _title.dispose();
@@ -92,11 +107,6 @@ class _MetadataEditorDialogState extends ConsumerState<_MetadataEditorDialog> {
     _year.dispose();
     _trackNumber.dispose();
     super.dispose();
-  }
-
-  void _changed(String _) {
-    if (_error != null) _error = null;
-    setState(() {});
   }
 
   Future<void> _pickCover() async {
@@ -227,7 +237,14 @@ class _MetadataEditorDialogState extends ConsumerState<_MetadataEditorDialog> {
   @override
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
-    final changes = _changes;
+    final listenable = Listenable.merge([
+      _title,
+      _artist,
+      _album,
+      _genre,
+      _year,
+      _trackNumber,
+    ]);
     final contentWidth = (MediaQuery.sizeOf(context).width - 96).clamp(
       280.0,
       720.0,
@@ -241,9 +258,7 @@ class _MetadataEditorDialogState extends ConsumerState<_MetadataEditorDialog> {
       year: _year,
       trackNumber: _trackNumber,
       enabled: _writable && !_saving,
-      onChanged: _changed,
     );
-    final preview = _ChangePreview(changes: changes);
     return PopScope(
       canPop: !_saving,
       child: AlertDialog(
@@ -322,13 +337,24 @@ class _MetadataEditorDialogState extends ConsumerState<_MetadataEditorDialog> {
                     children: [
                       Expanded(flex: 3, child: form),
                       const SizedBox(width: 32),
-                      Expanded(flex: 2, child: preview),
+                      Expanded(
+                        flex: 2,
+                        child: ListenableBuilder(
+                          listenable: listenable,
+                          builder: (context, child) =>
+                              _ChangePreview(changes: _changes),
+                        ),
+                      ),
                     ],
                   )
                 else ...[
                   form,
                   const SizedBox(height: 28),
-                  preview,
+                  ListenableBuilder(
+                    listenable: listenable,
+                    builder: (context, child) =>
+                        _ChangePreview(changes: _changes),
+                  ),
                 ],
                 if (_error case final error?) ...[
                   const SizedBox(height: 16),
@@ -349,10 +375,15 @@ class _MetadataEditorDialogState extends ConsumerState<_MetadataEditorDialog> {
             child: const Text('Cancel'),
           ),
           if (_writable)
-            TextButton(
-              key: const ValueKey('write-metadata'),
-              onPressed: _saving || changes.isEmpty ? null : _save,
-              child: Text(_saving ? 'Writing…' : 'Write changes'),
+            ListenableBuilder(
+              listenable: listenable,
+              builder: (context, child) {
+                return TextButton(
+                  key: const ValueKey('write-metadata'),
+                  onPressed: _saving || _changes.isEmpty ? null : _save,
+                  child: Text(_saving ? 'Writing…' : 'Write changes'),
+                );
+              },
             ),
         ],
       ),
@@ -369,7 +400,6 @@ class _MetadataForm extends StatelessWidget {
     required this.year,
     required this.trackNumber,
     required this.enabled,
-    required this.onChanged,
   });
 
   final TextEditingController title;
@@ -379,7 +409,6 @@ class _MetadataForm extends StatelessWidget {
   final TextEditingController year;
   final TextEditingController trackNumber;
   final bool enabled;
-  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -391,26 +420,14 @@ class _MetadataForm extends StatelessWidget {
           controller: title,
           enabled: enabled,
           autofocus: enabled,
-          onChanged: onChanged,
         ),
         _MetadataField(
           label: 'Artist credits',
           controller: artist,
           enabled: enabled,
-          onChanged: onChanged,
         ),
-        _MetadataField(
-          label: 'Album',
-          controller: album,
-          enabled: enabled,
-          onChanged: onChanged,
-        ),
-        _MetadataField(
-          label: 'Genre',
-          controller: genre,
-          enabled: enabled,
-          onChanged: onChanged,
-        ),
+        _MetadataField(label: 'Album', controller: album, enabled: enabled),
+        _MetadataField(label: 'Genre', controller: genre, enabled: enabled),
         Row(
           children: [
             Expanded(
@@ -419,7 +436,6 @@ class _MetadataForm extends StatelessWidget {
                 controller: year,
                 enabled: enabled,
                 numeric: true,
-                onChanged: onChanged,
               ),
             ),
             const SizedBox(width: 24),
@@ -429,7 +445,6 @@ class _MetadataForm extends StatelessWidget {
                 controller: trackNumber,
                 enabled: enabled,
                 numeric: true,
-                onChanged: onChanged,
               ),
             ),
           ],
@@ -530,7 +545,6 @@ class _MetadataField extends StatelessWidget {
     required this.label,
     required this.controller,
     required this.enabled,
-    required this.onChanged,
     this.numeric = false,
     this.autofocus = false,
   });
@@ -538,7 +552,6 @@ class _MetadataField extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final bool enabled;
-  final ValueChanged<String> onChanged;
   final bool numeric;
   final bool autofocus;
 
@@ -551,7 +564,6 @@ class _MetadataField extends StatelessWidget {
         controller: controller,
         enabled: enabled,
         autofocus: autofocus,
-        onChanged: onChanged,
         keyboardType: numeric ? TextInputType.number : TextInputType.text,
         style: Theme.of(context).textTheme.bodyMedium,
         cursorColor: palette.accent,
