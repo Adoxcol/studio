@@ -418,12 +418,18 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
       _progress(_latest, force: true);
 
       // 3. Fetch playlists from Navidrome
-      state = state.copyWith(
-        statusMessage: 'Fetching playlists...',
-        currentAlbumName: '',
+      _progress(
+        _latest.copyWith(
+          statusMessage: 'Fetching playlists...',
+          currentAlbumName: '',
+        ),
+        force: true,
       );
       final remotePlaylists = await client.getPlaylists();
-      state = state.copyWith(totalPlaylists: remotePlaylists.length);
+      _progress(
+        _latest.copyWith(totalPlaylists: remotePlaylists.length),
+        force: true,
+      );
 
       final existingPlaylists = await db.allPlaylists();
       var syncedPlaylists = 0;
@@ -481,11 +487,15 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
       }
 
       if (_isCancelled) return;
+      _progress(_latest, force: true);
 
       // 4. Fetch artist portraits from Navidrome
-      state = state.copyWith(
-        statusMessage: 'Syncing artist portraits...',
-        currentPlaylistName: '',
+      _progress(
+        _latest.copyWith(
+          statusMessage: 'Syncing artist portraits...',
+          currentPlaylistName: '',
+        ),
+        force: true,
       );
       final remoteArtists = await client.getArtists();
       await ref
