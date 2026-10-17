@@ -61,9 +61,9 @@ class _EditorialArtistAlbumByline extends ConsumerWidget {
       child: Semantics(
         button: true,
         label: 'View artist in Library',
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
             onTap: () {
               ref.read(libraryNavigationProvider.notifier).openArtist(artist);
               ref.read(playbackModeProvider.notifier).exit();
@@ -71,16 +71,21 @@ class _EditorialArtistAlbumByline extends ConsumerWidget {
                   .read(studioNavProvider.notifier)
                   .select(StudioDestination.library);
             },
-            child: Text(
-              album.isNotEmpty ? '$artist • $album$year' : artist,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 14,
-                fontStyle: FontStyle.italic,
-                color: palette.inkMuted,
-                fontFamilyFallback: const ['Georgia', 'serif'],
+            borderRadius: BorderRadius.circular(4),
+            hoverColor: palette.ink.withValues(alpha: 0.05),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Text(
+                album.isNotEmpty ? '$artist • $album$year' : artist,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontStyle: FontStyle.italic,
+                  color: palette.inkMuted,
+                  fontFamilyFallback: const ['Georgia', 'serif'],
+                ),
               ),
             ),
           ),
