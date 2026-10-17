@@ -90,6 +90,67 @@ void main() {
       expect(rows.last.id, existing.id);
       expect(rows.last.title, 'Existing title');
     });
+
+    test(
+      'compare playSongs old chunked lookup vs getOrInsertTracks with 2000 songs',
+      () async {
+        final songs = [
+          for (var i = 0; i < 2000; i++)
+            SubsonicSong(
+              id: 'song-$i',
+              title: 'Song $i',
+              artist: 'Artist',
+              album: 'Album',
+              durationSeconds: 180,
+            ),
+        ];
+
+        final companions = [
+          for (final song in songs)
+            TracksCompanion.insert(
+              source: const Value(TrackLocator.subsonic),
+              locator: song.id,
+              title: song.title,
+              artist: Value(song.artist),
+              album: Value(song.album),
+              durationMs: Value(song.durationSeconds * 1000),
+            ),
+        ];
+
+        // Old pattern: upsert then skip(i).take(900)
+        final swOld = Stopwatch()..start();
+        await db.upsertTracks(companions);
+        final locators = songs.map((s) => s.id).toList();
+        final Map<String, int> locatorToId = {};
+        for (var i = 0; i < locators.length; i += 900) {
+          final chunk = locators.skip(i).take(900).toList();
+          final tracks =
+              await (db.select(db.tracks)..where(
+                    (t) =>
+                        t.locator.isIn(chunk) &
+                        t.source.equals(TrackLocator.subsonic),
+                  ))
+                  .get();
+          for (final t in tracks) {
+            locatorToId[t.locator] = t.id;
+          }
+        }
+        final trackIdsOld = locators.map((loc) => locatorToId[loc]!).toList();
+        swOld.stop();
+
+        // New pattern: getOrInsertTracks
+        final swNew = Stopwatch()..start();
+        final tracksNew = await db.getOrInsertTracks(companions);
+        final trackIdsNew = tracksNew.map((t) => t.id).toList();
+        swNew.stop();
+
+        expect(trackIdsNew, trackIdsOld);
+        // ignore: avoid_print
+        print(
+          'Old chunked lookup time: ${swOld.elapsedMilliseconds}ms, New getOrInsertTracks time: ${swNew.elapsedMilliseconds}ms',
+        );
+      },
+    );
   });
 
   group('ArtistPictureRepository.saveRemote', () {
