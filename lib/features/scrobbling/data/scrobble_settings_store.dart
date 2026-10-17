@@ -25,7 +25,14 @@ class FileScrobbleSettingsStore implements ScrobbleSettingsStore {
   FileScrobbleSettingsStore(this.file);
 
   final File file;
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
+    mOptions: MacOsOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
+  );
   late ScrobbleSettings _cachedSettings;
 
   Future<void> init() async {
