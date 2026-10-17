@@ -10,3 +10,6 @@
 ## 2026-10-16 - Interactive Custom Segmented Controls
 **Learning:** In Flutter applications, custom segmented control tabs (like the `_SegmentedModePill` in the Player Bar) built with `GestureDetector` lack the native Material visual feedback, such as pointer cursors on hover or ink ripples on click.
 **Action:** Replace `GestureDetector` with an `InkWell` wrapped in `Material(type: MaterialType.transparency)`. Ensure you provide `borderRadius` and a `hoverColor` matching the existing aesthetic. This gives custom controls native interactive feedback and eliminates the missing pointer cursor issue.
+## 2026-10-17 - Interactive Artist/Album Byline
+**Learning:** In Flutter applications, text that is clickable but wrapped in a simple `GestureDetector` and `MouseRegion` feels unresponsive as it lacks visual hover and ripple feedback.
+**Action:** Use an `InkWell` wrapped in `Material(type: MaterialType.transparency)` and set `hoverColor` (and padding) to provide a native Material interactive experience on text elements.
