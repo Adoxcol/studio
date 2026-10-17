@@ -79,6 +79,25 @@ MockClientHandler _handler({required int albums, int songsPerAlbum = 3}) {
         'playlists': {'playlist': <Object>[]},
       });
     }
+    if (path.endsWith('/getPlaylist')) {
+      final id = params['id']!;
+      return _ok({
+        'playlist': {
+          'id': id,
+          'name': 'Playlist $id',
+          'entry': [
+            for (var s = 0; s < 5; s++)
+              {
+                'id': '$id-song-$s',
+                'title': 'Playlist Song $s',
+                'artist': 'Artist',
+                'album': 'Album',
+                'duration': 180,
+              },
+          ],
+        },
+      });
+    }
     if (path.endsWith('/getArtists')) {
       return _ok({
         'artists': {'index': <Object>[]},
@@ -183,6 +202,57 @@ void main() {
     // Unthrottled this was at least two updates per album.
     expect(updates, lessThan(60));
     expect(container!.read(subsonicScanProvider).totalTracks, 180);
+  });
+
+  test('scan fetches playlists concurrently', () async {
+    var inFlight = 0;
+    var peak = 0;
+    final inner = _handler(albums: 0);
+    container = containerFor(
+      MockClient((request) async {
+        final path = request.url.path;
+        final params = request.url.queryParameters;
+        if (path.endsWith('/getPlaylists')) {
+          return _ok({
+            'playlists': {
+              'playlist': [
+                for (var p = 0; p < 8; p++)
+                  {'id': 'pl-$p', 'name': 'Playlist $p', 'songCount': 5},
+              ],
+            },
+          });
+        }
+        if (path.endsWith('/getPlaylist')) {
+          peak = max(peak, ++inFlight);
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+          inFlight--;
+          final id = params['id']!;
+          return _ok({
+            'playlist': {
+              'id': id,
+              'name': 'Playlist $id',
+              'entry': [
+                for (var s = 0; s < 5; s++)
+                  {
+                    'id': '$id-song-$s',
+                    'title': 'Playlist Song $s',
+                    'artist': 'Artist',
+                    'album': 'Album',
+                    'duration': 180,
+                  },
+              ],
+            },
+          });
+        }
+        return inner(request);
+      }),
+    );
+
+    await container!.read(subsonicScanProvider.notifier).startScan();
+
+    expect(container!.read(subsonicScanProvider).error, isNull);
+    expect(peak, SubsonicScanNotifier.playlistConcurrency);
+    expect(container!.read(subsonicScanProvider).syncedPlaylists, 8);
   });
 
   test('scan fetches a few albums at once', () async {

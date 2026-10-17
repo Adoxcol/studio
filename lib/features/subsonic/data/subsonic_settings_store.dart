@@ -31,7 +31,14 @@ class FileSubsonicSettingsStore implements SubsonicSettingsStore {
   FileSubsonicSettingsStore(this.file);
 
   final File file;
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
+    mOptions: MacOsOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
+  );
   SubsonicServerConfig? _cachedConfig;
 
   @override

@@ -288,22 +288,33 @@ class FolderScanner {
     for (final track in rows) {
       if (isCancelled?.call() ?? false) return;
       if (track.artworkPath != null || track.fileModifiedMs == null) continue;
-      var path = await _sidecarPath(track.locator, sidecarCache, session);
       final albumKey = _albumKey(track.artist, track.album);
-      path ??= albumKey == null ? null : albumArt[albumKey];
+      var path = albumKey == null ? null : albumArt[albumKey];
+      if (path == null) {
+        path = await _sidecarPath(track.locator, sidecarCache, session);
+        if (path != null && albumKey != null) {
+          albumArt[albumKey] = path;
+        }
+      }
       if (path != null) {
         updates[track.id] = path;
-        if (albumKey != null) albumArt[albumKey] ??= path;
       }
     }
     if (updates.isNotEmpty) {
       await _db.setArtworkPaths(updates);
+      for (var i = 0; i < rows.length; i++) {
+        final path = updates[rows[i].id];
+        if (path != null) {
+          rows[i] = rows[i].copyWith(artworkPath: Value(path));
+        }
+      }
     }
     if (isCancelled?.call() ?? false) return;
     await _fetchMissingCovers(
       folderId,
       session: session,
       isCancelled: isCancelled,
+      tracks: rows,
     );
   }
 
@@ -325,9 +336,10 @@ class FolderScanner {
     int folderId, {
     required _ScanSession session,
     ScanCancel? isCancelled,
+    List<Track>? tracks,
   }) async {
     if (_covers == null || _artwork == null) return;
-    final rows = await _db.tracksInFolder(folderId);
+    final rows = tracks ?? await _db.tracksInFolder(folderId);
     final groups = <_AlbumKey, List<Track>>{};
     for (final track in rows) {
       if (track.artworkPath != null || track.fileModifiedMs == null) continue;
