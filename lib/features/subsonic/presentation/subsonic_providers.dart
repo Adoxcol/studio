@@ -294,6 +294,10 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
   /// and waiting on one round trip per album made big libraries slow.
   static const albumConcurrency = 4;
 
+  /// Playlists fetched at once. Parallelizing requests speeds up playlist sync
+  /// significantly while remaining friendly to Subsonic servers.
+  static const playlistConcurrency = 4;
+
   /// Progress is published at most this often; the final state always lands.
   static const progressEvery = Duration(milliseconds: 120);
 
@@ -414,51 +418,84 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
       _progress(_latest, force: true);
 
       // 3. Fetch playlists from Navidrome
-      state = state.copyWith(
-        statusMessage: 'Fetching playlists...',
-        currentAlbumName: '',
+      _progress(
+        _latest.copyWith(
+          statusMessage: 'Fetching playlists...',
+          currentAlbumName: '',
+        ),
+        force: true,
       );
       final remotePlaylists = await client.getPlaylists();
-      state = state.copyWith(totalPlaylists: remotePlaylists.length);
+      _progress(
+        _latest.copyWith(totalPlaylists: remotePlaylists.length),
+        force: true,
+      );
 
       final existingPlaylists = await db.allPlaylists();
       var syncedPlaylists = 0;
 
-      for (final rp in remotePlaylists) {
+      for (
+        var start = 0;
+        start < remotePlaylists.length;
+        start += playlistConcurrency
+      ) {
         if (_isCancelled) break;
-        state = state.copyWith(
-          currentPlaylistName: rp.name,
-          statusMessage: 'Fetching playlist: ${rp.name}',
+        final window = remotePlaylists.sublist(
+          start,
+          (start + playlistConcurrency).clamp(0, remotePlaylists.length),
+        );
+        _progress(
+          _latest.copyWith(
+            currentPlaylistName: window.first.name,
+            statusMessage: 'Fetching playlist: ${window.first.name}',
+          ),
         );
 
-        final playlistSongs = await client.getPlaylist(rp.id);
+        final results = await Future.wait([
+          for (final rp in window) client.getPlaylist(rp.id),
+        ]);
         if (_isCancelled) break;
 
-        final playlistTracks = await db.getOrInsertTracks([
-          for (final song in playlistSongs) subsonicTrackRow(song, client),
-        ]);
-        final trackIds = [for (final track in playlistTracks) track.id];
+        for (var i = 0; i < window.length; i++) {
+          final rp = window[i];
+          final playlistSongs = results[i];
 
-        final existing = existingPlaylists
-            .where((p) => p.name == rp.name && p.smartRules == null)
-            .firstOrNull;
-        final int playlistId;
-        if (existing != null) {
-          playlistId = existing.id;
-        } else {
-          playlistId = await db.createPlaylist(rp.name);
+          final playlistTracks = await db.getOrInsertTracks([
+            for (final song in playlistSongs) subsonicTrackRow(song, client),
+          ]);
+          final trackIds = [for (final track in playlistTracks) track.id];
+
+          final existing = existingPlaylists
+              .where((p) => p.name == rp.name && p.smartRules == null)
+              .firstOrNull;
+          final int playlistId;
+          if (existing != null) {
+            playlistId = existing.id;
+          } else {
+            playlistId = await db.createPlaylist(rp.name);
+          }
+          await db.replacePlaylistTracks(playlistId, trackIds);
+          syncedPlaylists++;
+          _progress(
+            _latest.copyWith(
+              syncedPlaylists: syncedPlaylists,
+              currentPlaylistName: rp.name,
+              statusMessage: 'Fetching playlist: ${rp.name}',
+            ),
+          );
         }
-        await db.replacePlaylistTracks(playlistId, trackIds);
-        syncedPlaylists++;
-        state = state.copyWith(syncedPlaylists: syncedPlaylists);
       }
 
       if (_isCancelled) return;
+      _progress(_latest, force: true);
 
       // 4. Fetch artist portraits from Navidrome
-      state = state.copyWith(
-        statusMessage: 'Syncing artist portraits...',
-        currentPlaylistName: '',
+      _progress(
+        _latest.copyWith(
+          statusMessage: 'Syncing artist portraits...',
+          currentPlaylistName: '',
+        ),
+        force: true,
       );
       final remoteArtists = await client.getArtists();
       await ref
