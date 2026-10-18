@@ -112,10 +112,7 @@ class _SmartPlaylistEditorState extends ConsumerState<_SmartPlaylistEditor> {
   @override
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
-    final definition = _definition;
-    final invalid = definition.validate();
     final library = ref.watch(libraryTracksProvider);
-    final matches = definition.evaluate(library.value ?? const []);
     return PopScope(
       canPop: !_saving,
       child: AlertDialog(
@@ -227,30 +224,47 @@ class _SmartPlaylistEditorState extends ConsumerState<_SmartPlaylistEditor> {
                   ],
                 ),
                 Divider(color: palette.hairline, height: 28),
-                Text(
-                  invalid ??
-                      (library.hasError
-                          ? 'Library preview is unavailable.'
-                          : library.isLoading
-                          ? 'Loading preview…'
-                          : '${matches.length} matching ${matches.length == 1 ? 'track' : 'tracks'}'),
-                  key: const ValueKey('smart-preview-count'),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: invalid != null ? palette.inkMuted : palette.accent,
-                  ),
+                ListenableBuilder(
+                  listenable: Listenable.merge(_rules.map((r) => r.value)),
+                  builder: (context, _) {
+                    final definition = _definition;
+                    final invalid = definition.validate();
+                    final matches = definition.evaluate(
+                      library.value ?? const [],
+                    );
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          invalid ??
+                              (library.hasError
+                                  ? 'Library preview is unavailable.'
+                                  : library.isLoading
+                                  ? 'Loading preview…'
+                                  : '${matches.length} matching ${matches.length == 1 ? 'track' : 'tracks'}'),
+                          key: const ValueKey('smart-preview-count'),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: invalid != null
+                                    ? palette.inkMuted
+                                    : palette.accent,
+                              ),
+                        ),
+                        if (invalid == null) ...[
+                          const SizedBox(height: 8),
+                          for (final track in matches.take(4))
+                            Text(
+                              '${track.title} — ${track.artist ?? 'Unknown artist'}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: palette.inkMuted),
+                            ),
+                        ],
+                      ],
+                    );
+                  },
                 ),
-                if (invalid == null) ...[
-                  const SizedBox(height: 8),
-                  for (final track in matches.take(4))
-                    Text(
-                      '${track.title} — ${track.artist ?? 'Unknown artist'}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: palette.inkMuted),
-                    ),
-                ],
                 const SizedBox(height: 12),
                 Text(
                   'Updates automatically as your library changes. Bitrate is estimated from file size and duration; lossless matching uses the file format.',
@@ -269,13 +283,17 @@ class _SmartPlaylistEditorState extends ConsumerState<_SmartPlaylistEditor> {
             onPressed: _saving ? null : () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: _name,
-            builder: (context, value, child) {
+          ListenableBuilder(
+            listenable: Listenable.merge([
+              _name,
+              ..._rules.map((r) => r.value),
+            ]),
+            builder: (context, child) {
+              final invalid = _definition.validate();
               return TextButton(
                 key: const ValueKey('save-smart-playlist'),
                 onPressed:
-                    _saving || invalid != null || value.text.trim().isEmpty
+                    _saving || invalid != null || _name.text.trim().isEmpty
                     ? null
                     : _save,
                 child: Text(_saving ? 'Saving…' : 'Save playlist'),
@@ -418,7 +436,6 @@ class _RuleEditor extends ConsumerWidget {
             TextField(
               controller: draft.value,
               enabled: enabled,
-              onChanged: (_) => onChanged(),
               keyboardType: draft.field.numeric
                   ? TextInputType.number
                   : TextInputType.text,
