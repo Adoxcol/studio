@@ -56,27 +56,39 @@ class FileScrobbleSettingsStore implements ScrobbleSettingsStore {
       bool needsMigration = false;
       if (json['lastFmSecret'] is String &&
           (json['lastFmSecret'] as String).isNotEmpty) {
-        await _secureStorage.write(
-          key: 'scrobbling_lastFmSecret',
-          value: json['lastFmSecret'] as String,
-        );
-        needsMigration = true;
+        try {
+          await _secureStorage.write(
+            key: 'scrobbling_lastFmSecret',
+            value: json['lastFmSecret'] as String,
+          );
+          needsMigration = true;
+        } on Object {
+          // Secure storage unavailable
+        }
       }
       if (json['lastFmSessionKey'] is String &&
           (json['lastFmSessionKey'] as String).isNotEmpty) {
-        await _secureStorage.write(
-          key: 'scrobbling_lastFmSessionKey',
-          value: json['lastFmSessionKey'] as String,
-        );
-        needsMigration = true;
+        try {
+          await _secureStorage.write(
+            key: 'scrobbling_lastFmSessionKey',
+            value: json['lastFmSessionKey'] as String,
+          );
+          needsMigration = true;
+        } on Object {
+          // Secure storage unavailable
+        }
       }
       if (json['listenBrainzToken'] is String &&
           (json['listenBrainzToken'] as String).isNotEmpty) {
-        await _secureStorage.write(
-          key: 'scrobbling_listenBrainzToken',
-          value: json['listenBrainzToken'] as String,
-        );
-        needsMigration = true;
+        try {
+          await _secureStorage.write(
+            key: 'scrobbling_listenBrainzToken',
+            value: json['listenBrainzToken'] as String,
+          );
+          needsMigration = true;
+        } on Object {
+          // Secure storage unavailable
+        }
       }
 
       if (needsMigration) {
@@ -86,15 +98,20 @@ class FileScrobbleSettingsStore implements ScrobbleSettingsStore {
     }
 
     // Now overlay any values from secure storage over the loaded settings
-    final lastFmSecret = await _secureStorage.read(
-      key: 'scrobbling_lastFmSecret',
-    );
-    final lastFmSessionKey = await _secureStorage.read(
-      key: 'scrobbling_lastFmSessionKey',
-    );
-    final listenBrainzToken = await _secureStorage.read(
-      key: 'scrobbling_listenBrainzToken',
-    );
+    String? lastFmSecret;
+    String? lastFmSessionKey;
+    String? listenBrainzToken;
+    try {
+      lastFmSecret = await _secureStorage.read(key: 'scrobbling_lastFmSecret');
+      lastFmSessionKey = await _secureStorage.read(
+        key: 'scrobbling_lastFmSessionKey',
+      );
+      listenBrainzToken = await _secureStorage.read(
+        key: 'scrobbling_listenBrainzToken',
+      );
+    } on Object {
+      // Secure storage unavailable
+    }
 
     if (lastFmSecret != null ||
         lastFmSessionKey != null ||
