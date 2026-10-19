@@ -142,11 +142,11 @@ class _TrackInfo extends ConsumerWidget {
             child: Semantics(
               button: true,
               label: 'Open Playback Mode',
-              child: MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
+              child: Material(
+                type: MaterialType.transparency,
+                child: InkWell(
                   onTap: ref.read(playbackModeProvider.notifier).enter,
+                  hoverColor: palette.ink.withValues(alpha: 0.05),
                   child: CoverArt(path: track.artworkPath, size: 40),
                 ),
               ),
