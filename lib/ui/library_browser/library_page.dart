@@ -657,7 +657,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                                 ),
                               if (_selectionMode) ...[
                                 Text(
-                                  '${tableTracks.where((track) => _selectedTrackIds.contains(track.id)).length} selected',
+                                  '${_selectedTrackIds.length} selected',
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                                 LibraryTextAction(
