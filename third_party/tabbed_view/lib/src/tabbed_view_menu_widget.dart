@@ -45,9 +45,8 @@ class _TabbedViewMenuWidgetState extends State<TabbedViewMenuWidget> {
             padding: menuTheme.menuItemPadding,
             child: Text(
               widget.provider.menuItems[itemIndex].text,
-              overflow: menuTheme.ellipsisOverflowText
-                  ? TextOverflow.ellipsis
-                  : null,
+              overflow:
+                  menuTheme.ellipsisOverflowText ? TextOverflow.ellipsis : null,
             ),
           ),
           hoverColor: menuTheme.hoverColor,

@@ -10,7 +10,7 @@ class DockingTheme extends StatelessWidget {
   ///
   /// The [data] and [child] arguments must not be null.
   const DockingTheme({Key? key, required this.child, required this.data})
-    : super(key: key);
+      : super(key: key);
 
   /// Specifies the theme for descendant widgets.
   final DockingThemeData data;
@@ -23,8 +23,8 @@ class DockingTheme extends StatelessWidget {
   /// The data from the closest [DockingTheme] instance that encloses the given
   /// context.
   static DockingThemeData of(BuildContext context) {
-    final _InheritedTheme? inheritedTheme = context
-        .dependOnInheritedWidgetOfExactType<_InheritedTheme>();
+    final _InheritedTheme? inheritedTheme =
+        context.dependOnInheritedWidgetOfExactType<_InheritedTheme>();
     final DockingThemeData data = inheritedTheme?.data ?? _defaultTheme;
     return data;
   }
@@ -37,7 +37,7 @@ class DockingTheme extends StatelessWidget {
 
 class _InheritedTheme extends InheritedWidget {
   const _InheritedTheme({Key? key, required this.data, required Widget child})
-    : super(key: key, child: child);
+      : super(key: key, child: child);
 
   final DockingThemeData data;
 

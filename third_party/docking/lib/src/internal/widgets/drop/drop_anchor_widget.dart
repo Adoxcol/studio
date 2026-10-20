@@ -85,8 +85,8 @@ class ItemDropAnchorWidget extends DropAnchorBaseWidget {
     required DropPosition dropPosition,
     required DropWidgetListener listener,
     required DockingItem dockingItem,
-  }) : _dockingItem = dockingItem,
-       super(layout: layout, dropPosition: dropPosition, listener: listener);
+  })  : _dockingItem = dockingItem,
+        super(layout: layout, dropPosition: dropPosition, listener: listener);
 
   final DockingItem _dockingItem;
 
@@ -112,8 +112,8 @@ class TabsDropAnchorWidget extends DropAnchorBaseWidget {
     required DropPosition dropPosition,
     required DropWidgetListener listener,
     required DockingTabs dockingTabs,
-  }) : _dockingTabs = dockingTabs,
-       super(layout: layout, dropPosition: dropPosition, listener: listener);
+  })  : _dockingTabs = dockingTabs,
+        super(layout: layout, dropPosition: dropPosition, listener: listener);
 
   final DockingTabs _dockingTabs;
 

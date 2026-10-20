@@ -6,7 +6,7 @@ import 'package:meta/meta.dart';
 @internal
 class DropFeedbackWidget extends StatefulWidget {
   const DropFeedbackWidget({Key? key, this.dropPosition, required this.child})
-    : super(key: key);
+      : super(key: key);
   final Widget child;
   final DropPosition? dropPosition;
 
@@ -26,8 +26,7 @@ class _DropFeedbackWidgetState extends State<DropFeedbackWidget> {
     final accent = Theme.of(context).colorScheme.primary;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final horizontal =
-            _lastPosition == DropPosition.left ||
+        final horizontal = _lastPosition == DropPosition.left ||
             _lastPosition == DropPosition.right;
         return Stack(
           fit: StackFit.expand,
@@ -42,9 +41,8 @@ class _DropFeedbackWidgetState extends State<DropFeedbackWidget> {
               top: _lastPosition == DropPosition.bottom
                   ? constraints.maxHeight / 2
                   : 0,
-              width: horizontal
-                  ? constraints.maxWidth / 2
-                  : constraints.maxWidth,
+              width:
+                  horizontal ? constraints.maxWidth / 2 : constraints.maxWidth,
               height: horizontal
                   ? constraints.maxHeight
                   : constraints.maxHeight / 2,

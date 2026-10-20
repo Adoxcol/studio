@@ -15,8 +15,8 @@ class TabbedViewMenuThemeData {
     double maxWidth = 200,
     this.dividerColor,
     this.hoverColor,
-  }) : this._dividerThickness = dividerThickness >= 0 ? dividerThickness : 0,
-       this._maxWidth = maxWidth >= 0 ? maxWidth : 0;
+  })  : this._dividerThickness = dividerThickness >= 0 ? dividerThickness : 0,
+        this._maxWidth = maxWidth >= 0 ? maxWidth : 0;
 
   EdgeInsetsGeometry? margin;
 

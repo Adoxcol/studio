@@ -90,8 +90,8 @@ class ItemContentWrapper extends ContentWrapperBase {
     required DropWidgetListener listener,
     required DockingItem dockingItem,
     required Widget child,
-  }) : _dockingItem = dockingItem,
-       super(layout: layout, listener: listener, child: child);
+  })  : _dockingItem = dockingItem,
+        super(layout: layout, listener: listener, child: child);
 
   final DockingItem _dockingItem;
 
@@ -113,8 +113,8 @@ class TabsContentWrapper extends ContentWrapperBase {
     required DropWidgetListener listener,
     required DockingTabs dockingTabs,
     required Widget child,
-  }) : _dockingTabs = dockingTabs,
-       super(layout: layout, listener: listener, child: child);
+  })  : _dockingTabs = dockingTabs,
+        super(layout: layout, listener: listener, child: child);
 
   final DockingTabs _dockingTabs;
 

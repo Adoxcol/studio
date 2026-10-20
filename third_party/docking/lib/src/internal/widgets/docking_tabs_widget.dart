@@ -113,7 +113,7 @@ class DockingTabsWidgetState extends State<DockingTabsWidget>
       tabsAreaBuilder: widget.tabsAreaBuilder == null
           ? null
           : (context, child) =>
-                widget.tabsAreaBuilder!(context, widget.dockingTabs, child),
+              widget.tabsAreaBuilder!(context, widget.dockingTabs, child),
       controller: controller,
       tabsAreaButtonsBuilder: _tabsAreaButtonsBuilder,
       onTabSelection: (int? index) {

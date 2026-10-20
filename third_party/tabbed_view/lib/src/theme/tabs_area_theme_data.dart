@@ -29,13 +29,14 @@ class TabsAreaThemeData {
     this.disabledButtonBackground,
     IconProvider? menuIcon,
     this.dropColor = const Color.fromARGB(150, 0, 0, 0),
-  }) : this._minimalFinalGap = minimalFinalGap >= 0 ? minimalFinalGap : 0,
-       this._buttonsOffset = buttonsOffset >= 0 ? buttonsOffset : 0,
-       this._buttonsGap = buttonsGap >= 0 ? buttonsGap : 0,
-       this.buttonIconSize = TabbedViewThemeConstants.normalize(buttonIconSize),
-       this.menuIcon = menuIcon == null
-           ? IconProvider.path(TabbedViewIcons.menu)
-           : menuIcon;
+  })  : this._minimalFinalGap = minimalFinalGap >= 0 ? minimalFinalGap : 0,
+        this._buttonsOffset = buttonsOffset >= 0 ? buttonsOffset : 0,
+        this._buttonsGap = buttonsGap >= 0 ? buttonsGap : 0,
+        this.buttonIconSize =
+            TabbedViewThemeConstants.normalize(buttonIconSize),
+        this.menuIcon = menuIcon == null
+            ? IconProvider.path(TabbedViewIcons.menu)
+            : menuIcon;
 
   bool visible;
 

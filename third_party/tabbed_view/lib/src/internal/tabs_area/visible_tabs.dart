@@ -30,8 +30,7 @@ class VisibleTabs {
     double reservedWidth,
   ) {
     if (_tabs.length == 1) {
-      double availableWidth =
-          maxWidth -
+      double availableWidth = maxWidth -
           reservedWidth -
           tabsAreaTheme.initialGap -
           tabsAreaTheme.minimalFinalGap;

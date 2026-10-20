@@ -19,8 +19,8 @@ class TabButton {
     this.padding,
     double? iconSize,
   }) : this.iconSize = iconSize == null
-           ? iconSize
-           : TabbedViewThemeConstants.normalize(iconSize);
+            ? iconSize
+            : TabbedViewThemeConstants.normalize(iconSize);
 
   final IconProvider icon;
   final EdgeInsetsGeometry? padding;

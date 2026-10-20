@@ -61,7 +61,7 @@ class ContentArea extends StatelessWidget {
         }
 
         NotificationListenerCallback<SizeChangedLayoutNotification>?
-        onSizeNotification;
+            onSizeNotification;
         if (provider.menuItems.isNotEmpty) {
           children.add(
             Positioned.fill(child: _Glass(theme.menu.blur, provider)),

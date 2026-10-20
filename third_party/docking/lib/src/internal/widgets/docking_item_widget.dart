@@ -115,7 +115,7 @@ class DockingItemWidgetState extends State<DockingItemWidget>
       tabsAreaBuilder: widget.tabsAreaBuilder == null
           ? null
           : (context, child) =>
-                widget.tabsAreaBuilder!(context, widget.item, child),
+              widget.tabsAreaBuilder!(context, widget.item, child),
       tabsAreaButtonsBuilder: _tabsAreaButtonsBuilder,
       onTabSelection: onTabSelection,
       tabCloseInterceptor: _tabCloseInterceptor,

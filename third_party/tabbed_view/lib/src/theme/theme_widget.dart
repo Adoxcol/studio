@@ -11,7 +11,7 @@ class TabbedViewTheme extends StatelessWidget {
   ///
   /// The [data] and [child] arguments must not be null.
   const TabbedViewTheme({Key? key, required this.child, required this.data})
-    : super(key: key);
+      : super(key: key);
 
   /// Specifies the theme for descendant widgets.
   final TabbedViewThemeData data;
@@ -25,8 +25,8 @@ class TabbedViewTheme extends StatelessWidget {
   /// The data from the closest [TabbedViewTheme] instance that encloses the given
   /// context.
   static TabbedViewThemeData of(BuildContext context) {
-    final _InheritedTheme? inheritedTheme = context
-        .dependOnInheritedWidgetOfExactType<_InheritedTheme>();
+    final _InheritedTheme? inheritedTheme =
+        context.dependOnInheritedWidgetOfExactType<_InheritedTheme>();
     final TabbedViewThemeData data =
         inheritedTheme?.theme.data ?? _defaultTheme;
     return data;
@@ -40,7 +40,7 @@ class TabbedViewTheme extends StatelessWidget {
 
 class _InheritedTheme extends InheritedWidget {
   const _InheritedTheme({Key? key, required this.theme, required Widget child})
-    : super(key: key, child: child);
+      : super(key: key, child: child);
 
   final TabbedViewTheme theme;
 
