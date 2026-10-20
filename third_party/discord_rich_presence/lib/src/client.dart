@@ -22,13 +22,10 @@ class Client {
   }
 
   Future<void> setActivity(Activity activity) async {
-    await _request(
-        DiscordCommands.setActivity.name,
-        <String, dynamic>{
-          'pid': pid,
-          'activity': activity.toJson(),
-        },
-        '');
+    await _request(DiscordCommands.setActivity.name, <String, dynamic>{
+      'pid': pid,
+      'activity': activity.toJson(),
+    }, '');
   }
 
   Future<void> _request(

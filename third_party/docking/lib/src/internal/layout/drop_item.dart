@@ -147,8 +147,9 @@ class DropItem extends LayoutModifier {
         );
         if (oldSelection != null) {
           int newSelectedIndex = children.indexOf(oldSelection);
-          (newArea as DockingTabs).selectedIndex =
-              newSelectedIndex > -1 ? newSelectedIndex : 0;
+          (newArea as DockingTabs).selectedIndex = newSelectedIndex > -1
+              ? newSelectedIndex
+              : 0;
         }
       }
       if (dockingTabs == targetArea) {
@@ -174,8 +175,9 @@ class DropItem extends LayoutModifier {
           );
           if (oldSelection != null) {
             int newSelectedIndex = children.indexOf(oldSelection);
-            newDockingTabs.selectedIndex =
-                newSelectedIndex > -1 ? newSelectedIndex : 0;
+            newDockingTabs.selectedIndex = newSelectedIndex > -1
+                ? newSelectedIndex
+                : 0;
           }
           return newDockingTabs;
         } else if (dropPosition == DropPosition.top) {

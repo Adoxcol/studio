@@ -42,38 +42,46 @@ class _CloseWindowDialogState extends State<CloseWindowDialog> {
             ).textTheme.bodyMedium?.copyWith(color: palette.inkMuted),
           ),
           const SizedBox(height: 16),
-          GestureDetector(
-            key: const ValueKey('close-remember'),
-            behavior: HitTestBehavior.opaque,
-            onTap: () => setState(() => _remember = !_remember),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: Checkbox(
-                    value: _remember,
-                    onChanged: (value) {
-                      setState(() => _remember = value ?? false);
-                    },
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                    side: BorderSide(color: palette.inkMuted),
-                    fillColor: WidgetStateProperty.resolveWith((states) {
-                      if (states.contains(WidgetState.selected)) {
-                        return palette.accent;
-                      }
-                      return Colors.transparent;
-                    }),
-                    checkColor: palette.bg,
-                  ),
+          Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              key: const ValueKey('close-remember'),
+              onTap: () => setState(() => _remember = !_remember),
+              borderRadius: BorderRadius.circular(4),
+              hoverColor: palette.ink.withValues(alpha: 0.05),
+              child: Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Checkbox(
+                        value: _remember,
+                        onChanged: (value) {
+                          setState(() => _remember = value ?? false);
+                        },
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        side: BorderSide(color: palette.inkMuted),
+                        fillColor: WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return palette.accent;
+                          }
+                          return Colors.transparent;
+                        }),
+                        checkColor: palette.bg,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      "Don't show again",
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  "Don't show again",
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ],
+              ),
             ),
           ),
         ],

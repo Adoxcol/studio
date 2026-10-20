@@ -170,8 +170,8 @@ class _FlowLayoutRenderBox extends RenderBox
   @override
   void paint(PaintingContext context, Offset offset) {
     _visitVisibleChildren((RenderObject child) {
-      final _FlowLayoutParentData childParentData =
-          child.flowLayoutParentData();
+      final _FlowLayoutParentData childParentData = child
+          .flowLayoutParentData();
       context.paintChild(child, childParentData.offset + offset);
     });
   }
@@ -180,8 +180,8 @@ class _FlowLayoutRenderBox extends RenderBox
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     _visitVisibleChildren((renderObject) {
       final RenderBox child = renderObject as RenderBox;
-      final _FlowLayoutParentData childParentData =
-          child.flowLayoutParentData();
+      final _FlowLayoutParentData childParentData = child
+          .flowLayoutParentData();
       result.addWithPaintOffset(
         offset: childParentData.offset,
         position: position,

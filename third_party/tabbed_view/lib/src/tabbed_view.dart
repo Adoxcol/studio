@@ -15,8 +15,8 @@ import 'package:tabbed_view/src/typedefs/on_draggable_build.dart';
 import 'package:tabbed_view/src/typedefs/can_drop.dart';
 
 /// Tabs area buttons builder
-typedef TabsAreaButtonsBuilder = List<TabButton> Function(
-    BuildContext context, int tabsCount);
+typedef TabsAreaButtonsBuilder =
+    List<TabButton> Function(BuildContext context, int tabsCount);
 
 /// The event that will be triggered after the tab close.
 typedef OnTabClose = void Function(int tabIndex, TabData tabData);

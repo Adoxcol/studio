@@ -38,13 +38,13 @@ class TabData extends ChangeNotifier with TabIndex {
     bool closable = true,
     this.draggable = true,
     this.keepAlive = false,
-  })  : _value = value,
-        _text = text,
-        _leading = leading,
-        _closable = closable,
-        _content = content,
-        _buttons = buttons,
-        key = keepAlive ? GlobalKey() : UniqueKey();
+  }) : _value = value,
+       _text = text,
+       _leading = leading,
+       _closable = closable,
+       _content = content,
+       _buttons = buttons,
+       key = keepAlive ? GlobalKey() : UniqueKey();
 
   /// Identifies the content of the tab in the tree
   final Key key;

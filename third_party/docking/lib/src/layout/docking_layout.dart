@@ -26,11 +26,11 @@ abstract class DockingArea extends Area {
     double? minimalWeight,
     double? minimalSize,
   }) : super(
-          size: size,
-          weight: weight,
-          minimalWeight: minimalWeight,
-          minimalSize: minimalSize,
-        );
+         size: size,
+         weight: weight,
+         minimalWeight: minimalWeight,
+         minimalSize: minimalSize,
+       );
 
   final dynamic id;
 
@@ -166,14 +166,14 @@ abstract class DockingParentArea extends DockingArea {
     double? weight,
     double? minimalWeight,
     double? minimalSize,
-  })  : this._children = children,
-        super(
-          id: id,
-          size: size,
-          weight: weight,
-          minimalWeight: minimalWeight,
-          minimalSize: minimalSize,
-        ) {
+  }) : this._children = children,
+       super(
+         id: id,
+         size: size,
+         weight: weight,
+         minimalWeight: minimalWeight,
+         minimalSize: minimalSize,
+       ) {
     for (DockingArea child in this._children) {
       if (child.runtimeType == this.runtimeType) {
         throw ArgumentError(
@@ -236,7 +236,8 @@ abstract class DockingParentArea extends DockingArea {
     bool hasParentInfo = false,
     bool nameInfo = false,
   }) {
-    String str = super.hierarchy(
+    String str =
+        super.hierarchy(
           indexInfo: indexInfo,
           levelInfo: levelInfo,
           hasParentInfo: hasParentInfo,
@@ -279,16 +280,16 @@ class DockingItem extends DockingArea with DropArea {
     double? weight,
     double? minimalWeight,
     double? minimalSize,
-  })  : this.buttons = buttons != null ? List.unmodifiable(buttons) : [],
-        this.globalKey = keepAlive ? GlobalKey() : null,
-        this._maximized = maximized,
-        super(
-          id: id,
-          size: size,
-          weight: weight,
-          minimalWeight: minimalWeight,
-          minimalSize: minimalSize,
-        );
+  }) : this.buttons = buttons != null ? List.unmodifiable(buttons) : [],
+       this.globalKey = keepAlive ? GlobalKey() : null,
+       this._maximized = maximized,
+       super(
+         id: id,
+         size: size,
+         weight: weight,
+         minimalWeight: minimalWeight,
+         minimalSize: minimalSize,
+       );
 
   String? name;
   Widget widget;
@@ -347,13 +348,13 @@ class DockingRow extends DockingParentArea {
     double? minimalWeight,
     double? minimalSize,
   }) : super(
-          children,
-          id: id,
-          size: size,
-          weight: weight,
-          minimalWeight: minimalWeight,
-          minimalSize: minimalSize,
-        ) {
+         children,
+         id: id,
+         size: size,
+         weight: weight,
+         minimalWeight: minimalWeight,
+         minimalSize: minimalSize,
+       ) {
     controller = MultiSplitViewController(areas: children);
     if (this._children.length < 2) {
       throw ArgumentError('Insufficient number of children');
@@ -408,13 +409,13 @@ class DockingColumn extends DockingParentArea {
     double? minimalWeight,
     double? minimalSize,
   }) : super(
-          children,
-          id: id,
-          size: size,
-          weight: weight,
-          minimalWeight: minimalWeight,
-          minimalSize: minimalSize,
-        ) {
+         children,
+         id: id,
+         size: size,
+         weight: weight,
+         minimalWeight: minimalWeight,
+         minimalSize: minimalSize,
+       ) {
     controller = MultiSplitViewController(areas: children);
     if (this._children.length < 2) {
       throw ArgumentError('Insufficient number of children');
@@ -470,15 +471,15 @@ class DockingTabs extends DockingParentArea with DropArea {
     double? weight,
     double? minimalWeight,
     double? minimalSize,
-  })  : this._maximized = maximized,
-        super(
-          children,
-          id: id,
-          size: size,
-          weight: weight,
-          minimalWeight: minimalWeight,
-          minimalSize: minimalSize,
-        ) {
+  }) : this._maximized = maximized,
+       super(
+         children,
+         id: id,
+         size: size,
+         weight: weight,
+         minimalWeight: minimalWeight,
+         minimalSize: minimalSize,
+       ) {
     if (this._children.length == 0) {
       throw ArgumentError('DockingTabs cannot be empty');
     }

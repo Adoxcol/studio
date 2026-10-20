@@ -52,10 +52,12 @@ class TabWidget extends StatelessWidget {
       ),
     );
 
-    BorderSide innerBottomBorder = statusTheme.innerBottomBorder ??
+    BorderSide innerBottomBorder =
+        statusTheme.innerBottomBorder ??
         tabTheme.innerBottomBorder ??
         BorderSide.none;
-    BorderSide innerTopBorder = statusTheme.innerTopBorder ??
+    BorderSide innerTopBorder =
+        statusTheme.innerTopBorder ??
         tabTheme.innerTopBorder ??
         BorderSide.none;
     BoxDecoration? decoration = statusTheme.decoration ?? tabTheme.decoration;
@@ -160,8 +162,9 @@ class TabWidget extends StatelessWidget {
               ? Duration.zero
               : const Duration(milliseconds: 140),
           child: tabWidget,
-          opacity:
-              provider.draggingTabIndex != index ? 1 : tabTheme.draggingOpacity,
+          opacity: provider.draggingTabIndex != index
+              ? 1
+              : tabTheme.draggingOpacity,
         );
       }
     }
@@ -201,8 +204,8 @@ class TabWidget extends StatelessWidget {
         : tabTheme.hoverButtonBackground;
     BoxDecoration? disabledBackground =
         statusTheme.disabledButtonBackground != null
-            ? statusTheme.disabledButtonBackground
-            : tabTheme.disabledButtonBackground;
+        ? statusTheme.disabledButtonBackground
+        : tabTheme.disabledButtonBackground;
 
     TextStyle? textStyle = tabTheme.textStyle;
     if (statusTheme.fontColor != null) {
@@ -213,7 +216,8 @@ class TabWidget extends StatelessWidget {
       }
     }
 
-    final bool buttonsEnabled = provider.draggingTabIndex == null &&
+    final bool buttonsEnabled =
+        provider.draggingTabIndex == null &&
         (provider.selectToEnableButtons == false ||
             (provider.selectToEnableButtons && status == TabStatus.selected));
     bool hasButtons = tab.buttons != null && tab.buttons!.length > 0;

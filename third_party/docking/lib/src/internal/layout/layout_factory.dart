@@ -186,8 +186,8 @@ class _ParentConfig extends _AreaConfig {
     required String id,
     required double? weight,
     required List<int> childrenIndexes,
-  })  : childrenIndexes = List.unmodifiable(childrenIndexes),
-        super(id: id, weight: weight);
+  }) : childrenIndexes = List.unmodifiable(childrenIndexes),
+       super(id: id, weight: weight);
 
   final List<int> childrenIndexes;
 }
