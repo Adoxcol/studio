@@ -90,6 +90,7 @@ Future<void> main(List<String> args) async {
   final playbackSettings = FilePlaybackSettingsStore(
     File(p.join(support.path, 'playback.json')),
   );
+  await playbackSettings.loadAsync();
   final playbackSession = FilePlaybackSessionStore(
     File(p.join(support.path, 'session.json')),
   );
