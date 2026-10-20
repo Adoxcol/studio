@@ -8,7 +8,7 @@ import 'package:studio/playback/playback_settings.dart';
 
 abstract class PlaybackSettingsStore {
   PlaybackSettings load();
-  Future<PlaybackSettings> loadAsync();
+  Future<PlaybackSettings> loadAsync() async => load();
   void save(PlaybackSettings settings);
 }
 
@@ -54,6 +54,7 @@ class FilePlaybackSettingsStore implements PlaybackSettingsStore {
 
   @override
   Future<PlaybackSettings> loadAsync() async {
+    if (_cachedSettings != null) return _cachedSettings!;
     if (!await file.exists()) {
       _cachedSettings = PlaybackSettings.defaults;
       return _cachedSettings!;
