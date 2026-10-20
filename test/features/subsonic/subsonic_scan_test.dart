@@ -276,13 +276,35 @@ void main() {
     expect(container!.read(subsonicScanProvider).currentAlbum, 20);
   });
 
+  test('benchmark: compare album sync scan duration for 100 albums', () async {
+    final inner = _handler(albums: 100, songsPerAlbum: 2);
+    container = containerFor(
+      MockClient((request) async {
+        if (request.url.path.endsWith('/getAlbum')) {
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+        }
+        return inner(request);
+      }),
+    );
+
+    final sw = Stopwatch()..start();
+    await container!.read(subsonicScanProvider.notifier).startScan();
+    sw.stop();
+
+    // ignore: avoid_print
+    print(
+      'Subsonic 100 album scan time (concurrency ${SubsonicScanNotifier.albumConcurrency}): ${sw.elapsedMilliseconds}ms',
+    );
+    expect(await db.allTracks(source: TrackLocator.subsonic), hasLength(200));
+  });
+
   test('a cancelled scan keeps the tracks it already fetched', () async {
     final gate = Completer<void>();
     var albumsServed = 0;
-    final inner = _handler(albums: 10);
+    final inner = _handler(albums: 25);
     container = containerFor(
       MockClient((request) async {
-        if (request.url.path.endsWith('/getAlbum') && ++albumsServed == 6) {
+        if (request.url.path.endsWith('/getAlbum') && ++albumsServed == 16) {
           await gate.future;
         }
         return inner(request);
@@ -291,7 +313,7 @@ void main() {
 
     final notifier = container!.read(subsonicScanProvider.notifier);
     final scan = notifier.startScan();
-    while (albumsServed < 6) {
+    while (albumsServed < 16) {
       await Future<void>.delayed(Duration.zero);
     }
     notifier.cancelScan();
@@ -299,8 +321,8 @@ void main() {
     await scan;
 
     final stored = await db.allTracks(source: TrackLocator.subsonic);
-    // The first window of four albums landed; the cancelled one did not.
-    expect(stored, hasLength(12));
+    // The first window of albums landed; the cancelled one did not.
+    expect(stored, hasLength(30));
     expect(container!.read(subsonicScanProvider).isScanning, isFalse);
   });
 
