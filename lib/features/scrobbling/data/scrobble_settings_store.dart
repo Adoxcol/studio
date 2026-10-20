@@ -155,10 +155,6 @@ class FileScrobbleSettingsStore implements ScrobbleSettingsStore {
 
   void _writeSync(ScrobbleSettings settings) {
     final json = settings.toJson();
-    // Exclude secrets from plaintext JSON
-    json.remove('lastFmSecret');
-    json.remove('lastFmSessionKey');
-    json.remove('listenBrainzToken');
 
     file.parent.createSync(recursive: true);
     final part = File('${file.path}.part');
