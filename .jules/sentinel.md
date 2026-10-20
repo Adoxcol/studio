@@ -26,3 +26,8 @@
 **Vulnerability:** Unhandled exceptions from `flutter_secure_storage` reads and writes during application initialization (e.g., in `init()` methods of settings stores).
 **Learning:** `flutter_secure_storage` interacts with platform-specific secure enclaves (like Android Keystore or macOS Keychain). If these systems are unavailable, corrupted, or locked, the plugin throws a `PlatformException`. If these calls are not wrapped in a `try/catch` block, especially during app startup, the exception remains unhandled and crashes the application, resulting in a Denial of Service (DoS) for the user.
 **Prevention:** Always wrap `_secureStorage.read` and `_secureStorage.write` operations in `try { ... } on Object { ... }` blocks to fail securely and gracefully fallback (e.g., by logging the error or returning null) without crashing the app.
+
+## 2026-03-31 - Omit Secrets directly in Domain Model Serialization
+**Vulnerability:** `ScrobbleSettings.toJson()` included sensitive secrets (`lastFmSecret`, `lastFmSessionKey`, `listenBrainzToken`), relying on callers to mutate the generated map with `json.remove()` prior to file write.
+**Learning:** Returning secrets in `toJson()` creates a fragility and race condition risk if any caller or logger serializes the model without manually removing secret keys.
+**Prevention:** When serializing model objects that store secrets separately in secure storage (`flutter_secure_storage`), directly omit secret fields from the `toJson()` map at model serialization time.

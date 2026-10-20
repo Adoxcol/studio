@@ -62,13 +62,13 @@ class ScrobbleSettings {
     );
   }
 
+  /// Returns a JSON-encodable map of non-sensitive settings.
+  /// Secrets (lastFmSecret, lastFmSessionKey, listenBrainzToken) are excluded
+  /// to prevent sensitive data from being serialized to plaintext files.
   Map<String, Object?> toJson() => {
     'lastFmApiKey': lastFmApiKey,
-    'lastFmSecret': lastFmSecret,
-    'lastFmSessionKey': lastFmSessionKey,
     'lastFmUser': lastFmUser,
     'lastFmExpired': lastFmExpired,
-    'listenBrainzToken': listenBrainzToken,
     'listenBrainzUser': listenBrainzUser,
     'listenBrainzExpired': listenBrainzExpired,
   };
