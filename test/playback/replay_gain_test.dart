@@ -18,14 +18,14 @@ void main() {
     expect(ReplayGainMode.fromName('album'), ReplayGainMode.album);
   });
 
-  test('file store round-trips album mode', () {
+  test('file store round-trips album mode', () async {
     final file = File(
       '${Directory.systemTemp.createTempSync('studio-playback').path}/playback.json',
     );
     addTearDown(() {
       if (file.parent.existsSync()) file.parent.deleteSync(recursive: true);
     });
-    FilePlaybackSettingsStore(
+    await FilePlaybackSettingsStore(
       file,
     ).save(const PlaybackSettings(replayGain: ReplayGainMode.album));
     expect(

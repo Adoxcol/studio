@@ -9,7 +9,7 @@ import 'package:studio/playback/playback_settings.dart';
 abstract class PlaybackSettingsStore {
   PlaybackSettings load();
   Future<PlaybackSettings> loadAsync() async => load();
-  void save(PlaybackSettings settings);
+  Future<void> save(PlaybackSettings settings);
 }
 
 class MemoryPlaybackSettingsStore implements PlaybackSettingsStore {
@@ -24,7 +24,7 @@ class MemoryPlaybackSettingsStore implements PlaybackSettingsStore {
   Future<PlaybackSettings> loadAsync() async => value;
 
   @override
-  void save(PlaybackSettings settings) {
+  Future<void> save(PlaybackSettings settings) async {
     value = settings;
   }
 }
@@ -34,6 +34,7 @@ class FilePlaybackSettingsStore implements PlaybackSettingsStore {
 
   final File file;
   PlaybackSettings? _cachedSettings;
+  Future<void> _lastSave = Future.value();
 
   @override
   PlaybackSettings load() {
@@ -95,20 +96,28 @@ class FilePlaybackSettingsStore implements PlaybackSettingsStore {
   }
 
   @override
-  void save(PlaybackSettings settings) {
+  Future<void> save(PlaybackSettings settings) {
     _cachedSettings = settings;
-    file.parent.createSync(recursive: true);
-    final part = File('${file.path}.part');
-    part.writeAsStringSync(
-      jsonEncode({
-        'replayGain': settings.replayGain.name,
-        'equalizerPreset': settings.equalizerPreset.name,
-        'equalizerGains': settings.equalizerGains,
-        'equalizerPreamp': settings.equalizerPreamp,
-        'crossfadeMs': settings.crossfade.inMilliseconds,
-      }),
-      flush: true,
-    );
-    part.renameSync(file.path);
+    final next = _lastSave.then((_) async {
+      try {
+        await file.parent.create(recursive: true);
+        final part = File('${file.path}.part');
+        await part.writeAsString(
+          jsonEncode({
+            'replayGain': settings.replayGain.name,
+            'equalizerPreset': settings.equalizerPreset.name,
+            'equalizerGains': settings.equalizerGains,
+            'equalizerPreamp': settings.equalizerPreamp,
+            'crossfadeMs': settings.crossfade.inMilliseconds,
+          }),
+          flush: true,
+        );
+        await part.rename(file.path);
+      } on Object {
+        // Ignore write errors to match non-blocking store contract.
+      }
+    });
+    _lastSave = next.catchError((_) {});
+    return next;
   }
 }
