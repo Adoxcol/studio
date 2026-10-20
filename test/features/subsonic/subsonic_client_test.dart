@@ -10,6 +10,18 @@ void main() {
       password: 'secretpassword',
     );
 
+    test(
+      'calculateToken generates correct MD5 hash according to Subsonic spec',
+      () {
+        final token = SubsonicClient.calculateToken(
+          'secretpassword',
+          'abcdef1234',
+        );
+        // md5("secretpasswordabcdef1234") == "864032f5587388e313bcd40186a7987f"
+        expect(token, '864032f5587388e313bcd40186a7987f');
+      },
+    );
+
     test('buildStreamUri includes auth parameters and song id', () {
       final client = SubsonicClient(config: config);
       final uri = client.buildStreamUri('song-456');
