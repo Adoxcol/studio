@@ -17,8 +17,27 @@ void main() {
   });
   tearDown(() => dir.deleteSync(recursive: true));
 
+  test('ScrobbleSettings.toJson excludes secrets', () {
+    const settings = ScrobbleSettings(
+      lastFmApiKey: 'k',
+      lastFmSecret: 'secret_val',
+      lastFmSessionKey: 'session_val',
+      lastFmUser: 'rj',
+      listenBrainzToken: 'token_val',
+      listenBrainzUser: 'rob',
+    );
+    final json = settings.toJson();
+    expect(json.containsKey('lastFmSecret'), isFalse);
+    expect(json.containsKey('lastFmSessionKey'), isFalse);
+    expect(json.containsKey('listenBrainzToken'), isFalse);
+    expect(json['lastFmApiKey'], 'k');
+    expect(json['lastFmUser'], 'rj');
+    expect(json['listenBrainzUser'], 'rob');
+  });
+
   test('settings round-trip and tolerate a corrupt file', () async {
-    final store = FileScrobbleSettingsStore(File(p.join(dir.path, 's.json')));
+    final settingsFile = File(p.join(dir.path, 's.json'));
+    final store = FileScrobbleSettingsStore(settingsFile);
     await store.init();
     expect(store.load().lastFmConnected, isFalse);
     store.save(
@@ -35,8 +54,15 @@ void main() {
     expect(loaded.lastFmConnected, isTrue);
     expect(loaded.lastFmUser, 'rj');
     expect(loaded.listenBrainzConnected, isTrue);
-    File(p.join(dir.path, 's.json')).writeAsStringSync('{not json');
-    final store2 = FileScrobbleSettingsStore(File(p.join(dir.path, 's.json')));
+
+    // Verify plaintext file does not contain secret strings
+    final rawJson = settingsFile.readAsStringSync();
+    expect(rawJson.contains('lastFmSecret'), isFalse);
+    expect(rawJson.contains('lastFmSessionKey'), isFalse);
+    expect(rawJson.contains('listenBrainzToken'), isFalse);
+
+    settingsFile.writeAsStringSync('{not json');
+    final store2 = FileScrobbleSettingsStore(settingsFile);
     await store2.init();
     expect(
       store2.load().listenBrainzConnected,
