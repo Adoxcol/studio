@@ -39,6 +39,3 @@
 ## 2025-05-18 - Asynchronous File Store Chaining
 **Learning:** Performing file writes asynchronously prevents UI main isolate thread blocking during state persistence. Chaining `_lastSave` Futures serializes back-to-back async saves safely, preventing temporary file collisions on atomic `.part` renames.
 **Action:** Always serialize concurrent asynchronous file writes with chained Futures when replacing synchronous atomic file saves in store classes.
-## 2026-10-19 - Tuning Album Concurrency for Subsonic Sync
-**Learning:** During Subsonic / Navidrome server library sync, `SubsonicScanNotifier` fetches track details album-by-album using `client.getAlbum(id)`. Setting `albumConcurrency = 4` limited network parallelization, forcing 25 sequential HTTP round-trip windows per 100 albums. Increasing `albumConcurrency` to 10 allows 10 concurrent requests, reducing total window iterations by 60% and speeding up 100-album scans from 250ms to 150ms while remaining well within HTTP connection pool limits.
-**Action:** When batching network requests across remote entities in windowed concurrent loops with `Future.wait`, tune concurrency thresholds (e.g. `albumConcurrency = 10`) to balance server request load with network round-trip latency.

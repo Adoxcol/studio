@@ -292,7 +292,7 @@ class SubsonicScanNotifier extends Notifier<SubsonicScanState> {
 
   /// Albums fetched at once. Servers handle a few parallel requests well,
   /// and waiting on one round trip per album made big libraries slow.
-  static const albumConcurrency = 10;
+  static const albumConcurrency = 4;
 
   /// Playlists fetched at once. Parallelizing requests speeds up playlist sync
   /// significantly while remaining friendly to Subsonic servers.

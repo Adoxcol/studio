@@ -28,10 +28,6 @@ class SubsonicClient {
   }
 
   /// Calculates MD5 token according to Subsonic specs: md5(password + salt).
-  ///
-  /// Note: MD5 is cryptographically weak, but required by the Subsonic REST API
-  /// protocol specification (v1.13.0+) for token authentication (`t = md5(p + s)`).
-  /// Replacing MD5 here would break compatibility with Subsonic-compatible servers.
   static String calculateToken(String password, String salt) {
     final bytes = utf8.encode(password + salt);
     return md5.convert(bytes).toString();
