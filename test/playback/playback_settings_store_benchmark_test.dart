@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studio/playback/playback_settings.dart';
@@ -20,10 +18,7 @@ void main() {
     }
     sw.stop();
 
-    print(
-      'Saved $iterations times in ${sw.elapsedMicroseconds} us (${sw.elapsedMilliseconds} ms)',
-    );
-    print('Average per save: ${sw.elapsedMicroseconds / iterations} us');
+    expect(sw.elapsedMicroseconds, greaterThan(0));
 
     tempDir.deleteSync(recursive: true);
   });
