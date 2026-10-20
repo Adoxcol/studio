@@ -123,14 +123,14 @@ void main() {
     expect(EqualizerPreset.fromName('nope'), EqualizerPreset.flat);
   });
 
-  test('file store round-trips a rock curve and preamp', () {
+  test('file store round-trips a rock curve and preamp', () async {
     final file = File(
       '${Directory.systemTemp.createTempSync('studio-eq').path}/playback.json',
     );
     addTearDown(() {
       if (file.parent.existsSync()) file.parent.deleteSync(recursive: true);
     });
-    FilePlaybackSettingsStore(file).save(
+    await FilePlaybackSettingsStore(file).save(
       PlaybackSettings(
         equalizerPreset: EqualizerPreset.custom,
         equalizerGains: Equalizer.rock,
@@ -173,14 +173,14 @@ void main() {
     expect(loaded.equalizerGains, Equalizer.flat);
   });
 
-  test('file store round-trips a 5s crossfade', () {
+  test('file store round-trips a 5s crossfade', () async {
     final file = File(
       '${Directory.systemTemp.createTempSync('studio-xfade').path}/playback.json',
     );
     addTearDown(() {
       if (file.parent.existsSync()) file.parent.deleteSync(recursive: true);
     });
-    FilePlaybackSettingsStore(
+    await FilePlaybackSettingsStore(
       file,
     ).save(const PlaybackSettings(crossfade: Crossfade.fiveSeconds));
     expect(

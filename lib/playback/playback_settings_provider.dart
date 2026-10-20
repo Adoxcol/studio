@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/playback/dsp/equalizer.dart';
 import 'package:studio/playback/dsp/equalizer_import.dart';
@@ -18,7 +20,7 @@ class PlaybackSettingsNotifier extends Notifier<PlaybackSettings> {
 
   void setReplayGain(ReplayGainMode mode) {
     state = state.copyWith(replayGain: mode);
-    ref.read(playbackSettingsStoreProvider).save(state);
+    unawaited(ref.read(playbackSettingsStoreProvider).save(state));
     ref.read(audioEngineProvider).setReplayGain(mode);
   }
 
@@ -32,7 +34,7 @@ class PlaybackSettingsNotifier extends Notifier<PlaybackSettings> {
       equalizerGains: gains,
       equalizerPreamp: preamp,
     );
-    ref.read(playbackSettingsStoreProvider).save(state);
+    unawaited(ref.read(playbackSettingsStoreProvider).save(state));
     ref.read(audioEngineProvider).setEqualizer(gains, preamp: preamp);
   }
 
@@ -44,7 +46,7 @@ class PlaybackSettingsNotifier extends Notifier<PlaybackSettings> {
       equalizerPreset: EqualizerPreset.custom,
       equalizerGains: next,
     );
-    ref.read(playbackSettingsStoreProvider).save(state);
+    unawaited(ref.read(playbackSettingsStoreProvider).save(state));
     ref
         .read(audioEngineProvider)
         .setEqualizer(next, preamp: state.equalizerPreamp);
@@ -56,7 +58,7 @@ class PlaybackSettingsNotifier extends Notifier<PlaybackSettings> {
       equalizerGains: imported.gains,
       equalizerPreamp: Equalizer.clampGain(imported.preamp),
     );
-    ref.read(playbackSettingsStoreProvider).save(state);
+    unawaited(ref.read(playbackSettingsStoreProvider).save(state));
     ref
         .read(audioEngineProvider)
         .setEqualizer(imported.gains, preamp: state.equalizerPreamp);
@@ -68,7 +70,7 @@ class PlaybackSettingsNotifier extends Notifier<PlaybackSettings> {
 
   void setCrossfade(Duration duration) {
     state = state.copyWith(crossfade: duration);
-    ref.read(playbackSettingsStoreProvider).save(state);
+    unawaited(ref.read(playbackSettingsStoreProvider).save(state));
     ref.read(audioEngineProvider).setCrossfade(duration);
   }
 }

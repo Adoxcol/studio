@@ -35,3 +35,7 @@
 ## 2026-10-18 - Replacing O(N) list traversals for count derivation in build methods
 **Learning:** In Flutter applications, calculating the intersection size of a displayed list and a selected set using an O(N) list traversal (e.g., `tableTracks.where((track) => _selectedTrackIds.contains(track.id)).length`) on every widget rebuild creates unnecessary overhead. Because `_selectedTrackIds` only tracks the selected subset of the currently active view (and is cleared when views change), its raw length already represents the exact number of selected items in `tableTracks`.
 **Action:** Replace derived O(N) count calculations like `list.where((item) => selectedSet.contains(item.id)).length` with the O(1) set property `selectedSet.length` when the set is strictly scoped to the active list view, avoiding O(N) operations inside `build()` methods.
+
+## 2025-05-18 - Asynchronous File Store Chaining
+**Learning:** Performing file writes asynchronously prevents UI main isolate thread blocking during state persistence. Chaining `_lastSave` Futures serializes back-to-back async saves safely, preventing temporary file collisions on atomic `.part` renames.
+**Action:** Always serialize concurrent asynchronous file writes with chained Futures when replacing synchronous atomic file saves in store classes.
