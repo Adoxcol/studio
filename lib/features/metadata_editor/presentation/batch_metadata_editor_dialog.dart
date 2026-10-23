@@ -222,7 +222,6 @@ class _BatchMetadataEditorDialogState
     final writable = _writableTracks.length;
     final skipped = widget.tracks.length - writable;
     final complete = _finished;
-    final affected = _targets.length;
     return PopScope(
       canPop: !_saving,
       child: AlertDialog(
@@ -268,7 +267,6 @@ class _BatchMetadataEditorDialogState
                     controller: entry.$3,
                     checked: _enabledFields.contains(entry.$1),
                     enabled: !_saving && !complete,
-                    onChanged: () => setState(() => _error = null),
                     onToggle: (checked) => setState(() {
                       if (checked) {
                         _enabledFields.add(entry.$1);
@@ -395,12 +393,18 @@ class _BatchMetadataEditorDialogState
             child: Text(complete ? 'Done' : 'Cancel'),
           ),
           if (!complete)
-            TextButton(
-              key: const ValueKey('apply-batch-metadata'),
-              onPressed: _saving || !_hasChanges || affected == 0
-                  ? null
-                  : _apply,
-              child: Text('Apply to $affected tracks'),
+            ListenableBuilder(
+              listenable: Listenable.merge([_artist, _album, _genre, _year]),
+              builder: (context, _) {
+                final affected = _targets.length;
+                return TextButton(
+                  key: const ValueKey('apply-batch-metadata'),
+                  onPressed: _saving || !_hasChanges || affected == 0
+                      ? null
+                      : _apply,
+                  child: Text('Apply to $affected tracks'),
+                );
+              },
             ),
         ],
       ),
@@ -416,7 +420,6 @@ class _BatchField extends StatelessWidget {
     required this.checked,
     required this.enabled,
     required this.onToggle,
-    required this.onChanged,
   });
 
   final String id;
@@ -425,7 +428,6 @@ class _BatchField extends StatelessWidget {
   final bool checked;
   final bool enabled;
   final ValueChanged<bool> onToggle;
-  final VoidCallback onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -441,7 +443,6 @@ class _BatchField extends StatelessWidget {
         Expanded(
           child: TextField(
             controller: controller,
-            onChanged: (_) => onChanged(),
             enabled: enabled && checked,
             keyboardType: id == 'year'
                 ? TextInputType.number
