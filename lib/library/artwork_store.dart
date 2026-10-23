@@ -38,7 +38,7 @@ class ArtworkStore {
     return file.path;
   }
 
-  static final _random = Random();
+  static final _random = Random.secure();
 
   static String _tempSuffix() =>
       '$pid-${_random.nextInt(1 << 32).toRadixString(16)}';
