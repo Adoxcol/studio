@@ -517,56 +517,65 @@ class _VolumeCluster extends ConsumerWidget {
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              return MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTapDown: (details) {
-                    onChanged(
-                      (details.localPosition.dx / constraints.maxWidth).clamp(
-                        0.0,
-                        1.0,
-                      ),
-                    );
-                  },
-                  onHorizontalDragStart: (details) {
-                    onChanged(
-                      (details.localPosition.dx / constraints.maxWidth).clamp(
-                        0.0,
-                        1.0,
-                      ),
-                    );
-                  },
-                  onHorizontalDragUpdate: (details) {
-                    onChanged(
-                      (details.localPosition.dx / constraints.maxWidth).clamp(
-                        0.0,
-                        1.0,
-                      ),
-                    );
-                  },
-                  child: SizedBox(
-                    height: 10,
-                    child: Stack(
-                      alignment: Alignment.centerLeft,
-                      children: [
-                        Container(height: 2, color: palette.hairlineStrong),
-                        FractionallySizedBox(
-                          widthFactor: volume,
-                          child: Container(height: 2, color: palette.accent),
+              return Semantics(
+                slider: true,
+                label: 'Volume',
+                value: '${(volume * 100).round()}%',
+                increasedValue: '${((volume + 0.1).clamp(0.0, 1.0) * 100).round()}%',
+                decreasedValue: '${((volume - 0.1).clamp(0.0, 1.0) * 100).round()}%',
+                onIncrease: () => onChanged((volume + 0.1).clamp(0.0, 1.0)),
+                onDecrease: () => onChanged((volume - 0.1).clamp(0.0, 1.0)),
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTapDown: (details) {
+                      onChanged(
+                        (details.localPosition.dx / constraints.maxWidth).clamp(
+                          0.0,
+                          1.0,
                         ),
-                        Align(
-                          alignment: Alignment(volume * 2 - 1, 0),
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: palette.accent,
-                              shape: BoxShape.circle,
+                      );
+                    },
+                    onHorizontalDragStart: (details) {
+                      onChanged(
+                        (details.localPosition.dx / constraints.maxWidth).clamp(
+                          0.0,
+                          1.0,
+                        ),
+                      );
+                    },
+                    onHorizontalDragUpdate: (details) {
+                      onChanged(
+                        (details.localPosition.dx / constraints.maxWidth).clamp(
+                          0.0,
+                          1.0,
+                        ),
+                      );
+                    },
+                    child: SizedBox(
+                      height: 10,
+                      child: Stack(
+                        alignment: Alignment.centerLeft,
+                        children: [
+                          Container(height: 2, color: palette.hairlineStrong),
+                          FractionallySizedBox(
+                            widthFactor: volume,
+                            child: Container(height: 2, color: palette.accent),
+                          ),
+                          Align(
+                            alignment: Alignment(volume * 2 - 1, 0),
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: palette.accent,
+                                shape: BoxShape.circle,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
