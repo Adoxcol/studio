@@ -521,8 +521,10 @@ class _VolumeCluster extends ConsumerWidget {
                 slider: true,
                 label: 'Volume',
                 value: '${(volume * 100).round()}%',
-                increasedValue: '${((volume + 0.1).clamp(0.0, 1.0) * 100).round()}%',
-                decreasedValue: '${((volume - 0.1).clamp(0.0, 1.0) * 100).round()}%',
+                increasedValue:
+                    '${((volume + 0.1).clamp(0.0, 1.0) * 100).round()}%',
+                decreasedValue:
+                    '${((volume - 0.1).clamp(0.0, 1.0) * 100).round()}%',
                 onIncrease: () => onChanged((volume + 0.1).clamp(0.0, 1.0)),
                 onDecrease: () => onChanged((volume - 0.1).clamp(0.0, 1.0)),
                 child: MouseRegion(
