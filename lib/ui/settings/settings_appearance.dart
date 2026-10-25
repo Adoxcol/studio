@@ -195,41 +195,50 @@ class _HueSlider extends StatelessWidget {
 
               return MouseRegion(
                 cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  key: const ValueKey('hue-slider'),
-                  behavior: HitTestBehavior.opaque,
-                  onTapDown: (details) => at(details.localPosition.dx),
-                  onHorizontalDragUpdate: (details) =>
-                      at(details.localPosition.dx),
-                  child: SizedBox(
-                    height: _height,
-                    child: Stack(
-                      alignment: Alignment.centerLeft,
-                      children: [
-                        Container(
-                          height: 2,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: _spectrum(brightness),
-                            ),
-                          ),
-                        ),
-                        Align(
-                          alignment: Alignment(t * 2 - 1, 0),
-                          child: Container(
-                            width: 8,
-                            height: 8,
+                child: Semantics(
+                  slider: true,
+                  value: '${AccentSeed.wrap(hue).round()}°',
+                  onIncrease: () => onChanged((hue + 15).clamp(0.0, 360.0)),
+                  onDecrease: () => onChanged((hue - 15).clamp(0.0, 360.0)),
+                  child: GestureDetector(
+                    key: const ValueKey('hue-slider'),
+                    behavior: HitTestBehavior.opaque,
+                    onTapDown: (details) => at(details.localPosition.dx),
+                    onHorizontalDragUpdate: (details) =>
+                        at(details.localPosition.dx),
+                    child: SizedBox(
+                      height: _height,
+                      child: Stack(
+                        alignment: Alignment.centerLeft,
+                        children: [
+                          Container(
+                            height: 2,
                             decoration: BoxDecoration(
-                              color: StudioPalette.forBrightness(
-                                brightness,
-                                hue: hue,
-                              ).accent,
-                              border: Border.all(color: palette.ink, width: 1),
-                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: _spectrum(brightness),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                          Align(
+                            alignment: Alignment(t * 2 - 1, 0),
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: StudioPalette.forBrightness(
+                                  brightness,
+                                  hue: hue,
+                                ).accent,
+                                border: Border.all(
+                                  color: palette.ink,
+                                  width: 1,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

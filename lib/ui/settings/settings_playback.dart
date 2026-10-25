@@ -145,34 +145,48 @@ class _CrossfadeSlider extends StatelessWidget {
 
               return MouseRegion(
                 cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  key: const ValueKey('crossfade-slider'),
-                  behavior: HitTestBehavior.opaque,
-                  onTapDown: (details) => at(details.localPosition.dx),
-                  onHorizontalDragUpdate: (details) =>
-                      at(details.localPosition.dx),
-                  child: SizedBox(
-                    height: _height,
-                    child: Stack(
-                      alignment: Alignment.centerLeft,
-                      children: [
-                        Container(height: 2, color: palette.hairlineStrong),
-                        FractionallySizedBox(
-                          widthFactor: t,
-                          child: Container(height: 2, color: palette.accent),
-                        ),
-                        Align(
-                          alignment: Alignment(t * 2 - 1, 0),
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: palette.accent,
-                              shape: BoxShape.circle,
+                child: Semantics(
+                  slider: true,
+                  value: Crossfade.label(Duration(seconds: seconds)),
+                  onIncrease: () => onSelect(
+                    Crossfade.fromSeconds(
+                      (seconds + 1).clamp(0, Crossfade.maxSeconds),
+                    ),
+                  ),
+                  onDecrease: () => onSelect(
+                    Crossfade.fromSeconds(
+                      (seconds - 1).clamp(0, Crossfade.maxSeconds),
+                    ),
+                  ),
+                  child: GestureDetector(
+                    key: const ValueKey('crossfade-slider'),
+                    behavior: HitTestBehavior.opaque,
+                    onTapDown: (details) => at(details.localPosition.dx),
+                    onHorizontalDragUpdate: (details) =>
+                        at(details.localPosition.dx),
+                    child: SizedBox(
+                      height: _height,
+                      child: Stack(
+                        alignment: Alignment.centerLeft,
+                        children: [
+                          Container(height: 2, color: palette.hairlineStrong),
+                          FractionallySizedBox(
+                            widthFactor: t,
+                            child: Container(height: 2, color: palette.accent),
+                          ),
+                          Align(
+                            alignment: Alignment(t * 2 - 1, 0),
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: palette.accent,
+                                shape: BoxShape.circle,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -269,35 +283,47 @@ class _EqSlider extends StatelessWidget {
             .clamp(0.0, 1.0);
     return Column(
       children: [
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapDown: (details) => onChanged(_gainAt(details.localPosition.dy)),
-          onVerticalDragUpdate: (details) =>
-              onChanged(_gainAt(details.localPosition.dy)),
-          child: SizedBox(
-            height: _height,
-            child: Stack(
-              alignment: Alignment.bottomCenter,
-              children: [
-                Align(
-                  child: Container(
-                    width: 2,
-                    height: _height,
-                    color: palette.hairlineStrong,
-                  ),
-                ),
-                Align(
-                  alignment: Alignment(0, 1 - t * 2),
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: palette.accent,
-                      shape: BoxShape.circle,
+        Semantics(
+          slider: true,
+          label: label,
+          value: '${gain.toStringAsFixed(1)} dB',
+          onIncrease: () => onChanged(
+            (gain + 0.5).clamp(Equalizer.minGain, Equalizer.maxGain),
+          ),
+          onDecrease: () => onChanged(
+            (gain - 0.5).clamp(Equalizer.minGain, Equalizer.maxGain),
+          ),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapDown: (details) =>
+                onChanged(_gainAt(details.localPosition.dy)),
+            onVerticalDragUpdate: (details) =>
+                onChanged(_gainAt(details.localPosition.dy)),
+            child: SizedBox(
+              height: _height,
+              child: Stack(
+                alignment: Alignment.bottomCenter,
+                children: [
+                  Align(
+                    child: Container(
+                      width: 2,
+                      height: _height,
+                      color: palette.hairlineStrong,
                     ),
                   ),
-                ),
-              ],
+                  Align(
+                    alignment: Alignment(0, 1 - t * 2),
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: palette.accent,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
