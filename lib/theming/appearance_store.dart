@@ -41,7 +41,8 @@ class FileAppearanceStore implements AppearanceStore {
     return _loading = Future(() async {
       if (!await file.exists()) return AppearanceState.defaults;
       try {
-        final json = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+        final json =
+            jsonDecode(await file.readAsString()) as Map<String, dynamic>;
         final modeName = json['mode'] as String?;
         final hue = (json['customHue'] as num?)?.toDouble();
         return _cache = AppearanceState(
