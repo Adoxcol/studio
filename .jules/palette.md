@@ -16,3 +16,6 @@
 ## 2026-10-18 - Interactive Custom Form Controls
 **Learning:** In Flutter applications, custom form controls (like the "Don't show again" checkbox row in `CloseWindowDialog`) built with a simple `GestureDetector` lack native Material visual feedback and do not naturally support keyboard navigation or focus states out of the box.
 **Action:** Replace `GestureDetector` with an `InkWell` wrapped in `Material(type: MaterialType.transparency)`. Add a `hoverColor` (e.g., `palette.ink.withValues(alpha: 0.05)`), padding, and `borderRadius`. Ensure inner `Row`s use `mainAxisSize: MainAxisSize.min` so the hover effect tightly wraps the content rather than unnecessarily filling available horizontal space.
+## 2024-05-18 - Custom volume sliders lack accessibility support
+**Learning:** Custom UI controls built from `GestureDetector` (like volume sliders) are completely invisible to screen readers, making them inaccessible.
+**Action:** When building custom sliders in Flutter, explicitly wrap them with a `Semantics` widget including `slider: true`, `value`, `increasedValue`, `decreasedValue`, and `onIncrease`/`onDecrease` callbacks.
