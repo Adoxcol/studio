@@ -73,6 +73,7 @@ Future<void> main(List<String> args) async {
   final appearance = FileAppearanceStore(
     File(p.join(support.path, 'appearance.json')),
   );
+  await appearance.loadAsync();
   final skins = FileSkinStore(Directory(p.join(support.path, 'skins')));
   final activeSkinId = skins.loadActive();
   await bootstrapWindow(

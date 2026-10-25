@@ -47,3 +47,7 @@
 ## 2026-10-19 - Tuning Album Concurrency for Subsonic Sync
 **Learning:** During Subsonic / Navidrome server library sync, `SubsonicScanNotifier` fetches track details album-by-album using `client.getAlbum(id)`. Setting `albumConcurrency = 4` limited network parallelization, forcing 25 sequential HTTP round-trip windows per 100 albums. Increasing `albumConcurrency` to 10 allows 10 concurrent requests, reducing total window iterations by 60% and speeding up 100-album scans from 250ms to 150ms while remaining well within HTTP connection pool limits.
 **Action:** When batching network requests across remote entities in windowed concurrent loops with `Future.wait`, tune concurrency thresholds (e.g. `albumConcurrency = 10`) to balance server request load with network round-trip latency.
+
+## 2026-10-19 - Asynchronous Initialization and In-Memory Caching for File Stores
+**Learning:** Reading configuration/settings files synchronously (`readAsStringSync`) during application startup blocks the main Dart isolate and UI thread, leading to UI stutter and latency. Adding an asynchronous `loadAsync()` method to preload settings during `main()` and serving synchronous `load()` requests from an in-memory cache reduced load latency while keeping Riverpod `Notifier` read operations synchronous.
+**Action:** When initializing local file storage that needs to be read synchronously by Riverpod providers, perform asynchronous preloading during application startup (`main()`) into an in-memory cache and serve synchronous read calls directly from the cache.
