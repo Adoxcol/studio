@@ -19,3 +19,6 @@
 ## 2024-05-18 - Custom volume sliders lack accessibility support
 **Learning:** Custom UI controls built from `GestureDetector` (like volume sliders) are completely invisible to screen readers, making them inaccessible.
 **Action:** When building custom sliders in Flutter, explicitly wrap them with a `Semantics` widget including `slider: true`, `value`, `increasedValue`, `decreasedValue`, and `onIncrease`/`onDecrease` callbacks.
+## 2024-05-18 - Custom EQ sliders lack accessibility support
+**Learning:** Custom UI controls built from `GestureDetector` (like EQ sliders) are completely invisible to screen readers, making them inaccessible.
+**Action:** When building custom sliders in Flutter, explicitly wrap them with a `Semantics` widget including `slider: true`, `value`, `increasedValue`, `decreasedValue`, and `onIncrease`/`onDecrease` callbacks.
