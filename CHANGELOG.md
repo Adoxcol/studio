@@ -7,6 +7,39 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-10-26
+
+### Fixed
+
+- Secure storage access failures no longer cause the app to crash on
+  launch if the operating system's credential service is temporarily
+  unavailable or corrupted.
+- Scrobble settings no longer export sensitive tokens (Last.fm session keys
+  and ListenBrainz tokens) in cleartext configurations.
+- Temporary cover art cache files now use cryptographically secure random
+  identifiers to prevent predictable filenames.
+- Volume, crossfade, and equalizer sliders now provide screen-reader semantics
+  and can be adjusted with standard accessibility controls.
+- The "Don't show again" checkbox in the window close confirmation dialog is
+  now keyboard-accessible with visible focus and hover feedback.
+- Player bar mode tabs, the artist byline, and the cover art button now
+  provide consistent native hover, ripple, and pointer cursor feedback.
+
+### Performance
+
+- Navidrome / Subsonic library scans and playlist synchronizations finish
+  faster with increased album scanning concurrency and parallel remote
+  playlist fetching.
+- Navidrome / Subsonic playback start and local library scanning eliminate
+  redundant database queries and repeated sidecar artwork file lookups.
+- Startup and settings persistence no longer block the UI thread, moving
+  appearance store and playback settings I/O to background asynchronous
+  operations.
+- Typing in the Smart Playlist and Batch Metadata editors is noticeably
+  smoother by isolating text field rebuilds from the rest of the dialog.
+- Selecting tracks in large library lists updates instantly with
+  constant-time selection count tracking.
+
 ## [0.8.1] - 2026-10-12
 
 ### Fixed
