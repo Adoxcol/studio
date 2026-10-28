@@ -22,3 +22,6 @@
 ## 2024-05-18 - Custom EQ sliders lack accessibility support
 **Learning:** Custom UI controls built from `GestureDetector` (like EQ sliders) are completely invisible to screen readers, making them inaccessible.
 **Action:** When building custom sliders in Flutter, explicitly wrap them with a `Semantics` widget including `slider: true`, `value`, `increasedValue`, `decreasedValue`, and `onIncrease`/`onDecrease` callbacks.
+## 2024-10-28 - Hue Slider Semantics
+**Learning:** Custom visual sliders built purely with `GestureDetector` miss out on semantic tree representation, meaning screen readers cannot interact with or understand them.
+**Action:** Always wrap custom sliders in a `Semantics` widget with `slider: true`, `value`, `increasedValue`, `decreasedValue`, and appropriate `onIncrease`/`onDecrease` callbacks.

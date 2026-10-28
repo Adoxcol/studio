@@ -193,43 +193,59 @@ class _HueSlider extends StatelessWidget {
                 onChanged((dx / width) * 360);
               }
 
-              return MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  key: const ValueKey('hue-slider'),
-                  behavior: HitTestBehavior.opaque,
-                  onTapDown: (details) => at(details.localPosition.dx),
-                  onHorizontalDragUpdate: (details) =>
-                      at(details.localPosition.dx),
-                  child: SizedBox(
-                    height: _height,
-                    child: Stack(
-                      alignment: Alignment.centerLeft,
-                      children: [
-                        Container(
-                          height: 2,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: _spectrum(brightness),
-                            ),
-                          ),
-                        ),
-                        Align(
-                          alignment: Alignment(t * 2 - 1, 0),
-                          child: Container(
-                            width: 8,
-                            height: 8,
+              final currentHue = AccentSeed.wrap(hue);
+              final increaseHue = AccentSeed.wrap(hue + 10);
+              final decreaseHue = AccentSeed.wrap(hue - 10);
+
+              return Semantics(
+                slider: true,
+                label: 'Accent hue',
+                value: '${currentHue.round()}°',
+                increasedValue: '${increaseHue.round()}°',
+                decreasedValue: '${decreaseHue.round()}°',
+                onIncrease: () => onChanged((hue + 10) % 360),
+                onDecrease: () => onChanged((hue - 10) % 360),
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    key: const ValueKey('hue-slider'),
+                    behavior: HitTestBehavior.opaque,
+                    onTapDown: (details) => at(details.localPosition.dx),
+                    onHorizontalDragUpdate: (details) =>
+                        at(details.localPosition.dx),
+                    child: SizedBox(
+                      height: _height,
+                      child: Stack(
+                        alignment: Alignment.centerLeft,
+                        children: [
+                          Container(
+                            height: 2,
                             decoration: BoxDecoration(
-                              color: StudioPalette.forBrightness(
-                                brightness,
-                                hue: hue,
-                              ).accent,
-                              border: Border.all(color: palette.ink, width: 1),
-                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: _spectrum(brightness),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                          Align(
+                            alignment: Alignment(t * 2 - 1, 0),
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: StudioPalette.forBrightness(
+                                  brightness,
+                                  hue: hue,
+                                ).accent,
+                                border: Border.all(
+                                  color: palette.ink,
+                                  width: 1,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
