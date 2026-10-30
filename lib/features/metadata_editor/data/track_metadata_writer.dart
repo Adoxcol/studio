@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
@@ -34,7 +35,7 @@ class TrackMetadataWriter {
     if (!original.existsSync()) {
       throw const FileSystemException('The audio file no longer exists.');
     }
-    final suffix = DateTime.now().microsecondsSinceEpoch;
+    final suffix = Random.secure().nextInt(1 << 32).toRadixString(16);
     final temporary = File('$path.studio-edit-$suffix');
     final backup = File('$path.studio-backup-$suffix');
     try {
