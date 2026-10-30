@@ -291,10 +291,10 @@ class _Swatch extends StatelessWidget {
         button: true,
         label: seed.label,
         selected: selected,
-        child: GestureDetector(
-          onTap: onTap,
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: onTap,
             child: SizedBox(
               width: 28,
               height: 28,
