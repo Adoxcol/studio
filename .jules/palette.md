@@ -25,3 +25,6 @@
 ## 2024-10-28 - Hue Slider Semantics
 **Learning:** Custom visual sliders built purely with `GestureDetector` miss out on semantic tree representation, meaning screen readers cannot interact with or understand them.
 **Action:** Always wrap custom sliders in a `Semantics` widget with `slider: true`, `value`, `increasedValue`, `decreasedValue`, and appropriate `onIncrease`/`onDecrease` callbacks.
+## 2024-10-31 - Scrubber Slider Semantics
+**Learning:** Custom visual sliders built purely with `GestureDetector` (like the playback scrubber in `_DividerScrubber`) miss out on semantic tree representation, meaning screen readers cannot interact with or understand them.
+**Action:** Always wrap custom sliders in a `Semantics` widget with `slider: true`, `value`, `increasedValue`, `decreasedValue`, and appropriate `onIncrease`/`onDecrease` callbacks mapping to the underlying seek mechanism.
