@@ -31,3 +31,7 @@
 **Vulnerability:** `ScrobbleSettings.toJson()` included sensitive secrets (`lastFmSecret`, `lastFmSessionKey`, `listenBrainzToken`), relying on callers to mutate the generated map with `json.remove()` prior to file write.
 **Learning:** Returning secrets in `toJson()` creates a fragility and race condition risk if any caller or logger serializes the model without manually removing secret keys.
 **Prevention:** When serializing model objects that store secrets separately in secure storage (`flutter_secure_storage`), directly omit secret fields from the `toJson()` map at model serialization time.
+## 2024-05-18 - Insecure Temporary File Suffixes (TOCTOU)
+**Vulnerability:** `TrackMetadataWriter` in `lib/features/metadata_editor/data/track_metadata_writer.dart` used a predictable `DateTime.now().microsecondsSinceEpoch` to generate suffixes for temporary edit and backup files during metadata writes.
+**Learning:** Using a predictable timestamp makes temporary file names guessable. Since audio files often reside in shared directories (like `~/Music`), local attackers could preemptively create symlinks at the guessed paths to cause the application to overwrite arbitrary files it has access to (a Time-of-Check to Time-of-Use or TOCTOU vulnerability).
+**Prevention:** Always use a cryptographically secure random number generator (`Random.secure()`) to generate unpredictable temporary file suffixes, ensuring they cannot be reliably guessed by malicious actors.

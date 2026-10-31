@@ -241,92 +241,118 @@ class _DividerScrubberState extends State<_DividerScrubber> {
       width: double.infinity,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          return MouseRegion(
-            cursor: SystemMouseCursors.click,
-            onEnter: (_) => setState(() => _hover = true),
-            onExit: (_) => setState(() => _hover = false),
-            child: Listener(
-              behavior: HitTestBehavior.opaque,
-              onPointerDown: (event) {
-                widget.onScrubStart();
-                final value = _fraction(
-                  event.localPosition,
-                  constraints.maxWidth,
-                );
-                setState(() => _scrub = value);
-                _send(value);
-              },
-              onPointerMove: (event) {
-                if (_scrub == null || !event.down) return;
-                setState(
-                  () => _scrub = _fraction(
+          return Semantics(
+            slider: true,
+            label: 'Playback progress',
+            value: formatDuration(elapsed),
+            increasedValue: formatDuration(
+              Duration(
+                milliseconds:
+                    (widget.duration.inMilliseconds *
+                            (progress + 0.05).clamp(0.0, 1.0))
+                        .round(),
+              ),
+            ),
+            decreasedValue: formatDuration(
+              Duration(
+                milliseconds:
+                    (widget.duration.inMilliseconds *
+                            (progress - 0.05).clamp(0.0, 1.0))
+                        .round(),
+              ),
+            ),
+            onIncrease: () => widget.onSeek((progress + 0.05).clamp(0.0, 1.0)),
+            onDecrease: () => widget.onSeek((progress - 0.05).clamp(0.0, 1.0)),
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              onEnter: (_) => setState(() => _hover = true),
+              onExit: (_) => setState(() => _hover = false),
+              child: Listener(
+                behavior: HitTestBehavior.opaque,
+                onPointerDown: (event) {
+                  widget.onScrubStart();
+                  final value = _fraction(
                     event.localPosition,
                     constraints.maxWidth,
-                  ),
-                );
-              },
-              onPointerUp: (_) {
-                final value = _scrub;
-                if (value != null) _send(value);
-                widget.onScrubEnd();
-                _sent = null;
-                setState(() => _scrub = null);
-              },
-              onPointerCancel: (_) {
-                widget.onScrubEnd();
-                _sent = null;
-                setState(() => _scrub = null);
-              },
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.centerLeft,
-                children: [
-                  Align(
-                    child: Container(height: 2, color: palette.hairlineStrong),
-                  ),
-                  FractionallySizedBox(
-                    widthFactor: progress,
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(height: 2, color: palette.accent),
+                  );
+                  setState(() => _scrub = value);
+                  _send(value);
+                },
+                onPointerMove: (event) {
+                  if (_scrub == null || !event.down) return;
+                  setState(
+                    () => _scrub = _fraction(
+                      event.localPosition,
+                      constraints.maxWidth,
                     ),
-                  ),
-                  Align(
-                    alignment: Alignment(progress * 2 - 1, 0),
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: palette.accent,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: palette.ink.withValues(alpha: 0.18),
-                            blurRadius: 2,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
+                  );
+                },
+                onPointerUp: (_) {
+                  final value = _scrub;
+                  if (value != null) _send(value);
+                  widget.onScrubEnd();
+                  _sent = null;
+                  setState(() => _scrub = null);
+                },
+                onPointerCancel: (_) {
+                  widget.onScrubEnd();
+                  _sent = null;
+                  setState(() => _scrub = null);
+                },
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.centerLeft,
+                  children: [
+                    Align(
+                      child: Container(
+                        height: 2,
+                        color: palette.hairlineStrong,
                       ),
                     ),
-                  ),
-                  if (_showTimes)
-                    Positioned(
-                      left: 16,
-                      right: 16,
-                      bottom: 14,
-                      child: IgnorePointer(
-                        child: _HoverTimes(
-                          start: formatDuration(Duration.zero),
-                          current: formatDuration(elapsed),
-                          end: formatDuration(widget.duration),
-                          progress: progress,
-                          startStyle: style,
-                          currentStyle: currentStyle,
-                          background: palette.bg,
+                    FractionallySizedBox(
+                      widthFactor: progress,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(height: 2, color: palette.accent),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment(progress * 2 - 1, 0),
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: palette.accent,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: palette.ink.withValues(alpha: 0.18),
+                              blurRadius: 2,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                ],
+                    if (_showTimes)
+                      Positioned(
+                        left: 16,
+                        right: 16,
+                        bottom: 14,
+                        child: IgnorePointer(
+                          child: _HoverTimes(
+                            start: formatDuration(Duration.zero),
+                            current: formatDuration(elapsed),
+                            end: formatDuration(widget.duration),
+                            progress: progress,
+                            startStyle: style,
+                            currentStyle: currentStyle,
+                            background: palette.bg,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           );

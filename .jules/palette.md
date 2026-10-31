@@ -28,3 +28,6 @@
 ## 2024-05-24 - Interactive color swatches lack keyboard focus
 **Learning:** Custom interactive elements built with `GestureDetector` and `MouseRegion` inside a `Semantics` node (like the color `_Swatch` in `settings_appearance.dart`) provide mouse hover and screen reader support, but they lack native keyboard focus support and standard visual ripple feedback, making keyboard navigation difficult.
 **Action:** Always wrap custom interactive UI elements in an `InkWell` inside a `Material(type: MaterialType.transparency)` widget instead of using `GestureDetector` directly to ensure native keyboard focus states and visual ripple feedback are natively handled.
+## 2024-10-31 - Scrubber Slider Semantics
+**Learning:** Custom visual sliders built purely with `GestureDetector` (like the playback scrubber in `_DividerScrubber`) miss out on semantic tree representation, meaning screen readers cannot interact with or understand them.
+**Action:** Always wrap custom sliders in a `Semantics` widget with `slider: true`, `value`, `increasedValue`, `decreasedValue`, and appropriate `onIncrease`/`onDecrease` callbacks mapping to the underlying seek mechanism.
