@@ -51,3 +51,7 @@
 ## 2026-10-19 - Asynchronous Initialization and In-Memory Caching for File Stores
 **Learning:** Reading configuration/settings files synchronously (`readAsStringSync`) during application startup blocks the main Dart isolate and UI thread, leading to UI stutter and latency. Adding an asynchronous `loadAsync()` method to preload settings during `main()` and serving synchronous `load()` requests from an in-memory cache reduced load latency while keeping Riverpod `Notifier` read operations synchronous.
 **Action:** When initializing local file storage that needs to be read synchronously by Riverpod providers, perform asynchronous preloading during application startup (`main()`) into an in-memory cache and serve synchronous read calls directly from the cache.
+
+## 2026-10-31 - Avoid O(N) array allocation for counting active booleans
+**Learning:** In Dart/Flutter, packing multiple boolean expressions into an array and using `.where((e) => e).length` to count true values forces the runtime to allocate a new `List` on the heap and instantiate an iterable closure. When this is done inside a getter that is frequently accessed (like during every `build` cycle of `LibraryPage`), it creates unnecessary garbage collection pressure and takes nearly 10x longer than a manual counter.
+**Action:** When counting active conditions, use a simple manual `var count = 0; if (condition) count++;` approach instead of wrapping them in a List to use iterable functional methods.
