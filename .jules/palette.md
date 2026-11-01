@@ -28,3 +28,6 @@
 ## 2024-10-31 - Scrubber Slider Semantics
 **Learning:** Custom visual sliders built purely with `GestureDetector` (like the playback scrubber in `_DividerScrubber`) miss out on semantic tree representation, meaning screen readers cannot interact with or understand them.
 **Action:** Always wrap custom sliders in a `Semantics` widget with `slider: true`, `value`, `increasedValue`, `decreasedValue`, and appropriate `onIncrease`/`onDecrease` callbacks mapping to the underlying seek mechanism.
+## 2024-05-24 - Use IconButton for interactive icons
+**Learning:** Manually wrapping a `GestureDetector` inside a standalone `Tooltip` and `Semantics(button: true)` creates verbose code and can duplicate semantics nodes compared to standard widgets.
+**Action:** Use Flutter's native `IconButton` widget instead, which intrinsically provides both visual tooltips and correct semantic button structure for screen readers without manual nesting.
