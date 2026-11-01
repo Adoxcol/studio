@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
@@ -149,7 +150,7 @@ class FileArtistPictureStore implements ArtistPictureStore {
     if (await file.exists()) return file.path;
     // Unique staging files also protect concurrent manual imports.
     final part = await File(
-      '${file.path}.${DateTime.now().microsecondsSinceEpoch}-${_writeSequence++}.part',
+      '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}-${_writeSequence++}.part',
     ).create();
     await part.writeAsBytes(bytes, flush: true);
     await part.rename(file.path);

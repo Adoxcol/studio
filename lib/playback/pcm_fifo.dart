@@ -85,7 +85,7 @@ class _WindowsPipe {
 
   static Future<PcmFifo> create() async {
     final name =
-        '\\\\.\\pipe\\studio-fft-$pid-${DateTime.now().microsecondsSinceEpoch}';
+        '\\\\.\\pipe\\studio-fft-$pid-${Random.secure().nextInt(1 << 32).toRadixString(16)}';
     final kernel32 = DynamicLibrary.open('kernel32.dll');
     final createNamedPipe = kernel32
         .lookupFunction<
