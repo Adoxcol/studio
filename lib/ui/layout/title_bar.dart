@@ -102,7 +102,9 @@ class _WindowControlState extends State<_WindowControl> {
           type: MaterialType.transparency,
           child: InkWell(
             onTap: widget.onTap,
-            hoverColor: widget.close ? const Color(0xFFC42B1C) : palette.hairlineSoft,
+            hoverColor: widget.close
+                ? const Color(0xFFC42B1C)
+                : palette.hairlineSoft,
             child: SizedBox(
               width: 46,
               height: StudioTitleBar.height,
