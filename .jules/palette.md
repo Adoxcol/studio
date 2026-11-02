@@ -31,3 +31,6 @@
 ## 2024-05-24 - Use IconButton for interactive icons
 **Learning:** Manually wrapping a `GestureDetector` inside a standalone `Tooltip` and `Semantics(button: true)` creates verbose code and can duplicate semantics nodes compared to standard widgets.
 **Action:** Use Flutter's native `IconButton` widget instead, which intrinsically provides both visual tooltips and correct semantic button structure for screen readers without manual nesting.
+## 2024-11-13 - Simplify Interactive Hover States with InkWell
+**Learning:** In Flutter applications, custom window control buttons built with `GestureDetector`, `MouseRegion` and `setState` for hover tracking are verbose and lack native visual feedback.
+**Action:** Replace `GestureDetector`, `MouseRegion`, and `AnimatedContainer` with an `InkWell` wrapped in `Material(type: MaterialType.transparency)`. Set `hoverColor` to provide native hover effects without requiring manual state management for `_hovered`.

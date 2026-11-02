@@ -89,38 +89,31 @@ class _WindowControl extends StatefulWidget {
 }
 
 class _WindowControlState extends State<_WindowControl> {
-  var _hovered = false;
-
   @override
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
-    final closeHover = widget.close && _hovered;
+
     return Tooltip(
       message: widget.tooltip,
       child: Semantics(
         button: true,
         label: widget.tooltip,
-        child: GestureDetector(
-          onTap: widget.onTap,
-          behavior: HitTestBehavior.opaque,
-          child: MouseRegion(
-            onEnter: (_) => setState(() => _hovered = true),
-            onExit: (_) => setState(() => _hovered = false),
-            cursor: SystemMouseCursors.click,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 80),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: widget.onTap,
+            hoverColor: widget.close
+                ? const Color(0xFFC42B1C)
+                : palette.hairlineSoft,
+            child: SizedBox(
               width: 46,
               height: StudioTitleBar.height,
-              color: closeHover
-                  ? const Color(0xFFC42B1C)
-                  : _hovered
-                  ? palette.hairlineSoft
-                  : Colors.transparent,
-              alignment: Alignment.center,
-              child: Icon(
-                widget.icon,
-                size: widget.close ? 18 : 16,
-                color: closeHover ? Colors.white : palette.inkMuted,
+              child: Center(
+                child: Icon(
+                  widget.icon,
+                  size: widget.close ? 18 : 16,
+                  color: palette.inkMuted,
+                ),
               ),
             ),
           ),
