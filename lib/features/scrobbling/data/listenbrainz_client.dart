@@ -89,8 +89,6 @@ class ListenBrainzClient {
       return await request().timeout(_timeout);
     } on SocketException catch (error) {
       throw ScrobbleException(ScrobbleFailure.retry, '$error');
-    } on http.ClientException catch (error) {
-      throw ScrobbleException(ScrobbleFailure.retry, '$error');
     } on TimeoutException {
       throw const ScrobbleException(ScrobbleFailure.retry, 'Timed out.');
     }
