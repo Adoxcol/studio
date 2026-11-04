@@ -776,7 +776,6 @@ class DockingLayout extends ChangeNotifier {
     } else {
       throw StateError('Root is not a DropArea');
     }
-    //TODO maximize test
   }
 
   /// Rebuilds this layout with modifiers.
