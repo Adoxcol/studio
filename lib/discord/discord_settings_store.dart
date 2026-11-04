@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 
 import 'package:studio/discord/discord_settings.dart';
@@ -96,7 +97,9 @@ class FileDiscordSettingsStore implements DiscordSettingsStore {
   void save(DiscordSettings settings) {
     _cache = settings;
     file.parent.createSync(recursive: true);
-    final part = File('${file.path}.part');
+    final part = File(
+      '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+    );
     part.writeAsStringSync(
       jsonEncode({
         'enabled': settings.enabled,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 
 import 'package:studio/theming/accent_seed.dart';
@@ -104,7 +105,9 @@ class FileAppearanceStore implements AppearanceStore {
   void save(AppearanceState state) {
     _cache = state;
     file.parent.createSync(recursive: true);
-    final part = File('${file.path}.part');
+    final part = File(
+      '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+    );
     part.writeAsStringSync(
       jsonEncode({
         'mode': state.mode.name,

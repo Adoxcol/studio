@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -81,7 +82,9 @@ class NetworkArtworkCache {
   Future<void> _store(File file, Uint8List body) async {
     try {
       await file.parent.create(recursive: true);
-      final temp = File('${file.path}.part');
+      final temp = File(
+        '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+      );
       await temp.writeAsBytes(body, flush: true);
       await temp.rename(file.path);
     } on FileSystemException catch (error) {

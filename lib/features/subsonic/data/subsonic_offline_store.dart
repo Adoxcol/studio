@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:convert';
 import 'dart:io';
 
@@ -68,7 +69,12 @@ class SubsonicOfflineStore {
   void _saveManifest(String server) {
     final dir = _dir(server)..createSync(recursive: true);
     final file = _manifestFile(server);
-    final part = File(p.join(dir.path, 'index.json.part'));
+    final part = File(
+      p.join(
+        dir.path,
+        'index.${Random.secure().nextInt(1 << 32).toRadixString(16)}.json.part',
+      ),
+    );
     part.writeAsStringSync(
       jsonEncode({
         for (final entry in _manifest(server).entries)
@@ -128,7 +134,9 @@ class SubsonicOfflineStore {
     }
     final name = '${_safeId(songId)}${_extension(response)}';
     final file = File(p.join(dir.path, name));
-    final part = File('${file.path}.part');
+    final part = File(
+      '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+    );
     final sink = part.openWrite();
     var received = 0;
     try {

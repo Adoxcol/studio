@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -141,7 +142,9 @@ class FreeImageArtworkUploader implements DiscordArtworkResolver {
     final disk = _disk;
     if (disk == null) return;
     cacheFile.parent.createSync(recursive: true);
-    final part = File('${cacheFile.path}.part');
+    final part = File(
+      '${cacheFile.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+    );
     part.writeAsStringSync(jsonEncode(disk), flush: true);
     part.renameSync(cacheFile.path);
   }

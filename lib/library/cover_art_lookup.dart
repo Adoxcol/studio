@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -128,7 +129,9 @@ class ITunesCoverArtLookup implements CoverArtLookup {
     if (file == null) return;
     try {
       file.parent.createSync(recursive: true);
-      final part = File('${file.path}.part');
+      final part = File(
+        '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+      );
       part.writeAsStringSync(
         jsonEncode(_misses!.toList()..sort()),
         flush: true,

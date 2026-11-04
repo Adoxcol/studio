@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -157,7 +158,9 @@ class FileScrobbleSettingsStore implements ScrobbleSettingsStore {
     final json = settings.toJson();
 
     file.parent.createSync(recursive: true);
-    final part = File('${file.path}.part');
+    final part = File(
+      '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+    );
     part.writeAsStringSync(jsonEncode(json), flush: true);
     part.renameSync(file.path);
   }

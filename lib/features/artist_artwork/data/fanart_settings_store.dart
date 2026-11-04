@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 
 class FanartSettings {
@@ -47,7 +48,9 @@ class FanartSettingsStore {
   Future<void> save(FanartSettings settings) async {
     if (file != null) {
       await file!.parent.create(recursive: true);
-      final part = File('${file!.path}.part');
+      final part = File(
+        '${file!.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+      );
       await part.writeAsString(
         jsonEncode({
           'projectKey': settings.projectKey,

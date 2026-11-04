@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 
 /// Where the Library page reads its catalogue from. Kept apart from folders:
@@ -51,7 +52,9 @@ class FileLibrarySourceStore implements LibrarySourceStore {
   @override
   void save(LibrarySource source) {
     file.parent.createSync(recursive: true);
-    final part = File('${file.path}.part');
+    final part = File(
+      '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+    );
     part.writeAsStringSync(jsonEncode({'source': source.name}), flush: true);
     part.renameSync(file.path);
   }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -91,7 +92,9 @@ class FileSkinStore implements SkinStore {
 
   void _write(File file, String contents) {
     directory.createSync(recursive: true);
-    final part = File('${file.path}.part');
+    final part = File(
+      '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+    );
     part.writeAsStringSync(contents, flush: true);
     part.renameSync(file.path);
   }

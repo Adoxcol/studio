@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 
 import 'package:studio/playback/playback_session.dart';
@@ -42,7 +43,9 @@ class FilePlaybackSessionStore implements PlaybackSessionStore {
   @override
   void save(PlaybackSession session) {
     file.parent.createSync(recursive: true);
-    final part = File('${file.path}.part');
+    final part = File(
+      '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+    );
     part.writeAsStringSync(jsonEncode(session.toJson()), flush: true);
     part.renameSync(file.path);
   }

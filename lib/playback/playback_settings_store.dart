@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 
 import 'package:studio/playback/dsp/crossfade.dart';
@@ -101,7 +102,9 @@ class FilePlaybackSettingsStore implements PlaybackSettingsStore {
     final next = _lastSave.then((_) async {
       try {
         await file.parent.create(recursive: true);
-        final part = File('${file.path}.part');
+        final part = File(
+          '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+        );
         await part.writeAsString(
           jsonEncode({
             'replayGain': settings.replayGain.name,
