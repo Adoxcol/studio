@@ -351,37 +351,40 @@ class _EditorialPlayerBar extends ConsumerWidget {
                           child: Semantics(
                             button: true,
                             label: 'Audio Engine Settings',
-                            child: InkWell(
-                              onTap: () => showAudioEngineSheet(context),
-                              borderRadius: BorderRadius.circular(4),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: palette.hairlineSoft,
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(color: palette.hairline),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.graphic_eq,
-                                      size: 12,
-                                      color: palette.accent,
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      'DSP',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
+                            child: Material(
+                              type: MaterialType.transparency,
+                              child: InkWell(
+                                onTap: () => showAudioEngineSheet(context),
+                                borderRadius: BorderRadius.circular(4),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: palette.hairlineSoft,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: palette.hairline),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.graphic_eq,
+                                        size: 12,
                                         color: palette.accent,
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        'DSP',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          color: palette.accent,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
