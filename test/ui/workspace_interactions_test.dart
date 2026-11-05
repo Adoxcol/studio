@@ -498,4 +498,109 @@ void main() {
       expect(tabOrder(remainingTabs), ['b', 'c']);
     });
   });
+
+  group('addItemOnRoot maximize behavior', () {
+    test(
+      'addItemOnRoot preserves maximized state of root DockingItem when added as new tab',
+      () {
+        final itemA = DockingItem(
+          id: 'a',
+          widget: Container(),
+          maximized: true,
+        );
+        final itemB = DockingItem(id: 'b', widget: Container());
+        final layout = DockingLayout(root: itemA);
+
+        expect(layout.maximizedArea, same(itemA));
+        expect(itemA.maximized, isTrue);
+
+        layout.addItemOnRoot(newItem: itemB, dropIndex: 1);
+
+        expect(layout.root, isA<DockingTabs>());
+        final tabs = layout.root as DockingTabs;
+        expect(tabs.childrenCount, 2);
+        expect(tabs.childAt(0).id, 'a');
+        expect(tabs.childAt(1).id, 'b');
+        expect(itemA.maximized, isTrue);
+        expect(layout.maximizedArea, same(itemA));
+        expect(itemB.maximized, isFalse);
+
+        layout.restore();
+        expect(layout.maximizedArea, isNull);
+        expect(itemA.maximized, isFalse);
+      },
+    );
+
+    test(
+      'addItemOnRoot preserves maximized state when adding beside maximized item as column',
+      () {
+        final itemA = DockingItem(id: 'a', widget: Container());
+        final itemB = DockingItem(id: 'b', widget: Container());
+        final layout = DockingLayout(root: itemA);
+        layout.maximizeDockingItem(itemA);
+
+        expect(layout.maximizedArea, same(itemA));
+        expect(itemA.maximized, isTrue);
+
+        layout.addItemOnRoot(newItem: itemB, dropPosition: DropPosition.bottom);
+
+        expect(layout.root, isA<DockingColumn>());
+        final col = layout.root as DockingColumn;
+        expect(col.childrenCount, 2);
+        expect(col.childAt(0), same(itemA));
+        expect(col.childAt(1), same(itemB));
+        expect(itemA.maximized, isTrue);
+        expect(layout.maximizedArea, same(itemA));
+        expect(itemB.maximized, isFalse);
+      },
+    );
+
+    test(
+      'addItemOnRoot preserves maximized state when adding beside maximized item as row',
+      () {
+        final itemA = DockingItem(id: 'a', widget: Container());
+        final itemB = DockingItem(id: 'b', widget: Container());
+        final layout = DockingLayout(root: itemA);
+        layout.maximizeDockingItem(itemA);
+
+        layout.addItemOnRoot(newItem: itemB, dropPosition: DropPosition.left);
+
+        expect(layout.root, isA<DockingRow>());
+        final row = layout.root as DockingRow;
+        expect(row.childrenCount, 2);
+        expect(row.childAt(0), same(itemB));
+        expect(row.childAt(1), same(itemA));
+        expect(itemA.maximized, isTrue);
+        expect(layout.maximizedArea, same(itemA));
+        expect(itemB.maximized, isFalse);
+      },
+    );
+
+    test('addItemOnRoot preserves maximized state of root DockingTabs', () {
+      final itemA = DockingItem(id: 'a', widget: Container());
+      final itemB = DockingItem(id: 'b', widget: Container());
+      final itemC = DockingItem(id: 'c', widget: Container());
+      final tabs = DockingTabs([itemA, itemB]);
+      final layout = DockingLayout(root: tabs);
+      layout.maximizeDockingTabs(tabs);
+
+      expect(layout.maximizedArea, same(tabs));
+      expect(tabs.maximized, isTrue);
+
+      layout.addItemOnRoot(newItem: itemC, dropIndex: 2);
+
+      expect(layout.root, isA<DockingTabs>());
+      final newTabs = layout.root as DockingTabs;
+      expect(newTabs.childrenCount, 3);
+      expect(newTabs.childAt(0).id, 'a');
+      expect(newTabs.childAt(1).id, 'b');
+      expect(newTabs.childAt(2).id, 'c');
+      expect(newTabs.maximized, isTrue);
+      expect(layout.maximizedArea, same(newTabs));
+
+      layout.restore();
+      expect(layout.maximizedArea, isNull);
+      expect(newTabs.maximized, isFalse);
+    });
+  });
 }
