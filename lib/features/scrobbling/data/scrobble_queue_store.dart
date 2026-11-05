@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 
 import 'package:studio/features/scrobbling/domain/scrobble_track.dart';
@@ -52,7 +53,9 @@ class FileScrobbleQueueStore implements ScrobbleQueueStore {
   @override
   void save(Map<String, List<ScrobbleTrack>> queues) {
     file.parent.createSync(recursive: true);
-    final part = File('${file.path}.part');
+    final part = File(
+      '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+    );
     part.writeAsStringSync(
       jsonEncode({
         for (final entry in queues.entries)

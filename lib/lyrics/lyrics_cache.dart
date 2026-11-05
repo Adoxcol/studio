@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
@@ -58,7 +59,9 @@ class FileLyricsCache implements LyricsCache {
   void write(LyricsQuery query, LrclibRecord? record) {
     directory.createSync(recursive: true);
     final file = _file(query);
-    final part = File('${file.path}.part');
+    final part = File(
+      '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+    );
     part.writeAsStringSync(
       jsonEncode({
         'missing': record == null,

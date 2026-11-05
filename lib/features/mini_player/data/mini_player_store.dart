@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 
 /// Remembers whether the mini player floats above other windows.
@@ -38,7 +39,9 @@ class FileMiniPlayerStore implements MiniPlayerStore {
   @override
   void savePinned(bool pinned) {
     file.parent.createSync(recursive: true);
-    final part = File('${file.path}.part');
+    final part = File(
+      '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+    );
     part.writeAsStringSync(jsonEncode({'pinned': pinned}), flush: true);
     part.renameSync(file.path);
   }

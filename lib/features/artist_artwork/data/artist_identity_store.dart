@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
@@ -47,7 +48,9 @@ class ArtistIdentityStore {
     if (directory != null) {
       await directory!.create(recursive: true);
       final file = File(p.join(directory!.path, '$key.json'));
-      final part = File('${file.path}.part');
+      final part = File(
+        '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+      );
       await part.writeAsString(jsonEncode({'mbid': id}), flush: true);
       await part.rename(file.path);
     }

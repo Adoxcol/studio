@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 
 import 'package:studio/core/desktop/close_preference.dart';
@@ -44,7 +45,9 @@ class FileClosePreferenceStore implements ClosePreferenceStore {
   @override
   void save(ClosePreference preference) {
     file.parent.createSync(recursive: true);
-    final part = File('${file.path}.part');
+    final part = File(
+      '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+    );
     part.writeAsStringSync(
       jsonEncode({'ask': preference.ask, 'remember': preference.remember.name}),
       flush: true,

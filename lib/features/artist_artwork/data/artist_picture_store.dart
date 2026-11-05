@@ -117,7 +117,9 @@ class FileArtistPictureStore implements ArtistPictureStore {
   Future<void> save(String key, ArtistPicture picture) async {
     await directory.create(recursive: true);
     final file = _manifest(key);
-    final part = File('${file.path}.part');
+    final part = File(
+      '${file.path}.${Random.secure().nextInt(1 << 32).toRadixString(16)}.part',
+    );
     await part.writeAsString(
       jsonEncode({
         'version': _cacheVersion,
