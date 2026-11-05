@@ -1,3 +1,6 @@
+## 2024-11-04 - Native Visual Feedback for Interactive Icons
+**Learning:** In Flutter, wrapping interactive icons (like `InkWell`) with `Semantics` and `Tooltip` is great for accessibility and context, but without a `Material(type: MaterialType.transparency)` parent, these icons lack the native material visual feedback (like ripple effects) upon interaction.
+**Action:** When creating custom interactive icons using `InkWell`, ensure they are nested inside a `Material(type: MaterialType.transparency)` to provide native visual feedback and improve the overall tactile feel of the UI.
 ## 2024-05-24 - Use IconButton for interactive icons
 **Learning:** Manually wrapping a `GestureDetector` inside a standalone `Tooltip` and `Semantics(button: true)` creates verbose code and can duplicate semantics nodes compared to standard widgets.
 **Action:** Use Flutter's native `IconButton` widget instead, which intrinsically provides both visual tooltips and correct semantic button structure for screen readers without manual nesting.
