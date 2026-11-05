@@ -570,10 +570,11 @@ class _EditorialLyricsScrollerState
 
               if (!widget.document.synced) return content;
 
-              return MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
+              return Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  hoverColor: Colors.white.withValues(alpha: 0.05),
                   onTap: () {
                     unawaited(
                       ref

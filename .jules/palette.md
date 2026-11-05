@@ -34,3 +34,6 @@
 ## 2024-11-13 - Simplify Interactive Hover States with InkWell
 **Learning:** In Flutter applications, custom window control buttons built with `GestureDetector`, `MouseRegion` and `setState` for hover tracking are verbose and lack native visual feedback.
 **Action:** Replace `GestureDetector`, `MouseRegion`, and `AnimatedContainer` with an `InkWell` wrapped in `Material(type: MaterialType.transparency)`. Set `hoverColor` to provide native hover effects without requiring manual state management for `_hovered`.
+## 2024-11-13 - Interactive Lyrics Lines
+**Learning:** In Flutter, text lines that are clickable (like synchronized lyrics) built with `GestureDetector` and `MouseRegion` feel unresponsive as they lack native visual feedback (hover color, ink ripples).
+**Action:** Replace `GestureDetector` and `MouseRegion` with an `InkWell` wrapped in `Material(type: MaterialType.transparency)`. Set `hoverColor` and `borderRadius` to provide a native interactive experience.
