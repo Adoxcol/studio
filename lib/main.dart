@@ -101,6 +101,7 @@ Future<void> main(List<String> args) async {
   final discordSettings = FileDiscordSettingsStore(
     File(p.join(support.path, 'discord.json')),
   );
+  await discordSettings.loadAsync();
   final discordArtwork = FreeImageArtworkUploader(
     cacheFile: File(p.join(support.path, 'discord-art.json')),
   );
