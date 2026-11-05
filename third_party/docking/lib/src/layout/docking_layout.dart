@@ -711,7 +711,6 @@ class DockingLayout extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    //TODO maximize test
     _rebuild([
       MoveItem(
         draggedItem: draggedItem,

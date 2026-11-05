@@ -416,5 +416,86 @@ void main() {
       expect(find.text('Tab b'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    test('moveItem retains maximized state when moved item is maximized', () {
+      final itemA = DockingItem(id: 'a', widget: Container());
+      final itemB = DockingItem(id: 'b', widget: Container());
+      final tabs = DockingTabs([itemA, itemB]);
+      final layout = DockingLayout(root: tabs);
+      layout.maximizeDockingItem(itemA);
+      expect(layout.maximizedArea, same(itemA));
+      expect(itemA.maximized, isTrue);
+
+      layout.moveItem(
+        draggedItem: itemA,
+        targetArea: tabs,
+        dropPosition: DropPosition.right,
+      );
+
+      expect(layout.maximizedArea, same(itemA));
+      expect(itemA.maximized, isTrue);
+      expect(layout.root, isA<DockingRow>());
+    });
+
+    test('moveItem preserves maximized state of another item', () {
+      final itemA = DockingItem(id: 'a', widget: Container());
+      final itemB = DockingItem(id: 'b', widget: Container());
+      final itemC = DockingItem(id: 'c', widget: Container());
+      final tabs = DockingTabs([itemA, itemB]);
+      final row = DockingRow([tabs, itemC]);
+      final layout = DockingLayout(root: row);
+      layout.maximizeDockingItem(itemA);
+      expect(layout.maximizedArea, same(itemA));
+
+      layout.moveItem(draggedItem: itemC, targetArea: tabs, dropIndex: 2);
+
+      expect(layout.maximizedArea, same(itemA));
+      expect(itemA.maximized, isTrue);
+      final currentTabs = layout.findDockingTabsWithItem('a');
+      expect(currentTabs, isNotNull);
+      expect(currentTabs!.childrenCount, 3);
+      expect(tabOrder(currentTabs), ['a', 'b', 'c']);
+    });
+
+    test(
+      'moveItem preserves maximized state of tabs during in-place reorder',
+      () {
+        final itemA = DockingItem(id: 'a', widget: Container());
+        final itemB = DockingItem(id: 'b', widget: Container());
+        final itemC = DockingItem(id: 'c', widget: Container());
+        final tabs = DockingTabs([itemA, itemB, itemC]);
+        final layout = DockingLayout(root: tabs);
+        layout.maximizeDockingTabs(tabs);
+        expect(layout.maximizedArea, same(tabs));
+        expect(tabs.maximized, isTrue);
+
+        layout.moveItem(draggedItem: itemA, targetArea: tabs, dropIndex: 3);
+
+        expect(layout.maximizedArea, same(tabs));
+        expect(tabs.maximized, isTrue);
+        expect(tabOrder(tabs), ['b', 'c', 'a']);
+      },
+    );
+
+    test('moveItem handles moving an item out of maximized tabs', () {
+      final itemA = DockingItem(id: 'a', widget: Container());
+      final itemB = DockingItem(id: 'b', widget: Container());
+      final itemC = DockingItem(id: 'c', widget: Container());
+      final tabs = DockingTabs([itemA, itemB, itemC]);
+      final layout = DockingLayout(root: tabs);
+      layout.maximizeDockingTabs(tabs);
+      expect(layout.maximizedArea, same(tabs));
+
+      layout.moveItem(
+        draggedItem: itemA,
+        targetArea: tabs,
+        dropPosition: DropPosition.bottom,
+      );
+
+      expect(layout.maximizedArea, isA<DockingTabs>());
+      final remainingTabs = layout.maximizedArea! as DockingTabs;
+      expect(remainingTabs.maximized, isTrue);
+      expect(tabOrder(remainingTabs), ['b', 'c']);
+    });
   });
 }
