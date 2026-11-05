@@ -603,4 +603,109 @@ void main() {
       expect(newTabs.maximized, isFalse);
     });
   });
+
+  group('docking layout maximize behavior with addItem', () {
+    test('addItemOn tab to a maximized DockingItem', () {
+      final itemA = DockingItem(id: 'a', widget: const SizedBox());
+      final itemB = DockingItem(id: 'b', widget: const SizedBox());
+      final layout = DockingLayout(root: DockingRow([itemA, itemB]));
+
+      layout.maximizeDockingItem(itemA);
+      expect(layout.maximizedArea, same(itemA));
+      expect(itemA.maximized, isTrue);
+
+      final newItem = DockingItem(id: 'c', widget: const SizedBox());
+      layout.addItemOn(newItem: newItem, targetArea: itemA, dropIndex: 1);
+
+      final tabs = layout.findDockingTabsWithItem('a');
+      expect(tabs, isNotNull);
+      expect(tabOrder(tabs!), ['a', 'c']);
+      expect(layout.maximizedArea, same(itemA));
+      expect(itemA.maximized, isTrue);
+    });
+
+    test(
+      'addItemOn with directional split adjacent to maximized DockingItem',
+      () {
+        final itemA = DockingItem(id: 'a', widget: const SizedBox());
+        final itemB = DockingItem(id: 'b', widget: const SizedBox());
+        final layout = DockingLayout(root: DockingRow([itemA, itemB]));
+
+        layout.maximizeDockingItem(itemA);
+        expect(layout.maximizedArea, same(itemA));
+
+        final newItem = DockingItem(id: 'c', widget: const SizedBox());
+        layout.addItemOn(
+          newItem: newItem,
+          targetArea: itemA,
+          dropPosition: DropPosition.right,
+        );
+
+        expect(layout.findDockingItem('c'), same(newItem));
+        expect(layout.maximizedArea, same(itemA));
+        expect(itemA.maximized, isTrue);
+      },
+    );
+
+    test('addItemOn tab to a maximized DockingTabs', () {
+      final itemA = DockingItem(id: 'a', widget: const SizedBox());
+      final itemB = DockingItem(id: 'b', widget: const SizedBox());
+      final tabs = DockingTabs([itemA, itemB]);
+      final itemC = DockingItem(id: 'c', widget: const SizedBox());
+      final layout = DockingLayout(root: DockingRow([tabs, itemC]));
+
+      layout.maximizeDockingTabs(tabs);
+      expect(layout.maximizedArea, same(tabs));
+      expect(tabs.maximized, isTrue);
+
+      final newItem = DockingItem(id: 'd', widget: const SizedBox());
+      layout.addItemOn(newItem: newItem, targetArea: tabs, dropIndex: 2);
+
+      final newTabs = layout.findDockingTabsWithItem('a')!;
+      expect(tabOrder(newTabs), ['a', 'b', 'd']);
+      expect(layout.maximizedArea, same(newTabs));
+      expect(newTabs.maximized, isTrue);
+    });
+
+    test('addItemOn to non-maximized area while another area is maximized', () {
+      final itemA = DockingItem(id: 'a', widget: const SizedBox());
+      final itemB = DockingItem(id: 'b', widget: const SizedBox());
+      final layout = DockingLayout(root: DockingRow([itemA, itemB]));
+
+      layout.maximizeDockingItem(itemA);
+      expect(layout.maximizedArea, same(itemA));
+
+      final newItem = DockingItem(id: 'c', widget: const SizedBox());
+      layout.addItemOn(
+        newItem: newItem,
+        targetArea: itemB,
+        dropPosition: DropPosition.bottom,
+      );
+
+      expect(layout.findDockingItem('c'), same(newItem));
+      expect(layout.maximizedArea, same(itemA));
+      expect(itemA.maximized, isTrue);
+    });
+
+    test('addItemOnRoot while an item is maximized', () {
+      final tabs = DockingTabs([
+        DockingItem(id: 'a', widget: const SizedBox()),
+        DockingItem(id: 'b', widget: const SizedBox()),
+      ]);
+      final layout = DockingLayout(root: tabs);
+
+      layout.maximizeDockingTabs(tabs);
+      expect(layout.maximizedArea, same(tabs));
+
+      final newItem = DockingItem(id: 'c', widget: const SizedBox());
+      layout.addItemOnRoot(newItem: newItem, dropPosition: DropPosition.bottom);
+
+      expect(layout.findDockingItem('c'), same(newItem));
+      final rootRowOrColumn = layout.root;
+      expect(rootRowOrColumn, isA<DockingColumn>());
+      final newTabs = layout.findDockingTabsWithItem('a')!;
+      expect(layout.maximizedArea, same(newTabs));
+      expect(newTabs.maximized, isTrue);
+    });
+  });
 }

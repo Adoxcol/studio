@@ -742,7 +742,6 @@ class DockingLayout extends ChangeNotifier {
     DropPosition? dropPosition,
     int? dropIndex,
   }) {
-    //TODO maximize test
     _rebuild([
       AddItem(
         newItem: newItem,
