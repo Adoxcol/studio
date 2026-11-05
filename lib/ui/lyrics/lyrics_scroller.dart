@@ -169,11 +169,12 @@ class _LyricsScrollerState extends ConsumerState<LyricsScroller> {
                     ),
             );
             if (!widget.document.synced) return text;
-            return MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
+            return Material(
+              type: MaterialType.transparency,
+              child: InkWell(
                 key: ValueKey<String>('lyric-$index'),
-                behavior: HitTestBehavior.opaque,
+                borderRadius: BorderRadius.circular(8),
+                hoverColor: palette.ink.withValues(alpha: 0.05),
                 onTap: () {
                   unawaited(
                     ref
