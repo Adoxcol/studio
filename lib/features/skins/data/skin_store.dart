@@ -68,8 +68,10 @@ class FileSkinStore implements SkinStore {
     final skins = <Skin>[];
     if (await directory.exists()) {
       await for (final file in directory.list()) {
-        if (file is! File || p.extension(file.path) != '.${Skin.fileExtension}')
+        if (file is! File ||
+            p.extension(file.path) != '.${Skin.fileExtension}') {
           continue;
+        }
         try {
           skins.add(Skin.parse(await file.readAsString()));
         } on Object catch (error) {
