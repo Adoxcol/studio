@@ -75,6 +75,7 @@ Future<void> main(List<String> args) async {
   );
   await appearance.loadAsync();
   final skins = FileSkinStore(Directory(p.join(support.path, 'skins')));
+  await skins.init();
   final activeSkinId = skins.loadActive();
   await bootstrapWindow(
     backgroundColor: StudioTheme.windowBackground(
