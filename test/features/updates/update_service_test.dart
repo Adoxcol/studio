@@ -7,12 +7,19 @@ import 'package:studio/features/updates/update_service.dart';
 class FakeBackend implements UpdateBackend {
   Completer<AvailableUpdate?> latestCall = Completer();
   Completer<void> downloadCall = Completer();
+  var initializeCalls = 0;
   var latestCalls = 0;
   var downloadCalls = 0;
   var applied = false;
+  Object? initializeError;
 
   @override
-  Future<void> initialize() async {}
+  Future<void> initialize() async {
+    initializeCalls++;
+    if (initializeError != null) {
+      throw initializeError!;
+    }
+  }
 
   @override
   Future<AvailableUpdate?> latest() {
@@ -31,6 +38,84 @@ class FakeBackend implements UpdateBackend {
 }
 
 void main() {
+  group('initialize', () {
+    test('check() is a no-op when service is uninitialized', () async {
+      final backend = FakeBackend();
+      final service = UpdateService(backend: backend);
+      addTearDown(service.dispose);
+
+      expect(service.state.initialized, isFalse);
+      await service.check();
+
+      expect(backend.latestCalls, 0);
+      expect(service.state.phase, UpdatePhase.idle);
+    });
+
+    test(
+      'successfully initializes backend and kicks off silent update check',
+      () async {
+        final backend = FakeBackend();
+        final service = UpdateService(
+          backend: backend,
+          now: () => DateTime(2026, 9, 27, 15, 4),
+        );
+        addTearDown(service.dispose);
+
+        expect(service.state.initialized, isFalse);
+        backend.latestCall.complete(null);
+
+        await service.initialize();
+        expect(backend.initializeCalls, 1);
+        expect(service.state.initialized, isTrue);
+        expect(service.state.error, isNull);
+
+        // Allow the unawaited check(silent: true) to settle
+        await Future<void>.delayed(Duration.zero);
+        expect(backend.latestCalls, 1);
+        expect(service.state.upToDate, isTrue);
+        expect(service.state.lastChecked, DateTime(2026, 9, 27, 15, 4));
+      },
+    );
+
+    test('is idempotent and ignores subsequent initialize calls', () async {
+      final backend = FakeBackend();
+      final service = UpdateService(backend: backend);
+      addTearDown(service.dispose);
+
+      backend.latestCall.complete(null);
+      await service.initialize();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(backend.initializeCalls, 1);
+      expect(backend.latestCalls, 1);
+
+      // Calling initialize a second time does nothing
+      await service.initialize();
+      expect(backend.initializeCalls, 1);
+      expect(backend.latestCalls, 1);
+    });
+
+    test(
+      'sets error and marks initialized when backend initialize throws',
+      () async {
+        final backend = FakeBackend();
+        final error = StateError('native lib not found');
+        backend.initializeError = error;
+
+        final service = UpdateService(backend: backend);
+        addTearDown(service.dispose);
+
+        await service.initialize();
+
+        expect(backend.initializeCalls, 1);
+        expect(service.state.initialized, isTrue);
+        expect(service.state.error, error);
+        // When initialization fails, check() is not invoked
+        expect(backend.latestCalls, 0);
+      },
+    );
+  });
+
   late FakeBackend backend;
   late UpdateService service;
   final phases = <UpdatePhase>[];
