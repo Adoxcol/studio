@@ -50,20 +50,20 @@ class SubsonicOfflineStore {
       File(p.join(_dir(server).path, 'index.json'));
 
   Map<String, _Entry> _manifest(String server) {
-    return _manifests.putIfAbsent(server, () {
+    return _manifests[server] ??= () {
       final file = _manifestFile(server);
-      if (!file.existsSync()) return {};
+      if (!file.existsSync()) return <String, _Entry>{};
       try {
         final json = jsonDecode(file.readAsStringSync());
-        if (json is! Map) return {};
+        if (json is! Map) return <String, _Entry>{};
         return {
           for (final entry in json.entries)
-            '${entry.key}': ?_Entry.fromJson(entry.value),
+            '${entry.key}': _Entry.fromJson(entry.value)!,
         };
       } on Object {
-        return {};
+        return <String, _Entry>{};
       }
-    });
+    }();
   }
 
   void _saveManifest(String server) {

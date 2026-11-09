@@ -55,3 +55,7 @@
 ## 2026-10-31 - Avoid O(N) array allocation for counting active booleans
 **Learning:** In Dart/Flutter, packing multiple boolean expressions into an array and using `.where((e) => e).length` to count true values forces the runtime to allocate a new `List` on the heap and instantiate an iterable closure. When this is done inside a getter that is frequently accessed (like during every `build` cycle of `LibraryPage`), it creates unnecessary garbage collection pressure and takes nearly 10x longer than a manual counter.
 **Action:** When counting active conditions, use a simple manual `var count = 0; if (condition) count++;` approach instead of wrapping them in a List to use iterable functional methods.
+
+## 2026-11-20 - Replacing putIfAbsent with null-aware assignment ??= in store caches
+**Learning:** Using `putIfAbsent` with an anonymous closure function allocating fallback values (e.g. reading from disk or creating objects) inside caching mechanisms causes closure allocation overhead even when the cache hits. When checking for file or track presence offline, these methods are called frequently, compounding the garbage collection pressure.
+**Action:** Replace `map.putIfAbsent(key, () => value)` with the null-aware assignment operator `map[key] ??= () { ... }()`. This evaluates the IIFE only if the key is missing, completely avoiding closure allocation on a cache hit. Ensure generic types (like `<String, _Entry>{}`) are explicitly defined if the closure returns empty collections to satisfy Dart's type inference.
