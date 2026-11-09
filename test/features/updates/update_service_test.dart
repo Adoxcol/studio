@@ -10,6 +10,7 @@ class FakeBackend implements UpdateBackend {
   var initializeCalls = 0;
   var latestCalls = 0;
   var downloadCalls = 0;
+  var restartCalls = 0;
   var applied = false;
   Object? initializeError;
 
@@ -34,7 +35,10 @@ class FakeBackend implements UpdateBackend {
   }
 
   @override
-  Future<void> restartAndApply() async => applied = true;
+  Future<void> restartAndApply() async {
+    restartCalls++;
+    applied = true;
+  }
 }
 
 void main() {
@@ -226,5 +230,64 @@ void main() {
     expect(service.state.error, isNull);
     await service.check(silent: true);
     expect(service.state.timedOut, isFalse);
+  });
+
+  group('restartAndUpdate', () {
+    test('is a no-op when not in ready phase', () async {
+      expect(service.state.ready, isFalse);
+      await service.restartAndUpdate();
+      expect(backend.restartCalls, 0);
+      expect(backend.applied, isFalse);
+
+      // Also a no-op while checking
+      final check = service.check();
+      await service.restartAndUpdate();
+      expect(backend.restartCalls, 0);
+      expect(backend.applied, isFalse);
+      backend.latestCall.complete(null);
+      await check;
+    });
+
+    test('calls backend restartAndApply when update is ready', () async {
+      final check = service.check();
+      backend.latestCall.complete((version: '1.2.3', notes: 'Important fixes'));
+      await Future<void>.delayed(Duration.zero);
+      backend.downloadCall.complete();
+      await check;
+
+      expect(service.state.ready, isTrue);
+      expect(backend.restartCalls, 0);
+
+      await service.restartAndUpdate();
+      expect(backend.restartCalls, 1);
+      expect(backend.applied, isTrue);
+    });
+
+    test(
+      'clearReady resets ready state and prevents restartAndUpdate',
+      () async {
+        final check = service.check();
+        backend.latestCall.complete((
+          version: '1.2.3',
+          notes: 'Important fixes',
+        ));
+        await Future<void>.delayed(Duration.zero);
+        backend.downloadCall.complete();
+        await check;
+
+        expect(service.state.ready, isTrue);
+        expect(service.state.version, '1.2.3');
+
+        service.clearReady();
+        expect(service.state.phase, UpdatePhase.idle);
+        expect(service.state.ready, isFalse);
+        expect(service.state.version, isNull);
+        expect(service.state.notes, isNull);
+
+        await service.restartAndUpdate();
+        expect(backend.restartCalls, 0);
+        expect(backend.applied, isFalse);
+      },
+    );
   });
 }
