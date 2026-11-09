@@ -227,4 +227,45 @@ void main() {
     await service.check(silent: true);
     expect(service.state.timedOut, isFalse);
   });
+
+  group('restartAndUpdate and clearReady', () {
+    test('restartAndUpdate does nothing when update is not ready', () async {
+      expect(service.state.ready, isFalse);
+      await service.restartAndUpdate();
+      expect(backend.applied, isFalse);
+    });
+
+    test('restartAndUpdate calls backend when update is ready', () async {
+      final check = service.check();
+      backend.latestCall.complete((version: '1.2.3', notes: 'Patch notes'));
+      await Future<void>.delayed(Duration.zero);
+      backend.downloadCall.complete();
+      await check;
+
+      expect(service.state.ready, isTrue);
+      expect(backend.applied, isFalse);
+
+      await service.restartAndUpdate();
+      expect(backend.applied, isTrue);
+    });
+
+    test('clearReady resets phase to idle and clears release info', () async {
+      final check = service.check();
+      backend.latestCall.complete((version: '1.2.3', notes: 'Patch notes'));
+      await Future<void>.delayed(Duration.zero);
+      backend.downloadCall.complete();
+      await check;
+
+      expect(service.state.ready, isTrue);
+      expect(service.state.version, '1.2.3');
+      expect(service.state.notes, 'Patch notes');
+
+      service.clearReady();
+
+      expect(service.state.ready, isFalse);
+      expect(service.state.phase, UpdatePhase.idle);
+      expect(service.state.version, isNull);
+      expect(service.state.notes, isNull);
+    });
+  });
 }
