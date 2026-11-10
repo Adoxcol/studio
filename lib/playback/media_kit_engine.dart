@@ -815,10 +815,8 @@ class MediaKitAudioEngine implements AudioEngine {
     return operation;
   }
 
-  Future<void> _ensureConfigured(Player player) => _configuration.putIfAbsent(
-    player,
-    () => _configureNative(player.platform),
-  );
+  Future<void> _ensureConfigured(Player player) =>
+      _configuration[player] ??= _configureNative(player.platform);
 
   static Future<void> _configureNative(Object? platform) async {
     if (platform is! NativePlayer) return;

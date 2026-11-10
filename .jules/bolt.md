@@ -59,3 +59,7 @@
 ## 2026-11-20 - Replacing putIfAbsent with null-aware assignment ??= in store caches
 **Learning:** Using `putIfAbsent` with an anonymous closure function allocating fallback values (e.g. reading from disk or creating objects) inside caching mechanisms causes closure allocation overhead even when the cache hits. When checking for file or track presence offline, these methods are called frequently, compounding the garbage collection pressure.
 **Action:** Replace `map.putIfAbsent(key, () => value)` with the null-aware assignment operator `map[key] ??= () { ... }()`. This evaluates the IIFE only if the key is missing, completely avoiding closure allocation on a cache hit. Ensure generic types (like `<String, _Entry>{}`) are explicitly defined if the closure returns empty collections to satisfy Dart's type inference.
+
+## 2024-11-10 - Replace putIfAbsent with null-aware assignment
+**Learning:** In Dart, using `Map.putIfAbsent(key, () => ...)` in frequently executed code paths allocates an anonymous closure on every execution regardless of key presence.
+**Action:** Replace `map.putIfAbsent(key, () => ...)` with the null-aware assignment operator (e.g., `map[key] ??= ...`) to lazily evaluate the fallback logic and prevent unnecessary garbage collection overhead.
