@@ -43,3 +43,6 @@
 ## 2024-11-11 - Custom Sliders Accessibility
 **Learning:** In Flutter, custom interactive controls built with `GestureDetector` lack native visual feedback on desktop/web unless explicitly wrapped in a `MouseRegion` with `cursor: SystemMouseCursors.click`. This was missing on the Equalizer custom sliders.
 **Action:** When creating or modifying custom sliders or draggable areas with `GestureDetector`, always ensure they are wrapped in a `MouseRegion` with an appropriate cursor to provide visual affordance for desktop users.
+## 2024-11-13 - Interactive Drag Handles
+**Learning:** In Flutter, when building custom drag handles (like in `ReorderableListView`), using `MouseRegion` and `Tooltip` to provide a grab cursor is good, but lacks visual hover feedback. Using `InkWell` requires a tap callback to activate the hover state, but drag handles don't have a tap action.
+**Action:** Replace the `MouseRegion` with an `InkWell` wrapped in `Material(type: MaterialType.transparency)`. Provide an empty `onTap: () {}` to enable the hover state, set `hoverColor` to provide visual feedback, and set `mouseCursor: SystemMouseCursors.grab` to retain the expected pointer.
