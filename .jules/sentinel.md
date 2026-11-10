@@ -39,3 +39,7 @@
 **Vulnerability:** Across various state and settings stores in the application, atomic file writes were implemented by first writing to a predictable file name (ending in `.part`), then renaming it to the final target file. An attacker could pre-create this `.part` file as a symlink to any file they have write access to, leading to arbitrary file overwrite.
 **Learning:** Hardcoded or predictable temporary file suffixes leave processes open to Time-of-Check to Time-of-Use (TOCTOU) symlink attacks.
 **Prevention:** Always use cryptographically secure random suffixes (`Random.secure().nextInt(1 << 32).toRadixString(16)`) for temporary/staging files involved in atomic writes, ensuring the paths cannot be predictably targeted.
+## 2024-05-24 - Validate URL Scheme for OS Commands
+**Vulnerability:** `openUrl(Uri url)` in `lib/core/desktop/open_url.dart` was passing unvalidated URIs to OS-level commands like `open`, `xdg-open`, and `rundll32` via `Process.start`.
+**Learning:** Using `Process.start` or `Process.run` to execute an OS-level open command with an unvalidated URI allows an attacker to execute arbitrary local files, access restricted network shares, or trigger malicious custom URL handlers using schemes like `file://` or `smb://`.
+**Prevention:** When launching a browser to open a URL via OS commands, always enforce a strict allowlist of accepted schemes (e.g., ensuring `url.scheme == 'http' || url.scheme == 'https'`) before launching the process.

@@ -2,6 +2,10 @@ import 'dart:io';
 
 /// Opens [url] in the default browser. Returns false if no opener ran.
 Future<bool> openUrl(Uri url) async {
+  if (url.scheme != 'http' && url.scheme != 'https') {
+    return false;
+  }
+
   final (command, args) = switch (Platform.operatingSystem) {
     'macos' => ('open', [url.toString()]),
     // rundll32 avoids cmd.exe re-parsing `&` in query strings.
