@@ -64,7 +64,7 @@ class FreeImageArtworkUploader implements DiscordArtworkResolver {
     }
     if (_cooling(key)) return null;
     debugPrint('Discord artwork: uploading $path');
-    return _inflight.putIfAbsent(key, () => _upload(file, key));
+    return _inflight[key] ??= _upload(file, key);
   }
 
   Future<String?> _upload(File file, String key) async {

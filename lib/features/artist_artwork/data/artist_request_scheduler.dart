@@ -48,16 +48,13 @@ class ArtistRequestScheduler {
     // AudioDB sometimes serves images on its API hostname: those still belong
     // to the download pool, not its free-tier metadata quota.
     final service = '$host:${image ? 'images' : 'metadata'}';
-    final lane = _lanes.putIfAbsent(
-      image ? 'images' : service,
-      () => _Lane(
-        image ? maxImageDownloads : 1,
-        image
-            ? Duration.zero
-            : host == 'theaudiodb.com'
-            ? audioDbSpacing
-            : metadataSpacing,
-      ),
+    final lane = _lanes[image ? 'images' : service] ??= _Lane(
+      image ? maxImageDownloads : 1,
+      image
+          ? Duration.zero
+          : host == 'theaudiodb.com'
+          ? audioDbSpacing
+          : metadataSpacing,
     );
     final result = Completer<T>();
     lane.queue.add(

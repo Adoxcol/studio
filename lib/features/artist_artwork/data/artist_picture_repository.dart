@@ -47,35 +47,32 @@ class ArtistPictureRepository {
   Future<ArtistPicture> get(String artist) {
     final key = artistKey(artist);
     if (_cache.containsKey(key)) return Future.value(_cache[key]);
-    return _loads.putIfAbsent(
-      key,
-      () => Future<ArtistPicture>.sync(() => store.load(key))
-          .then((value) {
-            _cache[key] = value;
-            if (value.hidden) {
-              log(
-                'Using selected placeholder; automatic lookup skipped.',
-                artist: artist,
-              );
-            } else if (value.isCustom) {
-              log('Cache hit: using your custom image.', artist: artist);
-            } else if (value.remotePath != null) {
-              log('Cache hit: using downloaded image.', artist: artist);
-            } else if (value.retryAfter != null &&
-                _clock().isBefore(value.retryAfter!)) {
-              log(
-                'Cached ${value.lookupState.name}; retry after ${value.retryAfter!.toLocal().toIso8601String()}.',
-                artist: artist,
-              );
-            }
-            return value;
-          })
-          // Run cleanup after the map entry is installed, even when a store throws
-          // synchronously. A failed read must never stay memoized forever.
-          .whenComplete(() {
-            _loads.remove(key);
-          }),
-    );
+    return _loads[key] ??= Future<ArtistPicture>.sync(() => store.load(key))
+        .then((value) {
+          _cache[key] = value;
+          if (value.hidden) {
+            log(
+              'Using selected placeholder; automatic lookup skipped.',
+              artist: artist,
+            );
+          } else if (value.isCustom) {
+            log('Cache hit: using your custom image.', artist: artist);
+          } else if (value.remotePath != null) {
+            log('Cache hit: using downloaded image.', artist: artist);
+          } else if (value.retryAfter != null &&
+              _clock().isBefore(value.retryAfter!)) {
+            log(
+              'Cached ${value.lookupState.name}; retry after ${value.retryAfter!.toLocal().toIso8601String()}.',
+              artist: artist,
+            );
+          }
+          return value;
+        })
+        // Run cleanup after the map entry is installed, even when a store throws
+        // synchronously. A failed read must never stay memoized forever.
+        .whenComplete(() {
+          _loads.remove(key);
+        });
   }
 
   Stream<ArtistPicture> watch(String artist) => Stream.multi((controller) {
