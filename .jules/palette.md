@@ -40,3 +40,6 @@
 ## 2024-11-13 - Interactive Lyrics Lines
 **Learning:** In Flutter, text lines that are clickable (like synchronized lyrics) built with `GestureDetector` and `MouseRegion` feel unresponsive as they lack native visual feedback (hover color, ink ripples).
 **Action:** Replace `GestureDetector` and `MouseRegion` with an `InkWell` wrapped in `Material(type: MaterialType.transparency)`. Set `hoverColor` and `borderRadius` to provide a native interactive experience.
+## 2024-11-11 - Custom Sliders Accessibility
+**Learning:** In Flutter, custom interactive controls built with `GestureDetector` lack native visual feedback on desktop/web unless explicitly wrapped in a `MouseRegion` with `cursor: SystemMouseCursors.click`. This was missing on the Equalizer custom sliders.
+**Action:** When creating or modifying custom sliders or draggable areas with `GestureDetector`, always ensure they are wrapped in a `MouseRegion` with an appropriate cursor to provide visual affordance for desktop users.

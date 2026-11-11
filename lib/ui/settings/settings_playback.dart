@@ -306,36 +306,39 @@ class _EqSlider extends StatelessWidget {
               onChanged((gain + 1).clamp(Equalizer.minGain, Equalizer.maxGain)),
           onDecrease: () =>
               onChanged((gain - 1).clamp(Equalizer.minGain, Equalizer.maxGain)),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapDown: (details) =>
-                onChanged(_gainAt(details.localPosition.dy)),
-            onVerticalDragUpdate: (details) =>
-                onChanged(_gainAt(details.localPosition.dy)),
-            child: SizedBox(
-              height: _height,
-              child: Stack(
-                alignment: Alignment.bottomCenter,
-                children: [
-                  Align(
-                    child: Container(
-                      width: 2,
-                      height: _height,
-                      color: palette.hairlineStrong,
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment(0, 1 - t * 2),
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: palette.accent,
-                        shape: BoxShape.circle,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (details) =>
+                  onChanged(_gainAt(details.localPosition.dy)),
+              onVerticalDragUpdate: (details) =>
+                  onChanged(_gainAt(details.localPosition.dy)),
+              child: SizedBox(
+                height: _height,
+                child: Stack(
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    Align(
+                      child: Container(
+                        width: 2,
+                        height: _height,
+                        color: palette.hairlineStrong,
                       ),
                     ),
-                  ),
-                ],
+                    Align(
+                      alignment: Alignment(0, 1 - t * 2),
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: palette.accent,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
