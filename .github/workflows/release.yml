@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          flutter-version: '3.47.3'
           channel: stable
       - uses: dtolnay/rust-toolchain@stable
       - run: flutter pub get
@@ -42,7 +42,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          flutter-version: '3.47.3'
           channel: stable
       - uses: dtolnay/rust-toolchain@stable
       - name: Validate release tag
@@ -77,7 +77,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          flutter-version: '3.47.3'
           channel: stable
       - uses: dtolnay/rust-toolchain@stable
       - run: flutter pub get
@@ -96,7 +96,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          flutter-version: '3.47.3'
           channel: stable
       - uses: dtolnay/rust-toolchain@stable
       - run: sudo apt-get update -y && sudo apt-get install -y libkeybinder-3.0-dev libayatana-appindicator3-dev libgtk-3-dev libblkid-dev liblzma-dev libsecret-1-dev ninja-build cmake pkg-config
