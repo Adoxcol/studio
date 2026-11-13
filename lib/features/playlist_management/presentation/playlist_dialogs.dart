@@ -273,7 +273,9 @@ class _OrderDialogState extends State<_OrderDialog> {
                                     child: Material(
                                       type: MaterialType.transparency,
                                       child: InkWell(
-                                        onTap: () {},
+                                        onTap: _saving ? null : () {},
+                                        canRequestFocus: false,
+                                        excludeFromSemantics: true,
                                         mouseCursor: SystemMouseCursors.grab,
                                         hoverColor: palette.ink.withValues(
                                           alpha: 0.05,

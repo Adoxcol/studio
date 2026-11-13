@@ -7,6 +7,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Playlist reorder drag handles now highlight on hover while preserving drag
+  behavior and the grab cursor.
+
 ## [0.8.2] - 2026-10-26
 
 ### Fixed
