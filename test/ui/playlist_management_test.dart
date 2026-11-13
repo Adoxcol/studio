@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -169,6 +170,33 @@ void main() {
       await tester.tap(find.text('Open'));
       await settleDatabase(tester);
       expect(find.text('A'), findsNWidgets(2));
+      final handle = find.descendant(
+        of: find.byType(ReorderableDragStartListener).first,
+        matching: find.byType(InkWell),
+      );
+      final ink = tester.widget<InkWell>(handle);
+      expect(ink.mouseCursor, SystemMouseCursors.grab);
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      addTearDown(mouse.removePointer);
+      await mouse.moveTo(tester.getCenter(handle));
+      await tester.pumpAndSettle();
+      final dynamic inkController = Material.of(tester.element(handle));
+      expect(
+        (inkController.debugInkFeatures as List<InkFeature>)
+            .whereType<InkHighlight>()
+            .any((highlight) => highlight.color == ink.hoverColor),
+        isTrue,
+      );
+      await mouse.moveTo(Offset.zero);
+      await tester.pumpAndSettle();
+      expect(inkController.debugInkFeatures, isEmpty);
+      await tester.tap(handle);
+      await tester.pumpAndSettle();
+      expect(
+        tester.getTopLeft(find.text('A').first).dy,
+        lessThan(tester.getTopLeft(find.text('B')).dy),
+      );
       await tester.drag(
         find.byType(ReorderableDragStartListener).first,
         const Offset(0, 150),

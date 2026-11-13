@@ -268,17 +268,27 @@ class _OrderDialogState extends State<_OrderDialog> {
                                 ReorderableDragStartListener(
                                   index: index,
                                   enabled: !_saving,
-                                  child: MouseRegion(
-                                    cursor: SystemMouseCursors.grab,
-                                    child: Tooltip(
-                                      message: 'Drag to reorder',
-                                      child: SizedBox(
-                                        width: 32,
-                                        height: 48,
-                                        child: Icon(
-                                          Icons.drag_handle,
-                                          size: 18,
-                                          color: palette.inkMuted,
+                                  child: Tooltip(
+                                    message: 'Drag to reorder',
+                                    child: Material(
+                                      type: MaterialType.transparency,
+                                      child: InkWell(
+                                        onTap: _saving ? null : () {},
+                                        canRequestFocus: false,
+                                        excludeFromSemantics: true,
+                                        mouseCursor: SystemMouseCursors.grab,
+                                        hoverColor: palette.ink.withValues(
+                                          alpha: 0.05,
+                                        ),
+                                        borderRadius: BorderRadius.circular(4),
+                                        child: SizedBox(
+                                          width: 32,
+                                          height: 48,
+                                          child: Icon(
+                                            Icons.drag_handle,
+                                            size: 18,
+                                            color: palette.inkMuted,
+                                          ),
                                         ),
                                       ),
                                     ),
