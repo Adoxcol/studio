@@ -1,14 +1,11 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:studio/core/network_artwork.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:studio/features/artist_artwork/presentation/artist_picture_providers.dart';
 import 'package:studio/library/library_query.dart';
 import 'package:studio/state/library_navigation_provider.dart';
 import 'package:studio/state/library_providers.dart'
-    show libraryTracksByIdProvider, spectrumBandsProvider;
+    show libraryTrackByIdProvider, spectrumBandsProvider;
 import 'package:studio/state/nav_provider.dart';
 import 'package:studio/state/nav_state.dart';
 import 'package:studio/state/playback_mode_provider.dart';
@@ -65,9 +62,7 @@ class _ClassicNowPlayingHero extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = StudioPalette.of(context);
     final hasTrack = trackId != null;
-    final track = trackId == null
-        ? null
-        : ref.watch(libraryTracksByIdProvider)[trackId];
+    final track = ref.watch(libraryTrackByIdProvider(trackId));
     return LayoutBuilder(
       builder: (context, constraints) {
         const visualizerHeight = 44.0;
@@ -292,18 +287,22 @@ class _ArtworkBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uri = Uri.tryParse(path);
-    final isNetwork =
-        uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
-    final image = isNetwork
-        ? Image(image: NetworkArtworkImage(path), fit: BoxFit.cover)
-        : Image.file(File(path), fit: BoxFit.cover);
+    // The image sits under a heavy scrim, so a full-window decode is wasted.
+    final extent = CoverArt.decodeExtent(
+      512,
+      MediaQuery.devicePixelRatioOf(context),
+    );
     return ColorFiltered(
       colorFilter: const ColorFilter.mode(
         Color(0xffb7a99a),
         BlendMode.modulate,
       ),
-      child: image,
+      child: Image(
+        image: CoverArt.resized(path, extent),
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, _, _) => const SizedBox.shrink(),
+      ),
     );
   }
 }

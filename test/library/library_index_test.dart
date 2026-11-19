@@ -26,6 +26,16 @@ void main() {
     }
   });
 
+  test('an unfiltered view does not copy the catalogue before sorting', () {
+    final index = LibraryIndex(tracks);
+    final view = LibraryView(
+      index: index,
+      sort: LibrarySort.title,
+      order: LibraryOrder.ascending,
+    );
+    expect(identical(view.filtered, tracks), isTrue);
+  });
+
   test('derived views are memoized and invalidate with a new snapshot', () {
     final index = LibraryIndex(tracks);
     final view = LibraryView(

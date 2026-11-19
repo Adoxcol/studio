@@ -129,9 +129,7 @@ class _TrackInfo extends ConsumerWidget {
         ),
       ),
     );
-    final trackRecord = track.id == null
-        ? null
-        : ref.watch(libraryTracksByIdProvider)[track.id];
+    final trackRecord = ref.watch(libraryTrackByIdProvider(track.id));
 
     return SizedBox(
       width: 260,

@@ -55,6 +55,17 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   String _query = '';
   LibraryView? _view;
   Object? _viewKey;
+  List<Track>? _indexedTracks;
+  LibraryIndex? _catalogueIndex;
+
+  /// Credit parsing and the search index stay with the catalogue snapshot.
+  /// Selection, search, and sort reuse it instead of reparsing every track.
+  LibraryIndex _catalogueFor(List<Track> tracks) {
+    final cached = _catalogueIndex;
+    if (cached != null && identical(_indexedTracks, tracks)) return cached;
+    _indexedTracks = tracks;
+    return _catalogueIndex = LibraryIndex(tracks);
+  }
 
   void _onSearch() {
     _searchTimer?.cancel();
@@ -437,7 +448,10 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     LibrarySource source,
     bool hasNavidrome,
   ) {
-    final index = LibraryIndex(allTracks);
+    final index = _catalogueFor(allTracks);
+    final trackLayout = ref.watch(
+      appearanceProvider.select((state) => state.trackLayout),
+    );
     final remote = source == LibrarySource.navidrome;
     final tab = remote && _tab == LibraryTab.folders ? LibraryTab.all : _tab;
     final foldersById = ref.watch(libraryFoldersByIdProvider);
@@ -579,9 +593,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                             canPlay: canPlay,
                             showSort: tab != LibraryTab.playlists,
                             showView: showTable,
-                            trackLayout: ref
-                                .watch(appearanceProvider)
-                                .trackLayout,
+                            trackLayout: trackLayout,
                             onPlayAll: () {
                               ref
                                   .read(playbackControllerProvider.notifier)

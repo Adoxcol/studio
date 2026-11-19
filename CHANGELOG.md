@@ -12,6 +12,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Playlist reorder drag handles now highlight on hover while preserving drag
   behavior and the grab cursor.
 
+### Performance
+
+- Library search, sorting, and track selection reuse the catalogue index
+  instead of reparsing every track on each interaction.
+- Sorting a large library normalizes titles once, rather than on every
+  comparison.
+- Tinted playback backgrounds and vinyl labels decode artwork at display
+  size, and the mini player progress bar updates without redrawing the cover.
+
 ## [0.8.2] - 2026-10-26
 
 ### Fixed

@@ -37,15 +37,19 @@ class LibraryTrackTable extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final appearance = ref.watch(appearanceProvider);
+    final appearance = ref.watch(
+      appearanceProvider.select(
+        (state) => (layout: state.trackLayout, artwork: state.showTrackArtwork),
+      ),
+    );
     final playingId = ref.watch(
       playbackControllerProvider.select((s) => s.trackId),
     );
-    if (appearance.trackLayout == TrackLayout.cards) {
+    if (appearance.layout == TrackLayout.cards) {
       return _TrackCardGrid(
         tracks: tracks,
         playingId: playingId,
-        showArtwork: appearance.showTrackArtwork,
+        showArtwork: appearance.artwork,
         onPlay: onPlay,
         onTrackMenu: onTrackMenu,
         bottomInset: bottomInset,
@@ -57,7 +61,7 @@ class LibraryTrackTable extends ConsumerWidget {
     return _TrackList(
       tracks: tracks,
       playingId: playingId,
-      showArtwork: appearance.showTrackArtwork,
+      showArtwork: appearance.artwork,
       onPlay: onPlay,
       onTrackMenu: onTrackMenu,
       bottomInset: bottomInset,

@@ -102,6 +102,17 @@ class LibraryView {
 
   late final searched = index.search(query);
   late final filtered = () {
+    // The default catalogue is already the full snapshot. Skip the walk that
+    // would only copy it before sorting.
+    if (query.trim().isEmpty &&
+        artist == null &&
+        album == null &&
+        genre == null &&
+        folderId == null &&
+        !filters.isActive) {
+      return index.tracks;
+    }
+
     Iterable<Track> base = searched;
 
     // ⚡ Bolt Optimization:
