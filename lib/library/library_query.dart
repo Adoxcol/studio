@@ -256,50 +256,94 @@ abstract final class LibraryQuery {
     bool byIndexedAt = false,
     String Function(Track)? artistOf,
   }) {
-    final copy = [...tracks];
-    // Normalize once per row, not on every O(n log n) comparison.
-    final textKeys = <int, String>{
-      if (!byIndexedAt &&
-          (sort == LibrarySort.title ||
-              sort == LibrarySort.artist ||
-              sort == LibrarySort.album))
-        for (final track in tracks)
-          track.id: (switch (sort) {
-            LibrarySort.artist => (artistOf ?? artistName)(track),
-            LibrarySort.album => albumName(track),
-            _ => track.title,
-          }).toLowerCase(),
-    };
-    copy.sort((a, b) {
-      final cmp = byIndexedAt || sort == LibrarySort.added
-          ? a.indexedAt.compareTo(b.indexedAt)
-          : switch (sort) {
-              LibrarySort.title ||
-              LibrarySort.artist ||
-              LibrarySort.album => textKeys[a.id]!.compareTo(textKeys[b.id]!),
-              LibrarySort.track => _compareNullableInt(
-                a.trackNumber,
-                b.trackNumber,
-              ),
-              LibrarySort.time => _compareNullableInt(
-                a.durationMs,
-                b.durationMs,
-              ),
-              LibrarySort.added => a.indexedAt.compareTo(b.indexedAt),
-            };
-      final directed = order == LibraryOrder.ascending ? cmp : -cmp;
+    if (tracks.length < 2) return List<Track>.of(tracks);
+    final descending = order == LibraryOrder.descending;
+    final byDate = byIndexedAt || sort == LibrarySort.added;
+    // Keys are parallel to [tracks] so comparisons never allocate, and so
+    // duplicate track ids still sort as separate rows.
+    final titleKey = List<String>.generate(
+      tracks.length,
+      (i) => tracks[i].title.toLowerCase(),
+      growable: false,
+    );
+    final textKey = byDate
+        ? null
+        : switch (sort) {
+            LibrarySort.title => titleKey,
+            LibrarySort.artist || LibrarySort.album => List<String>.generate(
+              tracks.length,
+              (i) {
+                final track = tracks[i];
+                final value = sort == LibrarySort.artist
+                    ? (artistOf ?? artistName)(track)
+                    : albumName(track);
+                return value.toLowerCase();
+              },
+              growable: false,
+            ),
+            _ => null,
+          };
+    final dates = byDate
+        ? List<int>.generate(
+            tracks.length,
+            (i) => tracks[i].indexedAt.microsecondsSinceEpoch,
+            growable: false,
+          )
+        : null;
+    final numbers =
+        !byDate && (sort == LibrarySort.track || sort == LibrarySort.time)
+        ? List<int?>.generate(
+            tracks.length,
+            (i) => sort == LibrarySort.track
+                ? tracks[i].trackNumber
+                : tracks[i].durationMs,
+            growable: false,
+          )
+        : null;
+    final albumKey = sort == LibrarySort.track
+        ? List<String>.generate(
+            tracks.length,
+            (i) => albumName(tracks[i]).toLowerCase(),
+            growable: false,
+          )
+        : null;
+    final albumTracks = sort == LibrarySort.album
+        ? List<int?>.generate(
+            tracks.length,
+            (i) => tracks[i].trackNumber,
+            growable: false,
+          )
+        : null;
+    final indexes = List<int>.generate(
+      tracks.length,
+      (i) => i,
+      growable: false,
+    );
+    indexes.sort((a, b) {
+      final int cmp;
+      if (dates != null) {
+        cmp = dates[a].compareTo(dates[b]);
+      } else if (textKey != null) {
+        cmp = textKey[a].compareTo(textKey[b]);
+      } else if (numbers != null) {
+        cmp = _compareNullableInt(numbers[a], numbers[b]);
+      } else {
+        cmp = 0;
+      }
+      final directed = descending ? -cmp : cmp;
       if (directed != 0) return directed;
-      if (sort == LibrarySort.track) {
-        final albums = compareText(albumName(a), albumName(b));
+      // Tie-breaks stay in natural order; only the primary key flips.
+      if (albumKey != null) {
+        final albums = albumKey[a].compareTo(albumKey[b]);
         if (albums != 0) return albums;
       }
-      if (sort == LibrarySort.album) {
-        final tracks = _compareNullableInt(a.trackNumber, b.trackNumber);
-        if (tracks != 0) return tracks;
+      if (albumTracks != null) {
+        final trackCmp = _compareNullableInt(albumTracks[a], albumTracks[b]);
+        if (trackCmp != 0) return trackCmp;
       }
-      return compareText(a.title, b.title);
+      return titleKey[a].compareTo(titleKey[b]);
     });
-    return copy;
+    return [for (final index in indexes) tracks[index]];
   }
 
   static List<LibraryGroup> groupArtists(

@@ -67,9 +67,20 @@ final libraryIndexProvider = Provider<LibraryIndex>((ref) {
 final libraryTracksByIdProvider = Provider<Map<int, Track>>((ref) {
   final local = ref.watch(libraryTracksProvider).value ?? const <Track>[];
   final remote = ref.watch(subsonicTracksProvider).value ?? const <Track>[];
+  if (local.isEmpty && remote.isEmpty) return const <int, Track>{};
+  if (remote.isEmpty) return {for (final track in local) track.id: track};
+  if (local.isEmpty) return {for (final track in remote) track.id: track};
   return {
-    for (final track in [...local, ...remote]) track.id: track,
+    for (final track in local) track.id: track,
+    for (final track in remote) track.id: track,
   };
+});
+
+/// The playing row. Library scans rebuild [libraryTracksByIdProvider] without
+/// notifying widgets whose track did not change.
+final libraryTrackByIdProvider = Provider.family<Track?, int?>((ref, id) {
+  if (id == null) return null;
+  return ref.watch(libraryTracksByIdProvider.select((tracks) => tracks[id]));
 });
 
 final playlistsProvider = StreamProvider<List<Playlist>>((ref) {

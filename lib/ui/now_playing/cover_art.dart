@@ -10,6 +10,21 @@ class CoverArt extends StatelessWidget {
   final String? path;
   final double size;
 
+  /// Decode [path] into a square no larger than [extent] pixels on a side.
+  static ImageProvider resized(String path, int extent) {
+    final uri = Uri.tryParse(path);
+    final ImageProvider source =
+        uri != null && (uri.scheme == 'http' || uri.scheme == 'https')
+        ? NetworkArtworkImage(path)
+        : FileImage(File(path));
+    return ResizeImage(
+      source,
+      width: extent,
+      height: extent,
+      policy: ResizeImagePolicy.fit,
+    );
+  }
+
   /// Reuse a small set of decode sizes while resizing panes. Both axes are
   /// bounded; fit preserves non-square artwork instead of stretching it.
   static int decodeExtent(double size, double pixelRatio) {
@@ -24,32 +39,10 @@ class CoverArt extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = StudioPalette.of(context);
     final artwork = path;
-    if (artwork != null && _isNetworkUri(artwork)) {
+    if (artwork != null) {
       final extent = decodeExtent(size, MediaQuery.devicePixelRatioOf(context));
       return Image(
-        image: ResizeImage(
-          NetworkArtworkImage(artwork),
-          width: extent,
-          height: extent,
-          policy: ResizeImagePolicy.fit,
-        ),
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        gaplessPlayback: true,
-        errorBuilder: (_, _, _) => _Placeholder(size: size, palette: palette),
-      );
-    }
-    final file = artwork == null ? null : File(artwork);
-    if (file != null) {
-      final extent = decodeExtent(size, MediaQuery.devicePixelRatioOf(context));
-      return Image(
-        image: ResizeImage(
-          FileImage(file),
-          width: extent,
-          height: extent,
-          policy: ResizeImagePolicy.fit,
-        ),
+        image: resized(artwork, extent),
         width: size,
         height: size,
         fit: BoxFit.cover,
@@ -58,11 +51,6 @@ class CoverArt extends StatelessWidget {
       );
     }
     return _Placeholder(size: size, palette: palette);
-  }
-
-  static bool _isNetworkUri(String value) {
-    final uri = Uri.tryParse(value);
-    return uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
   }
 }
 

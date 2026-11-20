@@ -42,9 +42,7 @@ class EditorialStage extends ConsumerWidget {
     final coverMode = ref.watch(editorialCoverModeProvider);
     final showTopBar = ref.watch(editorialShowTopBarProvider);
     final playback = ref.watch(playbackWithoutPositionProvider);
-    final track = playback.trackId == null
-        ? null
-        : ref.watch(libraryTracksByIdProvider)[playback.trackId];
+    final track = ref.watch(libraryTrackByIdProvider(playback.trackId));
 
     final artist = playback.artist;
     final creditedArtist = artist == null

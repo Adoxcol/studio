@@ -26,9 +26,6 @@ class MiniPlayerView extends ConsumerWidget {
         ),
       ),
     );
-    final progress = ref.watch(
-      playbackControllerProvider.select((s) => s.progress),
-    );
     final mini = ref.watch(miniPlayerProvider);
     final controller = ref.read(playbackControllerProvider.notifier);
     final notifier = ref.read(miniPlayerProvider.notifier);
@@ -134,14 +131,29 @@ class MiniPlayerView extends ConsumerWidget {
               ],
             ),
           ),
-          LinearProgressIndicator(
-            value: track.hasTrack ? progress : 0,
-            minHeight: 2,
-            color: palette.accent,
-            backgroundColor: palette.hairline,
-          ),
+          const _MiniProgress(),
         ],
       ),
+    );
+  }
+}
+
+class _MiniProgress extends ConsumerWidget {
+  const _MiniProgress();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = StudioPalette.of(context);
+    final bar = ref.watch(
+      playbackControllerProvider.select(
+        (s) => (progress: s.progress, hasTrack: s.trackId != null),
+      ),
+    );
+    return LinearProgressIndicator(
+      value: bar.hasTrack ? bar.progress : 0,
+      minHeight: 2,
+      color: palette.accent,
+      backgroundColor: palette.hairline,
     );
   }
 }
